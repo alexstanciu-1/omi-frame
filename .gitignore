@@ -1,0 +1,24 @@
+nbproject/
+src/temp/**
+tests/**
+tests/
+/tests/**
+
+*.gen.php
+*.dyn.php
+*.gen.dyn.php
+
+*.min.js
+*.min.css
+
+#OS junk files
+[Tt]humbs.db
+*.DS_Store
+
+**/temp/
+
+/modules/
+/modules/**
+
+src/view/js/mvvm.js
+

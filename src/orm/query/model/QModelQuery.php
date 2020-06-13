@@ -26,8 +26,6 @@ class QModelQuery
 	 */
 	public static function Query($query, $from = null, &$dataBlock = null, $skip_security = true, $binds = null, $initial_query = null, $filter_selector = null, $populate_only = false, \QIStorage $storage = null)
 	{
-		file_put_contents("test_q.txt", $query."\n\n", FILE_APPEND);
-		
 		if (is_string($filter_selector))
 			$filter_selector = qParseEntity($filter_selector);
 		// Execute the query

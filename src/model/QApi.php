@@ -433,35 +433,86 @@ class QApi
 	 * @return mixed
 	 * @throws Exception
 	 */
-	public static function Remote($url, $class_method, $arguments = [], $args_selector = [])
+	public static function Remote($url, $class_method, $arguments = [], $curl = null, array &$cookies_map = null, 
+				$convert_to_obj = true)
 	{
 		list($class, $method) = explode("::", $class_method);
 		$args_data = self::ToArray($arguments);
 		$args_data["_q_"] = $class.".".$method;
 		// $args_str = json_encode($arguments);
 		
-		$curl = curl_init($url);
+		if (!$curl)
+			$curl = curl_init();
+		
+		curl_setopt($curl, CURLOPT_URL, $url);
 		curl_setopt($curl, CURLOPT_POST, 1);
 		curl_setopt($curl, CURLOPT_POSTFIELDS, http_build_query(["__qFastAjax__" => 1, "_qb0" => $args_data]));
+		$curl_header = [];
+		if ($cookies_map)
+		{
+			$cookies_header = "";
+			foreach ($cookies_map as $k => $v)
+			{
+				if ($cookies_header)
+					$cookies_header .= "; ";
+				$cookies_header .= $k . '=' . $v;
+			}
+			if ($cookies_header)
+				$curl_header[] = "Cookie: ".$cookies_header;
+		}
+		curl_setopt($curl, CURLOPT_HTTPHEADER, $curl_header);
 		curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
 		curl_setopt($curl, CURLOPT_MAXREDIRS, 3);
 		curl_setopt($curl, CURLOPT_POSTREDIR, 1);
 		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+		curl_setopt($curl, CURLOPT_HEADER, 1);
+		
+		// Set-Cookie: PHPSESSID=kec7jni62m2ftsuks9gesm0db4; path=/\r
+		
 		$response = curl_exec($curl);
 		if ($response === false)
 			throw new Exception("Invalid response from: ".$url."\n\n".curl_error($curl));
-
+		
+		$info = curl_getinfo($curl);
+		$header = substr($response, 0, $info['header_size']);
+		$response = substr($response, $info['header_size']);
+		
+		$header_chunks = preg_split("/(\\s*\\r?\\n\\s*)/uis", $header, -1, PREG_SPLIT_NO_EMPTY);
+		$header_map = [];
+		foreach ($header_chunks as $hc)
+		{
+			list($header_name, $header_data) = preg_split("/(\\s*\\:\\s*)/uis", $hc, 2, PREG_SPLIT_NO_EMPTY);
+			$header_map[strtolower(trim($header_name))] = trim($header_data);
+		}
+		$cookies = null;
+		if ($header_map['set-cookie'])
+		{
+			// PHPSESSID=djnfv8hbelinqcao15bn3gaov0; path=/
+			$cookies = preg_split("/(\\s*\\;\\s*)/uis", $header_map['set-cookie'], -1, PREG_SPLIT_NO_EMPTY);
+			if ($cookies_map === null)
+				$cookies_map = [];
+			foreach ($cookies as $cookie)
+			{
+				list($cookie_name, $cookie_value) = preg_split("/(\\s*\\=\\s*)/uis", $cookie, 2, PREG_SPLIT_NO_EMPTY);
+				if ($cookie_name)
+					$cookies_map[$cookie_name] = $cookie_value;
+			}
+		}
+		
 		$json_decode = json_decode($response, true);
-		if (!$json_decode)
+		if ($json_decode === null)
 			return null;
+		if ($json_decode["EXCEPTION"])
+			return new \Error($json_decode["EXCEPTION"]["Message"]);
+			
 		$resp_data = $json_decode[0];
-		if (!$resp_data)
+		if ($resp_data === null)
 			return null;
 		
 		if (is_bool($json_decode[0]))
 			return $json_decode[0];
-
-		return QModel::FromArray($json_decode[0]);
+		
+		return $convert_to_obj ? QModel::FromArray($json_decode[0]) : $json_decode[0];
 	}
 	
 	/**
@@ -1970,26 +2021,57 @@ class QApi
 			$owner = new \Omi\Comm\Reseller();
 			$owner->setId($import_config["owner"]);
 			$bag = new \SplObjectStorage();
-			static::ImportData_Set_Owner($data, $owner, $bag);
+			$owner_paths = [];
+			static::ImportData_Set_Owner($data, $owner, $bag, $owner_paths);
 			unset($bag);
 			
 			$with_owner = true;
 		}
 		
+		$new_data = null;
+		
 		if ($import_config["mergeby"])
 		{
+			$new_data = \QApp::NewData();
+			
 			if (!is_array($import_config["mergeby"]))
 				throw new \Exception('Only merge by as an array is implemented !');
 			$walk_selector = [];
 			foreach ($import_config["mergeby"] ?: [] as $k => $v)
 			{
-				$walk_selector = qJoinSelectors($walk_selector, qParseEntity ($k));
+				$walk_selector = qJoinSelectors($walk_selector, qParseEntity($k));
 				if (is_string($v) || is_numeric($k))
 					$import_config["mergeby"][$k] = [$k => $v];
+				
+				foreach ($import_config["mergeby"][$k] as $key => $val)
+				{
+					if ($val === true)
+						$import_config["mergeby"][$k][$key] = $import_config["mergeby"][$key];
+				}
+				foreach ($import_config["mergeby"][$k] as $key => $val)
+				{
+					if (is_string($val))
+						$import_config["mergeby"][$k][$key] = preg_split("/\\s*\\,\\s*/uis", $val, -1, PREG_SPLIT_NO_EMPTY);
+				}
 			}
 			
 			$merge_by_list = [];
-			static::ImportData_Merge_By($data, $import_config["mergeby"], $walk_selector, $merge_by_list);
+			static::ImportData_Merge_By($data, true, $import_config["mergeby"], $walk_selector, $merge_by_list);
+			
+			if (($replace_elements = $merge_by_list['replace']) || ($remove_elements = $merge_by_list["remove"]))
+			{
+				// qvar_dumpk($merge_by_list['replace'], $data);
+				$duplicates_bag = new \SplObjectStorage();
+				static::ImportData_Remove_Duplicates($data, $replace_elements ?? new \SplObjectStorage(), $remove_elements ?? new \SplObjectStorage(), $duplicates_bag);
+				unset($merge_by_list['replace']);
+				unset($merge_by_list['remove']);
+				// qvar_dumpk($data);
+				// die;
+			}
+			
+			# $duplicates_check = $merge_by_list["#type"];
+			# unset($merge_by_list["#type"]);
+			# $duplicates_check
 			
 			foreach ($merge_by_list as $app_property => $merge_by_data)
 			{
@@ -2000,7 +2082,7 @@ class QApi
 				{
 					$query = "Id,".reset($merge_by_data["cols"])." WHERE ".reset($merge_by_data["cols"])." IN (?)";
 					$binds[] = array_keys($merge_by_data["list"]);
-					if ($with_owner)
+					if (in_array($app_property, $import_config["with_owner"]))
 					{
 						$query .= " AND Owner.Id=?";
 						$binds[] = $owner->Id;
@@ -2008,31 +2090,109 @@ class QApi
 				}
 				else
 				{
-					$query = "Id,".implode(", ", $merge_by_data["cols"])." WHERE (".implode(", ", $merge_by_data["cols"]).") IN (?)";
-					$binds[] = array_values($merge_by_data["list"]);
-					if ($with_owner)
+					// if we have nulls :(
+					$not_null_vals = [];
+					$with_null_vals = [];
+					$with_null_str = "";
+					foreach ($merge_by_data["list"] as $merge_by_data_cells)
+					{
+						$has_nulls = false;
+						foreach ($merge_by_data_cells as $merge_by_data_cells_val)
+						{
+							if ($merge_by_data_cells_val === null)
+							{
+								$has_nulls = true;
+								break;
+							}
+						}
+						if ($has_nulls)
+							$with_null_vals[] = $merge_by_data_cells;
+						else
+							$not_null_vals[] = $merge_by_data_cells;
+					}
+					
+					$query = "Id,".implode(", ", $merge_by_data["cols"])." WHERE ";
+					$prepend_and = false;
+					if ($not_null_vals)
+					{
+						$query .= " (".implode(", ", $merge_by_data["cols"]).") IN (?)";
+						$binds[] = array_values($merge_by_data["list"]);
+						$prepend_and = true;
+					}
+					foreach ($with_null_vals as $with_null_colls)
+					{
+						$sub_q = [];
+						foreach ($with_null_colls as $pos => $coll)
+						{
+							$sub_q[] = " (".$merge_by_data["cols"][$pos].(($coll === null) ? ' IS NULL ' : " = ?").") ";
+							if ($coll !== null)
+								$binds[] = $coll;
+						}
+							
+						$query .= ($prepend_and ? " AND " : "")." ( ".implode(" OR ", $sub_q)." ) ";
+						$prepend_and = true;
+					}
+					
+					if (in_array($app_property, $import_config["with_owner"]))
 					{
 						$query .= " AND Owner.Id=?";
 						$binds[] = $owner->Id;
 					}
-					
-					throw new \Exception('This case needs to be tested !!!');
 				}
 				
 				$list_of = \QQuery($app_property.".{{$query}}", $binds)->$app_property;
 				
+				// qvar_dumpk("{$app_property} : {$query} | " . json_encode($binds) , $list_of);
+				
 				$cols_def_mb = $merge_by_data["cols"];
 				$objs_list_mb = $merge_by_data["objs"];
 				
+				$matched_hashes = [];
+				
 				foreach ($list_of ?: [] as $db_item)
 				{
-					$data_hash = "";
+					$data_hash = [];
 					foreach ($cols_def_mb as $mby_col)
 					{
-						$data_hash .= ($data_hash ? "\n" : "").$db_item->$mby_col;
+						$mb_col_parts = preg_split("/\\s*\\.\\s*/uis", $mby_col, -1, PREG_SPLIT_NO_EMPTY);
+						// $data_hash .= ($data_hash ? "\n" : "").$db_item->$mby_col;
+						if (count($mb_col_parts) === 1)
+							$data_hash[] = $db_item->$mby_col;
+						else
+						{
+							$prop_val = $db_item;
+							foreach ($mb_col_parts as $mb_col_part)
+							{
+								if ($prop_val === null)
+									break;
+								$prop_val = $prop_val->$mb_col_part;
+							}
+							$data_hash[] = $prop_val;
+						}
 					}
-					foreach ($objs_list_mb[$data_hash] ?: [] as $matched_obj)
+					
+					$data_hash_str = implode("\n", $data_hash);
+					
+					foreach ($objs_list_mb[$data_hash_str] ?: [] as $matched_obj)
+					{
+						$matched_hashes[$data_hash_str] = true;
 						$matched_obj->setId($db_item->Id);
+					}
+				}
+				
+				// not matched need to be linked to app so if we re-run we will not re-import !
+				foreach ($objs_list_mb as $data_hash => $objs_list)
+				{
+					if (!$matched_hashes[$data_hash])
+					{
+						if ($data->$app_property === null)
+							$data->$app_property = new \QModelArray(); // @TODO this will fail if it's not a collection
+						foreach ($objs_list as $obj)
+						{
+							if (!$data->$app_property->in_array($obj))
+								$data->$app_property[] = $obj;
+						}
+					}
 				}
 				
 				unset($list_of);
@@ -2040,38 +2200,233 @@ class QApi
 			
 			unset($merge_by_list);
 			
-			qvar_dumpk($data);
-			
-			throw new \Exception("We should also try to link `subparts` rather than create new ones, should be ruled defined !!!! ");
+			// after MEREGE BY ... populate subparts where we have ids
+			$bag_sp = new \SplObjectStorage();
+			$max_subparts = 16;
+			do
+			{
+				$subparts_list = [];
+				foreach ($data->getModelType()->properties as $prop_name => $prop_def)
+				{
+					if ($data->$prop_name instanceof \QIModel)
+						static::ImportData_Populate_Subparts($import_config["mergeby"], qis_array($data->$prop_name) ? $data->$prop_name->getArrayCopy() : [$data->$prop_name], 
+									$subparts_list, $bag_sp, $prop_name);
+				}
+				$ids_setup = static::ImportData_Populate_Subparts_Query($subparts_list);
+				
+				if (!$ids_setup)
+					// no more IDs were resolved
+					break;
+				
+				$max_subparts--;
+				if ($max_subparts < 0)
+					throw new \Exception('Max repeating of populate for sub-parts was exceded. Either our algorithm has a problem or the import conffig.');
+			}
+			while ($subparts_list);
 		}
 		
-		qvar_dumpk($import_config, $data);
-		die;
+		/*if ($data->Users) # debug dump only !
+		{
+			foreach ($data->getModelType()->properties as $prop_name => $prop_def)
+			{
+				if (($prop_name === 'Id') || ($prop_name === 'Del__'))
+					continue;
+				
+				if ($data->$prop_name instanceof \QIModel)
+					qvar_dumpk($data->$prop_name);
+			}
+			die;
+		}*/
+		
+		$saved_context = null;
+		try
+		{
+			if ($owner && $owner->Id)
+			{
+				\Omi\App::SetupContext($owner->Id);
+				$saved_context = \Omi\App::GetCurrentOwner()->Id;
+			}
+			
+			foreach ($data->getModelType()->properties as $prop_name => $prop_def)
+			{
+				if (($prop_name === 'Id') || ($prop_name === 'Del__'))
+					continue;
+				
+				if ($data->$prop_name instanceof \QIModel)
+					\QApi::Merge($prop_name, $data->$prop_name, $import_config['selector'][$prop_name]);
+			}
+		}
+		finally
+		{
+			if (($saved_context !== null) && ($saved_context != \Omi\App::GetCurrentOwner()->Id))
+				\Omi\App::SetupContext($saved_context);
+		}
+		
+		return $data;
 	}
 	
-	public static function ImportData_Merge_By(\QIModel $data, array $mergeby_def, array $walk_selector, array &$merge_by_list, string $path = "")
+	public static function ImportData_Populate_Subparts_Query(array $subparts_list)
+	{
+		$ids_setup = 0;
+		
+		foreach ($subparts_list as $per_prop_list)
+		{
+			foreach ($per_prop_list as $prop_name => $prop_elements)
+			{
+				$query_list = new \QModelArray();
+				foreach ($prop_elements as $data_prop_value)
+				{
+					$query_on = new $data_prop_value;
+					$query_on->setId($data_prop_value->Id);
+					$query_list[] = $query_on;
+				}
+				$query_list->query($prop_name);
+				
+				foreach ($query_list as $pos => $item)
+				{
+					if ($item->$prop_name && $item->$prop_name->Id && (!$prop_elements[$pos]->$prop_name->Id))
+					{
+						$prop_elements[$pos]->$prop_name->setId($item->$prop_name->Id);
+						$ids_setup++;
+					}
+				}
+			}
+		}
+		
+		return $ids_setup;
+	}
+	
+	public static function ImportData_Populate_Subparts(array $avoid_merge_by_paths, array $elements, array &$subparts_list, \SplObjectStorage $bag, string $model_path = "")
+	{
+		$new_elements = [];
+		foreach ($elements as $data)
+		{
+			if ($data instanceof \QModelArray)
+			{
+				foreach ($data as $value)
+				{
+					if (($value instanceof \QIModel) && (!isset($bag[$value])))
+					{
+						$bag[$value] = true;
+						$new_elements[""][] = $value;
+					}
+				}
+			}
+			else if ($data instanceof \QIModel)
+			{
+				foreach ($data->getModelType()->properties ?: [] as $m_property => $prop_reflection)
+				{
+					$value = $data->$m_property;
+					if (($value instanceof \QIModel) && (!isset($bag[$value])))
+					{
+						$bag[$value] = true;
+						if ($data->Id)
+						{
+							if ((!$value->Id) && (!$avoid_merge_by_paths[($c_path = ($model_path && $m_property) ? $model_path .'.'. $m_property : $model_path . $m_property)]))
+								$subparts_list[$model_path][$m_property][] = $data;
+						}
+						else
+							$new_elements[$m_property][] = $value;
+					}
+				}
+			}
+		}
+		
+		foreach ($new_elements as $m_property => $new_el_list)
+		{
+			static::ImportData_Populate_Subparts($avoid_merge_by_paths, $new_el_list, $subparts_list, $bag, ($model_path && $m_property) ? $model_path.".".$m_property : $model_path.$m_property);
+		}
+	}
+	
+	public static function ImportData_Merge_By(\QIModel $data, bool $merge_by_mandatory, array $mergeby_def, array $walk_selector, array &$merge_by_list, string $path = "", 
+													\QIModel $parent_data = null, $parent_key = null)
 	{
 		if ($data instanceof \QModelArray)
 		{
-			foreach ($data as $value)
-				static::ImportData_Merge_By($value, $mergeby_def, $walk_selector, $merge_by_list, $path);
+			foreach ($data as $pos => $value)
+				static::ImportData_Merge_By($value, $merge_by_mandatory, $mergeby_def, $walk_selector, $merge_by_list, $path, $data, $pos);
 		}
 		else if ($data instanceof \QIModel)
 		{
 			$mby_rule = $mergeby_def[$path];
+			
 			if ($mby_rule)
 			{
+				$remove_item = false;
+				
 				foreach ($mby_rule as $app_prop => $merge_by_prop_def)
 				{
-					if ((!is_string($merge_by_prop_def)) || (strpos($merge_by_prop_def, ".") !== false))
-						throw new \Exception('We need to implement more merge by scenarios!');
-					$mb_data_cols = [$merge_by_prop_def];
-					$mb_data_key = [$data->$merge_by_prop_def];
-					$mb_data_hash = $data->$merge_by_prop_def;
+					if ($app_prop === '@')
+					{
+						// internal to this collection !
+						throw new \Exception('Internal mb to collection!');
+					}
 					
-					$merge_by_list[$app_prop]["list"][$mb_data_hash] = $mb_data_key;
-					$merge_by_list[$app_prop]["cols"] = $mb_data_cols;
-					$merge_by_list[$app_prop]["objs"][$mb_data_hash][] = $data;
+					$mb_data_cols = is_array($merge_by_prop_def) ? $merge_by_prop_def : [$merge_by_prop_def];
+					
+					$mb_data_key = [];
+					foreach ($mb_data_cols as $mb_col)
+					{
+						if (!is_string($mb_col))
+							throw new \Exception('We need to implement more merge by scenarios!');
+						
+						$mb_col_parts = preg_split("/\\s*\\.\\s*/uis", $mb_col, -1, PREG_SPLIT_NO_EMPTY);
+						if (count($mb_col_parts) === 1)
+						{
+							if ($remove_item || ($merge_by_mandatory && empty($data->$mb_col)))
+							{
+								$remove_item = true;
+								break;
+							}
+							else
+								$mb_data_key[] = $data->$mb_col;
+						}
+						else
+						{
+							$prop_val = $data;
+							foreach ($mb_col_parts as $mb_col_part)
+							{
+								$prop_val = $prop_val->$mb_col_part;
+								if ($remove_item || ($merge_by_mandatory && empty($prop_val)))
+								{
+									$remove_item = true;
+									break;
+								}
+								else if ($prop_val === null)
+									break;
+							}
+							if ($remove_item)
+								break;
+							else
+								$mb_data_key[] = $prop_val;
+						}
+					}
+					
+					if ($remove_item)
+					{
+						if ($merge_by_list["remove"] === null)
+							$merge_by_list["remove"] = new \SplObjectStorage();
+						$merge_by_list["remove"][$data] = true;
+						break;
+					}
+					else
+					{
+						$mb_data_hash = implode("\n", $mb_data_key);
+
+						$first_data = reset($merge_by_list[$app_prop]["objs"][$mb_data_hash]);
+						if ($first_data)
+						{
+							if ($merge_by_list["replace"] === null)
+								$merge_by_list["replace"] = new \SplObjectStorage();
+							$merge_by_list["replace"][$data] = $first_data;
+						}
+						else
+						{
+							$merge_by_list[$app_prop]["objs"][$mb_data_hash][] = $data;
+							$merge_by_list[$app_prop]["list"][$mb_data_hash] = $mb_data_key;
+							$merge_by_list[$app_prop]["cols"] = $mb_data_cols;
+						}
+					}
 				}
 			}
 			
@@ -2079,7 +2434,7 @@ class QApi
 			{
 				$v = $data->$property;
 				if ($v instanceof \QIModel)
-					static::ImportData_Merge_By($v, $mergeby_def, $sub_walk_selector, $merge_by_list, $path ? $path.".".$property : $property);
+					static::ImportData_Merge_By($v, $merge_by_mandatory, $mergeby_def, $sub_walk_selector, $merge_by_list, $path ? $path.".".$property : $property, $data, $property);
 			}
 		}
 	}
@@ -2131,7 +2486,7 @@ class QApi
 		}
 	}
 	
-	public static function ImportData_Set_Owner(\QIModel $data, \Omi\Comm\Reseller $owner, \SplObjectStorage $bag)
+	public static function ImportData_Set_Owner(\QIModel $data, \Omi\Comm\Reseller $owner, \SplObjectStorage $bag, array &$owner_paths = null, string $path = "")
 	{
 		if (isset($bag[$data]))
 			return;
@@ -2142,20 +2497,72 @@ class QApi
 			foreach ($data as $value)
 			{
 				if ($value instanceof \QIModel)
-					static::ImportData_Set_Owner($value, $owner, $bag);
+					static::ImportData_Set_Owner($value, $owner, $bag, $owner_paths, $path);
 			}
 		}
 		else if ($data instanceof \QIModel)
 		{
 			if ($data->_synchronizable === true)
+			{
 				$data->setOwner($owner);
+				$owner_paths[$path] = true;
+			}
 			foreach ($data->getModelType()->properties ?: [] as $m_property => $prop_reflection)
 			{
 				$value = $data->$m_property;
 				if ($value instanceof \QIModel)
-					static::ImportData_Set_Owner($value, $owner, $bag);
+					static::ImportData_Set_Owner($value, $owner, $bag, $owner_paths, ($path ? $path."." : "").$m_property);
 			}
 		}
 	}
-
+	
+	public static function ImportData_Remove_Duplicates(\QIModel $data, \SplObjectStorage $replace_elements, \SplObjectStorage $remove_elements, \SplObjectStorage $bag, \QIModel $copy_from = null)
+	{
+		if (isset($bag[$data]))
+			return;
+		$bag[$data] = true;
+		
+		if ($data instanceof \QModelArray)
+		{
+			foreach ($data as $k => $value)
+			{
+				if (!$value instanceof \QIModel)
+					continue;
+				else if (isset($remove_elements[$value]))
+				{
+					$data[$k] = null;
+					unset($data[$k]);
+				}
+				else if (isset($replace_elements[$value]) && ($replacement = $replace_elements[$value]))
+				{
+					$data[$k] = $replacement;
+					static::ImportData_Remove_Duplicates($replacement, $replace_elements, $remove_elements, $bag, $value);
+				}
+				else
+					static::ImportData_Remove_Duplicates($value, $replace_elements, $remove_elements, $bag);
+			}
+		}
+		else if ($data instanceof \QIModel)
+		{
+			foreach ($data->getModelType()->properties ?: [] as $m_property => $prop_reflection)
+			{
+				$value = $data->$m_property;
+				if (($value === null) && ($copy_from->$m_property !== null))
+					$data->$m_property = $copy_from->$m_property;
+				else if (!$value instanceof \QIModel)
+					continue;
+				else if (isset($remove_elements[$value]))
+				{
+					$data->$k = null;
+				}
+				else if (isset($replace_elements[$value]) && ($replacement = $replace_elements[$value]))
+				{
+					$data->$m_property = $replacement;
+					static::ImportData_Remove_Duplicates($replacement, $replace_elements, $remove_elements, $bag, $value);
+				}
+				else
+					static::ImportData_Remove_Duplicates($value, $replace_elements, $remove_elements, $bag);
+			}
+		}
+	}
 }

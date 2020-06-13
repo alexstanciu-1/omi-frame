@@ -1489,6 +1489,16 @@ class QModelArray extends ArrayObject implements QIModelArray
 		return false;
 	}
 	
+	public function in_array($value, bool $strict = true)
+	{
+		foreach ($this as $v)
+		{
+			if (($value === $v) || ((!$strict) && ($value == $v)))
+				return true;
+		}
+		return false;
+	}
+	
 	public function has($value, string $property = null, bool $index = false, bool $strict = true)
 	{
 		return ($this->find($value, $property, $index, $strict) !== false);
@@ -2124,5 +2134,27 @@ class QModelArray extends ArrayObject implements QIModelArray
 		}
 	}
 	
-	######## QMODEL PATCH END !! #############	
+	######## QMODEL PATCH END !! #############
+
+	public function getClone($selector)
+	{
+		if (is_string($selector))
+			$selector = qParseEntity($selector);
+		if (!is_array($selector))
+			return;
+		
+		$clone = new static;
+		foreach ($this as $pos => $val)
+		{
+			if (is_scalar($val))
+				$clone[$pos] = $val;
+			else if ($val instanceof \QIModel)
+				$clone[$pos] = $val->getClone($selector);
+			else
+				throw new \Exception('Unexpected data');
+		}
+			
+		return $clone;
+	}
+	
 }

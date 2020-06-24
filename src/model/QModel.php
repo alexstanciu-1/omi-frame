@@ -5841,5 +5841,15 @@ class QModel implements QIModel, Iterator
 		$this->_iter = 0;
 	}	
 	public function valid () { return isset(static::$_Type_Properties[static::class][$this->_iter]); }
+	
+	/**
+	 * Saves the model in the Storage, no other action is performed
+	 *
+	 * @param string|boolean|null $selector
+	 */
+	public function db_save($selector = null, $data = null, $state = null)
+	{
+		return $this->save($selector, $data, $state, false, false, false, false);
+	}
 }
 

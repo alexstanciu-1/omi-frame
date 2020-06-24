@@ -117,14 +117,6 @@ class QCodeSync2
 			// exit after upgrade
 			return;
 		}
-		
-		/*
-		$full_file_path = '/home/alex/public_html/vf-merge/vf-base-new/~includes/voip-fuse/frontend/Customers/Customers.formSitesRow.tpl';
-		$obj_parsed = \QPHPToken::ParsePHPFile($full_file_path, true);
-			
-			qvar_dumpk(token_name(381), $obj_parsed->children[0]->children[10]->children[51]);
-			die;
-		*/
   
 		if (defined('Q_RUN_CODE_NEW_AS_TRAITS') && Q_RUN_CODE_NEW_AS_TRAITS)
 		{

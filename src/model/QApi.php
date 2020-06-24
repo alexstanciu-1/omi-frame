@@ -985,6 +985,8 @@ class QApi
 					# add extra selector to resolve FK/References caption issues
 					$selector = qJoinSelectors($selector, $append_extra_selector);
 				}
+				
+				// qvar_dumpk('$append_extra_selector', $append_extra_selector, $view_class_name::$Extra_Selectors);
 			}
 			
 			$selector = qJoinSelectors($selector, $selector_gen_form);

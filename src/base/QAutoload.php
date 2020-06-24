@@ -1150,7 +1150,7 @@ final class QAutoload
 			}
 			else if (filter_var($restriction, FILTER_VALIDATE_IP) !== false)
 			{
-				if ($restriction === filter_input(INPUT_SERVER, array_key_exists('HTTP_X_FORWARDED_FOR', $_SERVER) ? "HTTP_X_FORWARDED_FOR" : "REMOTE_ADDR", FILTER_VALIDATE_IP))
+				if ($restriction === Q_REMOTE_ADDR)
 				{
 					self::RunDevelopmenMode($full_resync, $debug_mode, $ajax_mode);
 					$scaned = true;

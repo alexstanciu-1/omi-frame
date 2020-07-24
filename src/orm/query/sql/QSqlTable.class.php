@@ -1813,12 +1813,12 @@ abstract class QSqlTable_frame_ extends QStorageTable
 								$rv = $record[$c];
 								if (($rv === null) && (!array_key_exists($c, $record)))
 									throw new \Exception('We did not add one or more columns needed to identify the return');
-								$r_binds[] = $rv;
+								$r_binds[] = ($rv === null) ? null : (string)$rv;
 							}
 							
 							$yield_reqsts = $select_return_index[json_encode($r_binds)];
 							if (!$yield_reqsts)
-									throw new \Exception('Error we could not id the request. Review the way you index data in $select_return_index.');
+								throw new \Exception('Error we could not id the request. Review the way you index data in $select_return_index.');
 							
 							foreach ($yield_reqsts as $yield_req)
 								$yield_req->result = $record;

@@ -663,7 +663,8 @@ final class QAutoload
 						
 						// if it's a generated file we don't care if it was modified or not
 						// for CSS / JS we only track their presence
-						if (($ext === "php") && ($sub_ext = substr($f, - strlen($ext) - 5, 4)) && (($sub_ext === ".gen") || ($sub_ext === ".dyn")))
+						if ((($ext === "php") || ($ext === "js") || ($ext === "css")) && 
+								($sub_ext = substr($f, - strlen($ext) - 5, 4)) && (($sub_ext === ".gen") || ($sub_ext === ".dyn")))
 						{
 							unset($files_state[$rel]);
 						}
@@ -855,8 +856,16 @@ final class QAutoload
 
 					// changed files : $changed
 					// removed files : $files_state
-					
-					if ($full_resync || $new || $changed || $files_state)
+					if ((!$full_resync) && $changed && (!$new) && (!$files_state) && $changed[Q_FRAME_PATH] && (count($changed) === 1))
+					{
+						# frame only changes will not trigger any sync ! It should not be patched anywhere !
+						# if in the frame, do not do any complicated sync
+						$failed = file_put_contents($save_state_path, qArrayToCode($info, "Q_FILES_STATE_SAVE"));
+						if ($failed === false)
+							throw new \Exception('Unable to save files state');
+						opcache_invalidate($save_state_path, true);
+					}
+					else if ($full_resync || $new || $changed || $files_state)
 					{
 						static::$HasChanges = true;
 						// based on some files dependency the code sync should be able to manage the issues 
@@ -952,7 +961,9 @@ final class QAutoload
 						
 						$sync->resync($info, $changed, $removed_files, $new, $full_resync);
 						
-						file_put_contents($save_state_path, qArrayToCode($info, "Q_FILES_STATE_SAVE"));
+						$failed = file_put_contents($save_state_path, qArrayToCode($info, "Q_FILES_STATE_SAVE"));
+						if ($failed === false)
+							throw new \Exception('Unable to save files state');
 						opcache_invalidate($save_state_path, true);
 					}
 					else
@@ -1150,7 +1161,7 @@ final class QAutoload
 			}
 			else if (filter_var($restriction, FILTER_VALIDATE_IP) !== false)
 			{
-				if ($restriction === Q_REMOTE_ADDR)
+				if ($restriction === filter_input(INPUT_SERVER, array_key_exists('HTTP_X_FORWARDED_FOR', $_SERVER) ? "HTTP_X_FORWARDED_FOR" : "REMOTE_ADDR", FILTER_VALIDATE_IP))
 				{
 					self::RunDevelopmenMode($full_resync, $debug_mode, $ajax_mode);
 					$scaned = true;

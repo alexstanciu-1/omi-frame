@@ -280,12 +280,7 @@ function QPatchClass(newClassName, parentClass, properties)
  */
 function QExtendClass(newClassName, parentClass, properties, prefix_patch)
 {
-	// console.log(newClassName + ' extends ' + parentClass + ' | patch=' + prefix_patch);
-	// console.log(window.omi);
-	
 	var class_obj = window[newClassName];
-	// if (class_obj && (!prefix_patch))
-		// return;
 	
 	if (!parentClass)
 	{

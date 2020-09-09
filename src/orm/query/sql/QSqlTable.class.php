@@ -2140,7 +2140,7 @@ abstract class QSqlTable_frame_ extends QStorageTable
 				{
 					$res = $parents_map->query($sql, $qpart_binds);
 				}
-				catch (\Exception$ex)
+				catch (\Exception $ex)
 				{
 					qvar_dump($queries, $property, $sql, $qpart_binds);
 					throw $ex;

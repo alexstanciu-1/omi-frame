@@ -373,9 +373,6 @@ abstract class QViewBase_frame_ extends QModel
 			$class = get_parent_class($class);
 		}
 		
-		qvar_dumpk('GetResourcesForClass', get_called_class(), $data, $data_css);
-		die;
-		
 		return [$data, $data_css];
 	}
 	
@@ -554,7 +551,7 @@ abstract class QViewBase_frame_ extends QModel
 		{
 			if (isset(self::$IncludeJs[$k]))
 				continue;
-			self::$IncludeJs[$k] = $v;
+			self::$IncludeJs[$k][$v] = $v;
 		}
 	}
 	
@@ -565,7 +562,7 @@ abstract class QViewBase_frame_ extends QModel
 			if (isset(self::$IncludeCss[$k]))
 				continue;
 
-			self::$IncludeCss[$k] = $v;
+			self::$IncludeCss[$k][$v] = $v;
 		}	
 	}
 	

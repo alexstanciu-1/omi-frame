@@ -1,3 +1,4 @@
+
 <?php
 
 
@@ -1106,11 +1107,11 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 				throw new Exception("Invalid response from: ".Q_FRAME_GET_ID_TYPE."\n\n".curl_error($curl));
 			
 			$data = json_decode($data, true);
-				if (!$data)
-				{
-					#echo $rawResponse;
-					throw new Exception("Invalid response from: ".Q_FRAME_GET_ID_TYPE."\n\nResponse cannot be decoded");
-				}
+			if (!$data)
+			{
+				#echo $rawResponse;
+				throw new Exception("Invalid response from: ".Q_FRAME_GET_ID_TYPE."\n\nResponse cannot be decoded");
+			}
 			$data_flip = array_flip($data);
 			
 			$s = "<?php \$_Q_FRAME_TYPE_IDS = array(";

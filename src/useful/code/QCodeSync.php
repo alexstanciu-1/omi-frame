@@ -3004,7 +3004,7 @@ class QCodeSync
 						$v_alert = str_replace($_to_replace, $_to_replace_with, $v_alert);
 						$v_info = str_replace($_to_replace, $_to_replace_with, $v_info);
 
-						$alert .= "<span class=\"qc-validation-alert\" data-tag=\"{$validator_tag}\">{$v_alert}</span>";
+						$alert .= "<span class=\"qc-validation-alert text-red-600 hidden\" data-tag=\"{$validator_tag}\">{$v_alert}</span>";
 						$alert_pos++;
 					}
 

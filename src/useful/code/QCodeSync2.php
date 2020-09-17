@@ -98,6 +98,8 @@ class QCodeSync2
 	 */
 	public function resync($files, $changed_or_added, $removed_files, $new_files, bool $full_resync = false)
 	{
+		ob_start();
+		
 		$this->init();
 		
 		$this->sync_started_at = microtime(true);
@@ -132,6 +134,10 @@ class QCodeSync2
 			
 			return true;
 		}
+		
+		$out_string = ob_get_clean();
+		if ($_GET['force_resync'])
+			echo $out_string;
 	}
 	
 	/**

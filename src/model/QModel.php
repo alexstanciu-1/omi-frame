@@ -4107,34 +4107,6 @@ class QModel implements QIModel, Iterator
 		}
 	}
 
-	public function updateSyncProps($syncProps, $selector = null)
-	{
-		$this->doOnSelector($selector, function ($obj, $syncProps) {
-			if ($obj->_synchronizable)
-				$obj->extractFromArray($syncProps);
-		}, $syncProps);
-	}
-
-	public function clearSyncProps($syncPropsSelector = null, $selector = null, &$_bag = [])
-	{
-		if (!$syncPropsSelector)
-			$syncPropsSelector = $this::GetSyncProps();
-
-		if (is_scalar($syncPropsSelector))
-			$syncPropsSelector = qParseEntity($syncPropsSelector);
-		else if (!is_array($syncPropsSelector))
-			throw new \Exception("Sync props selector not provided!");
-
-		// use the callback
-		$this->doOnSelector($selector, function ($obj, $syncPropsSelector) {
-			// unset properties here
-			foreach ($syncPropsSelector as $sp => $sv)
-			{
-				$obj->unsetProp($sp);
-			}
-		}, $syncPropsSelector);
-	}
-
 	public function getEnumAcceptedValues($property)
 	{
 		$prop = $this->getModelType()->properties[$property];
@@ -4468,55 +4440,7 @@ class QModel implements QIModel, Iterator
 			$this->setupSyncPropsInSelector($recurse);
 		return $this->frame_transform($parameters, $containers, $recurse, $backtrace, $as_simulation, $issues, $root_issues, $trigger_provision, $trigger_events, $trigger_save, $trigger_import);
 	}
-	/**
-	 * Setup sync props in selector
-	 * 
-	 * @param string|boolean|array $selector
-	 * @return null
-	 */
-	protected function setupSyncPropsInSelector(&$selector, &$bag = [], $depth = 0)
-	{
-		if (!$bag)
-			$bag = [];
-
-		// selector can't be null at this stage
-		if (($selector === null) || ($selector === true) || isset($bag[$this->getTemporaryId()]))
-			return;
-
-		$bag[$this->getTemporaryId()] = $this;
-
-		$is_root = ($depth === 0);
-		$depth++;
-
-		if (!$this->_synchronizable && !$is_root)
-			return;
-
-		if (!$selector)
-			$selector = [];
-		else if (is_string($selector))
-			$selector = qParseEntity($selector);
-
-		if ($this->_synchronizable)
-			$selector = array_merge($selector, qParseEntity($this::GetSyncProps()));
-
-		foreach ($this as $k => $itms)
-		{
-			if ((!($itms instanceof \QIModel)) || ($selector[$k] === null))
-				continue;
-
-			if (qis_array($itms))
-			{
-				foreach ($itms as $itm)
-				{
-					if ($itm instanceof \QModel)
-						$itm->setupSyncPropsInSelector($selector[$k], $bag, $depth);
-				}
-			}
-			else
-				$itms->setupSyncPropsInSelector($selector[$k], $bag, $depth);
-		}
-	}
-
+	
 	/**
 	 * 
 	 * @param boolean|string|array $selector

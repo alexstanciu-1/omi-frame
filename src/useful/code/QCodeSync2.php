@@ -831,8 +831,10 @@ class QCodeSync2
 							$this->model_types[$full_class_name] = $full_class_name;
 							$this->cache_types[$full_class_name] = $full_class_name;
 						}
+						/* # there is no point to do this atm ... as it will be ignored
 						else
 							$this->cache_types[$full_class_name] = $full_class_name;
+						*/
 					}
 					else if ($header_inf['type'] === 'url')
 					{

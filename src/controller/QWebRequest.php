@@ -513,7 +513,7 @@ class QWebRequest
 		$ssl = ((!empty($_SERVER['HTTPS'])) && ($_SERVER['HTTPS'] === 'on')) ? "s" : "";
 		$port = $_SERVER['SERVER_PORT'];
 		$port = ((!$ssl && ($port == '80')) || ($ssl && ($port == '443'))) ? '' : ':'.$port;
-		
+		qvar_dump(self::$OriginalRequest); die;
 		$url = "http{$ssl}://".$_SERVER['HTTP_HOST'].$port.self::$BaseHref.self::$OriginalRequest;
 		if ($with_query_string && (!empty($_GET)))
 			return $url."?".http_build_query($_GET);

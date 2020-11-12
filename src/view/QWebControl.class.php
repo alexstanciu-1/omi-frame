@@ -214,7 +214,8 @@ abstract class QWebControl_frame_ extends QViewBase
 		
 		if ((!QWebRequest::IsAjaxRequest()) && QAutoload::$DebugStacks)
 		{
-			?><div id='qb-dump-panel' class='qHideOnClickAway ' style='z-index: 100000; max-width: 90%; position: fixed; top: 0px; right: 0px; display: block; overflow: scroll; height: 100%; background-color: white; border: 1px solid gray; padding: 10px; margin: 0px;' >
+			# class='qHideOnClickAway '
+			?><div id='qb-dump-panel' style='z-index: 100000; max-width: 90%; position: fixed; top: 0px; right: 0px; display: block; overflow: scroll; height: 100%; background-color: white; border: 1px solid gray; padding: 10px; margin: 0px;' >
 					<a onclick='jQuery(this).parent().hide();' style='position: absolute; right: 5px; top: 3px; cursor: pointer; color: red;'>x</a>
 					<a onclick='jQuery(this).next().empty(); jQuery(this).parent().hide();' style='position: absolute; right: 35px; top: 3px; cursor: pointer; color: blue;'>clear</a>
 					<?php 
@@ -271,7 +272,7 @@ abstract class QWebControl_frame_ extends QViewBase
 					continue;
 
 					if (is_scalar($js))
-						$js = [$js];
+						$js = [$js => $js];
 					
 					foreach ($js as $js_path) :
 						if (empty($js_path))

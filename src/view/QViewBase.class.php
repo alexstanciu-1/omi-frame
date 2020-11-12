@@ -292,13 +292,12 @@ abstract class QViewBase_frame_ extends QModel
 		$data_js = array();
 		$data_css = array();
 
-		// qvar_dumpk('IncludeResourcesForClass: '. $class);
 		//$dev_mode = QAutoload::GetDevelopmentMode();
 		while ($class && (self::$IncludeJs[$class] === null))
 		{
 			$js_paths = QAutoload::GetJsClassPath($class);
 			$css_paths = QAutoload::GetCssClassPath($class);
-
+			
 			// self::$IncludeJs[$class] = $js_path ? QApp::GetWebPath($js_path) : "";
 			/*if ($js_path && (!$dev_mode) && file_exists(substr($js_path,0, -2)."min.js"))
 				$js_path = substr($js_path, 0, -2)."min.js";
@@ -306,14 +305,20 @@ abstract class QViewBase_frame_ extends QModel
 				$css_path = substr($css_path, 0, -3)."min.css";*/
 
 			if (is_scalar($js_paths))
-				$js_paths = [$js_paths];
-
+				$js_paths = [$js_paths => $js_paths];
+			
 			foreach ($js_paths ?: [] as $js_path)
 			{
+				if (empty($js_path))
+					continue;
 				$js_web_path = $js_path ? QApp::GetWebPath($js_path) : "";
 				if (!empty($js_web_path))
+					$data_js[$class][$js_web_path] = $js_web_path;
+				if (file_exists(substr($js_path, 0, -3).".gen.js"))
 				{
-					$data_js[$class] = $js_web_path;
+					$js_web_path_gen = $js_path ? QApp::GetWebPath(substr($js_path, 0, -3).".gen.js") : "";
+					if (!empty($js_web_path_gen))
+						$data_js[$class][$js_web_path_gen] = $js_web_path_gen;
 				}
 			}
 			
@@ -322,18 +327,34 @@ abstract class QViewBase_frame_ extends QModel
 
 			foreach ($css_paths ?: [] as $css_path)
 			{
+				if (empty($css_path))
+					continue;
 				$css_web_path = $css_path ? QApp::GetWebPath($css_path) : "";
 				if (!empty($css_web_path))
+					$data_css[$class][$css_web_path] = $css_web_path;
+				if (file_exists(substr($css_path, 0, -4).".gen.css"))
 				{
-					$data_css[$class] = $css_web_path;
+					$css_web_path_gen = $css_path ? QApp::GetWebPath(substr($css_path, 0, -4).".gen.css") : "";
+					if (!empty($css_web_path_gen))
+						$data_css[$class][$css_web_path_gen] = $css_web_path_gen;
 				}
 			}
 
 			$class = get_parent_class($class);
 		}
-
-		self::$IncludeJs += array_reverse($data_js);
-		self::$IncludeCss += array_reverse($data_css);
+		
+		foreach (array_reverse($data_js) as $f_class => $paths)
+		{
+			foreach ($paths as $path)
+				self::$IncludeJs[$f_class][$path] = $path;
+		}
+		foreach (array_reverse($data_css) as $f_class => $paths)
+		{
+			foreach ($paths as $path)
+				self::$IncludeCss[$f_class][$path] = $path;
+		}
+		# self::$IncludeJs += array_reverse($data_js);
+		# self::$IncludeCss += array_reverse($data_css);
 	}
 	
 	public static function GetResourcesForClass($class = null)

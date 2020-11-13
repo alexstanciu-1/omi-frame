@@ -809,7 +809,11 @@ class QApi
 		}
 
 		if (static::$_Caller_Company_In_Callee_Box && static::$_Partner_Call)
+		{
+			if (!static::$_Caller_Company_In_Callee_Box->BuyPriceProfile)
+				throw new \Exception('Missing price profile on partner');
 			$parameters["PartnerPriceProfile"] = static::$_Caller_Company_In_Callee_Box->BuyPriceProfile->getId();
+		}
 
 		$parsed_sources = $from ? static::ParseSourceInfo($from) : [null, null];
 		if (!$parsed_sources)
@@ -1004,9 +1008,9 @@ class QApi
 				$parameters = [];
 			$parameters = array_merge($parameters, $fromParams);
 		}
-
+		
 		$q = static::__Query(($initialFrom !== $from) ? [$from, $initialFrom] : $from, $selector, $parameters, $only_first, $id);
-
+		
 		return $q;
 	}
 	
@@ -1437,11 +1441,15 @@ class QApi
 			// $login_identity->populate('*,User.{*, Context.*, Owner.*},Session.*');
 			// serialize and deserialize to break references
 			
-			list($class_name, $method) = explode("::", $class_method, 2);
-			
-			//qvardump("\$remote_user", \Omi\User::GetCurrentUser(), $remote_user, $class_name, $method, $arguments);
-
-			$result = call_user_func_array([$class_name, $method], $arguments);
+			if (is_callable($class_method))
+			{
+				$result = $class_method(...$arguments);
+			}
+			else
+			{
+				list($class_name, $method) = explode("::", $class_method, 2);
+				$result = call_user_func_array([$class_name, $method], $arguments);
+			}
 			
 			static::$_LastCalledPartner = $partner;
 		}
@@ -2224,19 +2232,6 @@ class QApi
 			}
 			while ($subparts_list);
 		}
-		
-		/*if ($data->Users) # debug dump only !
-		{
-			foreach ($data->getModelType()->properties as $prop_name => $prop_def)
-			{
-				if (($prop_name === 'Id') || ($prop_name === 'Del__'))
-					continue;
-				
-				if ($data->$prop_name instanceof \QIModel)
-					qvar_dumpk($data->$prop_name);
-			}
-			die;
-		}*/
 		
 		$saved_context = null;
 		try

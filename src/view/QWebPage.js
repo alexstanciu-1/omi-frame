@@ -1,6 +1,58 @@
 
 // this is a very useful way to hide popups and drop downs on click away
-jQuery(document.body).click(qHideOnClickAway);
+
+// jQuery(document.body).click(qHideOnClickAway);
+
+jQuery(document.body).click(function ($event)
+{
+	// try to fix hide on click away here
+	// var $search_within = jQuery(e.target).is('.qHideOnClickAway, .q-hide-on-click-away');
+	// if (!$node.contains($event.target))
+		// $node.__ctx.dom_event($event, $evs[$i][2]);
+	var $items = jQuery(".qHideOnClickAway, .q-hide-on-click-away");
+	for (var $i = 0; $i < $items.length; $i++)
+	{
+		var $node = $items[$i];
+		
+		if (!$node.contains($event.target))
+		{
+			var $node_jq = jQuery($node);
+			var $container = $node_jq.find(".qHideOnClickAway-container, .q-hide-on-click-away-container").not(
+					$node_jq.find(".qHideOnClickAway .qHideOnClickAway-container, .q-hide-on-click-away .q-hide-on-click-away-container"));
+			
+			if ($container && $container.length)
+			{
+				if ($container.hasClass("qHideOnClickAway-remove") || $container.hasClass("q-hide-on-click-away-remove"))
+					$container.remove();
+				else
+					$container.hide();
+			}
+			else
+			{
+				// qHideOnClickAway-remove qHideOnClickAway-parent
+				var $possible_parent = $node_jq.closest(".qHideOnClickAway-parent, .q-hide-on-click-away-parent");
+				var $first;
+				
+				if ($possible_parent && $possible_parent.length && 
+						($first = $possible_parent.find('.qHideOnClickAway, .q-hide-on-click-away').first()) && ($first.length === 1) &&
+						($first[0] === $node))
+				{
+					if ($possible_parent.hasClass("qHideOnClickAway-remove") || $possible_parent.hasClass("q-hide-on-click-away-remove"))
+						$possible_parent.remove();
+					else
+						$possible_parent.hide();
+				}
+				else
+				{
+					if ($node_jq.hasClass("qHideOnClickAway-remove") || $node_jq.hasClass("q-hide-on-click-away-remove"))
+						$node_jq.remove();
+					else
+						$node_jq.hide();
+				}
+			}
+		}
+	}
+});
 
 jQuery(document).ready(function ()
 {

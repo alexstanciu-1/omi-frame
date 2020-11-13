@@ -1651,7 +1651,7 @@ class QCodeSync
 			
 			if ($render_code->jsFunc)
 			{
-				$js_path = substr($element->getTemplatePath(""), 0, -3)."js";
+				$js_path = substr($element->getTemplatePath(""), 0, -4).".gen.js";
 				$contents = file_exists($js_path) ? file_get_contents($js_path) : "";
 				foreach ($render_code->jsFunc as $func_tag => $func_code)
 				{
@@ -1709,8 +1709,8 @@ class QCodeSync
 						$contents .= "\n\n".$code_id_tag."\n".$func_str."\n".$code_id_tag_end."\n\n";
 				}
 
-				self::filePutContentsIfChanged($js_path, $contents);
-
+				$rc_jsp = self::filePutContentsIfChanged($js_path, $contents);
+				
 				$js_debug_path = "/".ltrim(substr($js_path, strlen($_SERVER["DOCUMENT_ROOT"])), "/");
 
 				$debug_log .= "Generating (".count($render_code->jsFunc).") JS Functions to: {$js_debug_path}\n";
@@ -1900,15 +1900,16 @@ class QCodeSync
 		
 		if ($parent_js && file_exists($parent_js))
 		{
+			/*
 			// $parent_js
 			if (!$parent_js_wf)
 				throw new \Exception('Missing wf');
 			$parent_js_rel = substr($parent_js, strlen($parent_js_wf));
 			
-			$JS_Patch_Append_Key_Start = "/* START PATCHED JS: {$parent_js_rel} | (key:".static::JS_Patch_Append_Key.") */";
-			$JS_Patch_Append_Key_End = "/* END PATCHED JS: {$parent_js_rel} | (key:".static::JS_Patch_Append_Key.") */";
-			// const JS_Patch_Append_Key_Start = "/* START: mp93xcgyn2mfyzgnbi428o7gfnzchm2sxdbg74xz2cgh */";
-			// const JS_Patch_Append_Key_End = "/* END: mp93xcgyn2mfyzgnbi428o7gfnzchm2sxdbg74xz2cgh */";
+			$JS_Patch_Append_Key_Start = "/ * START PATCHED JS: {$parent_js_rel} | (key:".static::JS_Patch_Append_Key.") * /";
+			$JS_Patch_Append_Key_End = "/ * END PATCHED JS: {$parent_js_rel} | (key:".static::JS_Patch_Append_Key.") * /";
+			// const JS_Patch_Append_Key_Start = "/* START: mp93xcgyn2mfyzgnbi428o7gfnzchm2sxdbg74xz2cgh * /";
+			// const JS_Patch_Append_Key_End = "/* END: mp93xcgyn2mfyzgnbi428o7gfnzchm2sxdbg74xz2cgh * /";
 			$dest_str = file_get_contents($js_path);
 			$start_pos = strpos($dest_str, $JS_Patch_Append_Key_Start);
 			$end_pos = strpos($dest_str, $JS_Patch_Append_Key_End, $start_pos ?: 0);
@@ -1933,6 +1934,7 @@ class QCodeSync
 			{
 				static::filePutContentsIfChanged($js_path, $new_js);
 			}
+			*/
 		}
 	}
 	

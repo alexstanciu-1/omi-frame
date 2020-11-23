@@ -2145,7 +2145,7 @@ class QModel implements QIModel, Iterator
 								{
 									if (!$prop_inf["#"])
 									{
-										qvardump($k, $v);
+										qvar_dumpk($k, $v);
 										throw new \Exception("Expected type cannot be identified!");
 									}
 									$expected_type = "\\".reset($prop_inf["#"]);

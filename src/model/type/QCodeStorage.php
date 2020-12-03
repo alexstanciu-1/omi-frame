@@ -14,7 +14,12 @@ class QCodeStorage
 	 * @var QCodeStorage
 	 */
 	protected static $Default;
-	
+	/**
+	 * @var QCodeStorage[]
+	 */
+	protected static $_Types_Cache;
+
+
 	// const ParamsRegExp = "/(^.*?(?=(?:\\n\\s*(?:validator|filter)\\:)|\$))|(?:(?:^|\\n)\\s*(?:((?:filter)|(?:validator))\\:)\\s*(.*?)(?=(?:\\n\\s*(?:validator|filter)\\:)|\$))/ius";
 	const ParamsRegExp = "/(.*?)(?:(?:\\n\\s*(?:(validator|filter))\\:)|\$)/ius";
 	
@@ -984,6 +989,17 @@ class QCodeStorage
 				}
 			}
 		}
+	}
+	
+	public static function Get_Cached_Class(string $class_name)
+	{
+		$cache_path = QAutoload::GetRuntimeFolder()."temp/types/".qClassToPath($class_name).".type.php";
+		if (!file_exists($cache_path))
+			return null;
+		
+		require($cache_path);
+		$str_type = qClassToVar($class_name);
+		return (self::$_Types_Cache[$class_name] = ${"Q_TYPECACHE_{$str_type}"});
 	}
 	
 	public static function CacheData($className, $cache_path = null)

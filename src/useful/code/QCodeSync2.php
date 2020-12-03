@@ -146,7 +146,7 @@ class QCodeSync2
 					$this->empty_gens = true; # for testing
 				$this->run_backend_fix = false;
 				$this->model_only_run = true;
-
+				
 				if (defined('Q_GENERATED_VIEW_FOLDER_TAG') && Q_GENERATED_VIEW_FOLDER_TAG) # if ($this->full_sync)
 				{
 					\QApp::SetDataClass_Internal(Q_DATA_CLASS);
@@ -199,11 +199,19 @@ class QCodeSync2
 					
 					$generated_views = [];
 					
-					if ($this->full_sync || $this->has_model_changes || $has_backend_config_changes)
+					if ($this->full_sync || ($changed_or_added || $removed_files) || $has_backend_config_changes)
 					{
 						// if (!$this->full_sync)
 						$ru = $this->full_sync ? null : $_SERVER["REQUEST_URI"];
 						$rel_url = ((!$this->full_sync) && $ru && (substr($ru, 0, strlen(BASE_HREF)) === BASE_HREF)) ? substr($ru, strlen(BASE_HREF)) : null;
+						
+						if (is_string($rel_url))
+						{
+							$match_ru = null;
+							$rc_ru = preg_match("/^([^\\/]+)/uis", $rel_url, $match_ru);
+							# qvar_dumpk($match_ru, $rc_ru);
+							$rel_url = $rc_ru ? $match_ru[1] : null;
+						}
 						
 						if ($this->full_sync || $rel_url)
 						{

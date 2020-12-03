@@ -336,6 +336,10 @@ class QCodeSync2
 			$out_string = ob_get_clean();
 			if ($_GET['force_resync'])
 				echo $out_string;
+			else
+			{
+				\QWebRequest::AddHiddenOutput($out_string);
+			}
 		}
 	}
 	

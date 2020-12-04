@@ -199,7 +199,7 @@ class QCodeSync2
 					
 					$generated_views = [];
 					
-					if ($this->full_sync || ($changed_or_added || $removed_files) || $has_backend_config_changes)
+					if ($this->full_sync || ($model_changed_or_added || $model_removed_files) || $has_backend_config_changes)
 					{
 						// if (!$this->full_sync)
 						$ru = $this->full_sync ? null : $_SERVER["REQUEST_URI"];
@@ -236,7 +236,7 @@ class QCodeSync2
 
 									$prop_views = $prop_info->storage['views'];
 									$prop_views_arr = $prop_views ? preg_split("/(\\s*\\,\\s*)/uis", $prop_info->storage['views'], -1, PREG_SPLIT_NO_EMPTY) : null;
-
+						
 									if ((!$this->full_sync) && ($rel_url !== $property) && ((!$prop_views_arr) || (!in_array($rel_url, $prop_views_arr))))
 									{
 										continue;
@@ -1732,7 +1732,8 @@ class QCodeSync2
 		foreach ($this->cache_types as $class_name => $path)
 		{
 			$cache_path = $cache_folder.qClassToPath($class_name).".type.php";
-			list($cache_type, $cache_has_changes) = QCodeStorage::CacheData($class_name, $cache_path);
+			list($cache_type, $cache_has_changes) = QCodeStorage::CacheData($class_name, $cache_path, true);
+			
 			if ($cache_has_changes)
 				$has_cache_changes = true;
 			if ($class_name === Q_DATA_CLASS)

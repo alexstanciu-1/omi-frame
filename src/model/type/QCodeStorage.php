@@ -1002,7 +1002,7 @@ class QCodeStorage
 		return (self::$_Types_Cache[$class_name] = ${"Q_TYPECACHE_{$str_type}"});
 	}
 	
-	public static function CacheData($className, $cache_path = null)
+	public static function CacheData($className, $cache_path = null, bool $update_static_cache = false)
 	{
 		if (!$cache_path)
 			$cache_path = QAutoload::GetRuntimeFolder()."temp/types/".qClassToPath($className).".type.php";
@@ -1124,7 +1124,13 @@ class QCodeStorage
 		
 		$has_changes = (!file_exists($cache_path)) || (file_get_contents($cache_path) !== $str);
 		if ($has_changes)
+		{
 			file_put_contents($cache_path, $str);
+			opcache_invalidate($cache_path, true);
+		}
+		
+		if ($update_static_cache)
+			self::$_Types_Cache[$class_name] = $type;
 	
 		return [$type, $has_changes];
 	}

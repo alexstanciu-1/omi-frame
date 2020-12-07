@@ -733,6 +733,10 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 				{
 					return "BLOB";
 				}
+			case QSqlTableColumn::TypeLongBlob:
+				{
+					return "LONGBLOB";
+				}
 			case QSqlTableColumn::TypeEnum:
 				{
 					return "ENUM";
@@ -919,6 +923,10 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 			case "BLOB":
 			{
 				return QSqlTableColumn::TypeBlob;
+			}
+			case "LONGBLOB":
+			{
+				return QSqlTableColumn::TypeLongBlob;
 			}
 			case "ENUM":
 			{

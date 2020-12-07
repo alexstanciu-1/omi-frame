@@ -1180,6 +1180,15 @@ function qvar_dumpk()
 	return $ret;
 }
 
+function qvar_get()
+{
+	ob_start();
+	$ret = "";
+	foreach (func_get_args() as $arg)
+		$ret .= qDebugStackInner($arg, false, false);
+	return ob_get_clean();
+}
+
 /**
  * Better var_dump for objects/model
  * 
@@ -2917,12 +2926,12 @@ function qpreg_get_all(string $pattern, string $subject, array &$matches = null,
 
 function _trace(string $uid, array $config = null, \Closure $closure = null, $closure_context = null)
 {
-	return (new \QTrace())->trace($uid, $config, $closure, $closure_context);
+	# return (new \QTrace())->trace($uid, $config, $closure, $closure_context);
 }
 
 function _trace_s(string $static_class_name, string $uid, array $config = null, \Closure $closure = null)
 {
-	return (new \QTrace())->trace($uid, $config, $closure, $static_class_name);
+	# return (new \QTrace())->trace($uid, $config, $closure, $static_class_name);
 }
 
 function q_get_lang()

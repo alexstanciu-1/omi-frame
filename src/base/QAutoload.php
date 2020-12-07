@@ -1085,7 +1085,7 @@ final class QAutoload
 	 * @param boolean $recursive
 	 * @param boolean $use_compiled_if_exists
 	 */
-	private static function IncludeClassesInFolder($folder, $recursive = false, $use_compiled_if_exists = true)
+	public static function IncludeClassesInFolder($folder, $recursive = false, $use_compiled_if_exists = true)
 	{
 		$items = scandir($folder);
 		foreach ($items as $item)
@@ -1340,6 +1340,9 @@ final class QAutoload
 	protected static function RunDevelopmenMode($full_resync, $debug_mode, $ajax_mode = false)
 	{
 		self::$DevelopmentMode = true;
+		
+		file_put_contents("temp_log_dev_mode.txt", 
+				date("Y-m-d H:i:s")." - " . $_SERVER["HTTP_X_FORWARDED_FOR"] . " : " .$_SERVER["REMOTE_ADDR"] . "\n" , FILE_APPEND);
 		
 		if (!$ajax_mode)
 		{

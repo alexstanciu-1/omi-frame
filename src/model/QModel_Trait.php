@@ -2,6 +2,22 @@
 
 trait QModel_Trait
 {
+	public static function Get_Data_Model_Caption($data)
+	{
+		if (($data instanceof \QModelArray) || (is_array($data)))
+		{
+			$captions = [];
+			foreach ($data as $d)
+				$captions[] = static::Get_Data_Model_Caption($d);
+			
+			return implode("; ", $captions);
+		}
+		else if ($data instanceof \QModel)
+			return $data->getModelCaption();
+		else if (is_scalar($data))
+			return (string)$data;
+	}
+	
 	/**
 	 * Transforms the object into a PHP array. 
 	 * The selector is mandatory.
@@ -1039,7 +1055,14 @@ trait QModel_Trait
 			// if the property is not subpart then it needs to be linked to app
 			# $_isSubpart = ($_prop->storage && $_prop->storage["dependency"] && ($_prop->storage["dependency"] === "subpart"));
 			$prop_path = ($path ? $path."." : "").$key;
+			
 			$expand_in_props = static::$Sync_Mapping[$prop_path];
+			if (($expand_in_props === null) && ((substr($prop_path, 0, strlen("Offers.Services.")) === 'Offers.Services.') || 
+												(substr($prop_path, 0, strlen("Offers.Products.")) === 'Offers.Products.')))
+			{
+				# dirty workaround but I do now want to re-write everything, we re-map Offers.Services/Products to Offers.Items
+				$expand_in_props = static::$Sync_Mapping["Offers.Items." . substr($prop_path, strlen("Offers.Services."))];
+			}
 			
 			$act_on_elements = ($value instanceof \QIModelArray) ? $value : [$value];
 			foreach ($act_on_elements as $itm)

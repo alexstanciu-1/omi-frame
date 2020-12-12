@@ -1007,7 +1007,7 @@ class QCodeSync2
 							continue;
 						}
 						$added_or_changed = (($header_inf['status'] === static::Status_Changed) || 
-											($header_inf['status'] === static::Status_Changed_Dependencies) ||
+											($header_inf['status-deps'] === static::Status_Changed_Dependencies) ||
 											($header_inf['status'] === static::Status_Added));
 					}
 					
@@ -2144,7 +2144,7 @@ class QCodeSync2
 				foreach ($changes_list as $tag_name => $header_inf)
 				{
 					$was_moved = ($header_inf['status'] === static::Status_Moved);
-					if ((($header_inf['type'] === 'php') || ($header_inf['type'] === 'tpl') || ($header_inf['type'] === 'url')))
+					if ($was_moved && (($header_inf['type'] === 'php') || ($header_inf['type'] === 'tpl') || ($header_inf['type'] === 'url')))
 						# at the moment a moved file of the specified type should have no effect
 						continue;
 
@@ -2152,6 +2152,9 @@ class QCodeSync2
 					if (!$target_deps_list)
 						continue;
 					
+					# qvar_dumpk('fcn::$target_deps_list', $full_class_name, $target_deps_list, $deps_info, $changes_info);
+					# die;
+
 					# now ... for all the dependencies
 					foreach ($target_deps_list as $target_class_name => $target_info)
 					{
@@ -2193,10 +2196,21 @@ class QCodeSync2
 			foreach ($info['files'] ?: [] as $layer_tag => $tags_list)
 			{
 				foreach ($tags_list as $tag => $header_inf)
-					$cbc_info[$layer_tag][$tag] = $header_inf;
+				{
+					if (empty($cbc_info[$layer_tag][$tag]))
+						$cbc_info[$layer_tag][$tag] = $this->info_by_class[$full_class_name]["files"][$layer_tag][$tag];
+					$cbc_info[$layer_tag][$tag]['status-deps'] = $header_inf['status-deps'];
+				}
 			}
 			unset($cbc_info);
 		}
+		
+		/*if ($this->changes_by_class['Omi\TFS\View\Special_Deals'])
+		{
+			qvar_dumpk('$triggered_changes', $triggered_changes, $this->info_by_class['Omi\TFS\View\Special_Deals'], 
+						$this->changes_by_class['Omi\TFS\View\Special_Deals'], $this->dependencies['Omi\TFS\View\Special_Deals']);
+			die;
+		}*/
 	}
 	
 	/**

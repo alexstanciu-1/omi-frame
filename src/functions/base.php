@@ -1974,7 +1974,7 @@ function qDSDumpVar($var, $max_depth = 8, &$bag = null, $depth = 0, $accessModif
 			echo "<div>";
 			foreach ($var as $k => $v)
 			{
-				echo $pad."\t<b>{$k}</b>";
+				echo $pad."\t<b>".htmlspecialchars($k)."</b>";
 				if ($max_depth)
 					qDSDumpVar($v, $max_depth - 1, $bag, $depth + 1, $accessModifier, $wasSet);
 				else
@@ -2849,6 +2849,10 @@ function filePutContentsIfChanged_commit(bool $roolback = false)
 		{
 			# echo "Restore `{$file_path}` from ".filemtime($file_path)." TO {$file_m_time} <br/>\n";
 			touch($file_path, $file_m_time);
+		}
+		else
+		{
+			# echo "OK!<br/>\n";
 		}
 		# in all cases release the backup
 		unlink($file_path."._fpcic_bak");

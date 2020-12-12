@@ -46,6 +46,8 @@ class QErrorHandler
 		}
 		else 
 		{
+			qvar_dumpk('HandleError');
+			
 			throw new ErrorException($errstr, 0, $errno, $errfile, $errline);
 		}
 	}
@@ -336,11 +338,17 @@ class QErrorHandler
 		
 		$isError = false;
 		$error = error_get_last();
+		$is_fatal = false;
 		
 		if ($error)
 		{
 			switch($error['type'])
 			{
+				case E_CORE_ERROR:
+				case E_COMPILE_ERROR:
+				{
+					$is_fatal = true;
+				}
 				case E_ERROR:
 				case E_CORE_ERROR:
 				case E_COMPILE_ERROR:
@@ -355,7 +363,11 @@ class QErrorHandler
 				}
 			}
 		}
-
+		
+		if ($is_fatal)
+		{
+			qvar_dumpk('fatal error', $is_fatal);
+		}
         if ($isError)
         {
 			self::HandleError($error["type"], $error["message"], $error["file"], $error["line"], true);

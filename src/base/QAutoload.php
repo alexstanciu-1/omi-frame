@@ -295,11 +295,27 @@ final class QAutoload
 		if (($qp = self::$AutoloadArray[$class_name]))
 		{
 			if (is_string($qp))
+			{
+				if (!file_exists($qp))
+				{
+					if (\QAutoload::GetDevelopmentMode())
+						qvar_dumpk('$class_name, self::$AutoloadArray[$class_name]', $class_name, self::$AutoloadArray[$class_name]);
+					throw new \Exception('Requested file does not exists.');
+				}
 				require_once($qp);
+			}
 			else
 			{
 				foreach ($qp as $_qp)
+				{
+					if (!file_exists($_qp))
+					{
+						if (\QAutoload::GetDevelopmentMode())
+							qvar_dumpk('$class_name, self::$AutoloadArray[$class_name]', $class_name, self::$AutoloadArray[$class_name]);
+						throw new \Exception('Requested file does not exists.');
+					}
 					require_once($_qp);
+				}
 			}
 		}
 		else
@@ -318,11 +334,27 @@ final class QAutoload
 			if (($qp = self::$AutoloadArray[$class_name]))
 			{
 				if (is_string($qp))
+				{
+					if (!file_exists($qp))
+					{
+						if (\QAutoload::GetDevelopmentMode())
+							qvar_dumpk('$class_name, self::$AutoloadArray[$class_name]', $class_name, self::$AutoloadArray[$class_name]);
+						throw new \Exception('Requested file does not exists.');
+					}
 					require_once($qp);
+				}
 				else
 				{
 					foreach ($qp as $_qp)
+					{
+						if (!file_exists($_qp))
+						{
+							if (\QAutoload::GetDevelopmentMode())
+								qvar_dumpk('$class_name, self::$AutoloadArray[$class_name]', $class_name, self::$AutoloadArray[$class_name]);
+							throw new \Exception('Requested file does not exists.');
+						}
 						require_once($_qp);
+					}
 				}
 			}
 		}

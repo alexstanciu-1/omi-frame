@@ -517,6 +517,12 @@ trait QModel_Security
 							# $ret['filter'][0] .= ($ret['filter'][0] ? "," : "").'owner_customer+is:owner_customer:of:$each';
 							break;
 						}
+						case 'tfh-box':
+						{
+							$ret['filter'][0] .= ($ret['filter'][0] ? "," : "").'is:owner:of:$each';
+							# $ret['filter'][0] .= ($ret['filter'][0] ? "," : "").'owner_customer+is:owner_customer:of:$each';
+							break;
+						}
 						case 'strict-box-customer':
 						{
 							$ret['filter'][0] .= ($ret['filter'][0] ? "," : "").'customer+is:ownerCustomer:of:$each';
@@ -573,6 +579,12 @@ trait QModel_Security
 						case 'strict-box-and-customers':
 						{
 							$ret['relation'][] = 'owner (Owner.Users.Id=?)';
+							# $ret['filter'][0] .= ($ret['filter'][0] ? "," : "").'owner_customer+is:owner_customer:of:$each';
+							break;
+						}
+						case 'tfh-box':
+						{
+							$ret['relation'][] = 'owner (Owner.Users.Id=? OR Owner.Accessible_By.Users.Id=?)';
 							# $ret['filter'][0] .= ($ret['filter'][0] ? "," : "").'owner_customer+is:owner_customer:of:$each';
 							break;
 						}

@@ -1236,7 +1236,8 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 	 * 
 	 * @return QIModel
 	 */
-	public static function ApiQuery($storage_model, $from, $from_type, $selector = null, $parameters = null, $only_first = false, $id = null, $skip_security = true, $sql_filter = null)
+	public static function ApiQuery($storage_model, $from, $from_type, $selector = null, $parameters = null, 
+			$only_first = false, $id = null, $skip_security = true, $sql_filter = null)
 	{
 		$view_tag = null;
 		if (is_array($from) && (count($from) === 2))

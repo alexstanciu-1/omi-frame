@@ -29,6 +29,19 @@ class QModelQuery
 		\QTrace::Begin_Trace([],
 					[$query, $binds, $skip_security, $populate_only], ["query"]);
 		
+		foreach (debug_backtrace() as $dbgb)
+		{
+			if (($dbgb['function'] === 'Query') && ($dbgb['class'] === 'QApi') && ($dbgb['args'][0] === 'Properties') && 
+					(substr($query, 0, strlen('Properties.')) === 'Properties.'))
+			{
+				
+				# ((((Owner.Users.Id='1' OR Owner.Accessible_By.Users.Id='1'))))
+				# qvar_dumpk('x', $dbgb, $query, debug_backtrace());
+				# die;
+			}
+		}
+		
+		
 		try
 		{
 			if (is_string($filter_selector))

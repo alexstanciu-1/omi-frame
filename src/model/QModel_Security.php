@@ -385,6 +385,7 @@ trait QModel_Security
 		$return = false;
 		
 		$sql_or = [];
+		
 		foreach ($options as $_opt)
 		{
 			$opt = trim($_opt);
@@ -443,6 +444,10 @@ trait QModel_Security
 					$is_true = false;
 					break;
 				}
+				else
+				{
+					# ok, we have the defined group and we are happy with it
+				}
 			}
 
 			if (!$is_true)
@@ -490,6 +495,8 @@ trait QModel_Security
 		{
 			$s_modes = explode(",", $security_mode);
 			
+			$defined_groups = \Omi\User::Get_All_Possible_Groups();
+			
 			foreach ($s_modes as $_smode)
 			{
 				$s_mode = trim($_smode);
@@ -498,7 +505,7 @@ trait QModel_Security
 					// non-customer,customer groups
 					// notcustomer
 					// filter is expected as an array with a single element
-					switch ($_smode)
+					switch ($s_mode)
 					{
 						case 'top':
 						{
@@ -520,6 +527,12 @@ trait QModel_Security
 						case 'tfh-box':
 						{
 							$ret['filter'][0] .= ($ret['filter'][0] ? "," : "").'is:owner:of:$each';
+							# $ret['filter'][0] .= ($ret['filter'][0] ? "," : "").'owner_customer+is:owner_customer:of:$each';
+							break;
+						}
+						case 'tfh-box-via-property':
+						{
+							$ret['filter'][0] .= ($ret['filter'][0] ? "," : "").'is:propertyOwner:of:$each';
 							# $ret['filter'][0] .= ($ret['filter'][0] ? "," : "").'owner_customer+is:owner_customer:of:$each';
 							break;
 						}
@@ -565,11 +578,19 @@ trait QModel_Security
 							$ret['filter'][0] .= ($ret['filter'][0] ? "," : "").'sipuser+is:sipuser:of:$each';
 							break;
 						}
+						default:
+						{
+							if (($s_mode{0} === '@') && in_array(substr($s_mode, 1), $defined_groups))
+							{
+								$ret['filter'][0] .= ($ret['filter'][0] ? "," : "").substr($s_mode, 1);
+							}
+							break;
+						}
 					}
 				}
 				if (($what === 'relation') || (!$what))
 				{
-					switch ($_smode)
+					switch ($s_mode)
 					{
 						case 'strict-box':
 						{
@@ -586,6 +607,11 @@ trait QModel_Security
 						{
 							$ret['relation'][] = 'owner (Owner.Users.Id=? OR Owner.Accessible_By.Users.Id=?)';
 							# $ret['filter'][0] .= ($ret['filter'][0] ? "," : "").'owner_customer+is:owner_customer:of:$each';
+							break;
+						}
+						case 'tfh-box-via-property':
+						{
+							$ret['relation'][] = 'propertyOwner (Property.Owner.Users.Id=? OR Property.Owner.Accessible_By.Users.Id=?)';
 							break;
 						}
 						case 'strict-box-customer-self':
@@ -631,6 +657,10 @@ trait QModel_Security
 						case 'customer-self':
 						{
 							$ret['relation'][] = 'customer OwnUsers';
+							break;
+						}
+						default:
+						{
 							break;
 						}
 					}

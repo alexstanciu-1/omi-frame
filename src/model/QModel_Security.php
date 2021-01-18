@@ -665,6 +665,78 @@ trait QModel_Security
 						}
 					}
 				}
+				if (($what === 'enforce') || (!$what))
+				{
+					switch ($s_mode)
+					{
+						case 'tfh-box':
+						{
+							# for @superadmin this will fail
+							$ret['enforce'][] = function ($objects, int $user_id) {
+								
+								if ($user_id < 1)
+									return [false, 'user_id', $user_id];
+								$populate = new \QModelArray();
+								foreach ($objects ?: [] as $key => $obj)
+								{
+									$own = $obj->Owner;
+									if (!$own)
+										return [false, 'no-owner', $key, $obj];
+									$populate[] = $own;
+								}
+								
+								$populate->populate("Owner.{Users.{Id WHERE Id=?},Accessible_By.Users.{Id WHERE Id=?}} "
+														. "WHERE Owner.Users.Id=? OR Owner.Accessible_By.Users.Id=?", 
+													[$user_id, $user_id, $user_id, $user_id]);
+								
+								foreach ($objects ?: [] as $key => $obj)
+								{
+									$found = false;
+									foreach ($own->Users ?: [] as $user)
+									{
+										if ($user->Id && ($user->Id == $user_id))
+										{
+											$found = true;
+											break;
+										}
+									}
+									if (!$found)
+									{
+										foreach ($own->Accessible_By ?: [] as $acc_by)
+										{
+											foreach ($acc_by->Users ?: [] as $user)
+											{
+												if ($user->Id && ($user->Id == $user_id))
+												{
+													$found = true;
+													break;
+												}
+											}
+											if ($found)
+												break;
+										}
+									}
+									if (!$found)
+										return [false, 'bad-owner', $key, $obj];
+								}
+								
+								# if all check ok
+								return true;
+							};
+							
+							break;
+						}
+						case 'tfh-box-via-property':
+						{
+							$ret['enforce'][] = 'propertyOwner (Property.Owner.Users.Id=? OR Property.Owner.Accessible_By.Users.Id=?)';
+							break;
+						}
+						default:
+						{
+							break;
+						}
+					}
+				}
 				
 			}
 			// strict-box, it means it has an owner

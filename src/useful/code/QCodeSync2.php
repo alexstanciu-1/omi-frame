@@ -2205,6 +2205,9 @@ class QCodeSync2
 			unset($cbc_info);
 		}
 		
+		qvar_dumpk($this->changes_by_class);
+		die("aaaa");
+		
 		/*if ($this->changes_by_class['Omi\TFS\View\Special_Deals'])
 		{
 			qvar_dumpk('$triggered_changes', $triggered_changes, $this->info_by_class['Omi\TFS\View\Special_Deals'], 

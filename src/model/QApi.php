@@ -32,6 +32,7 @@ class QApi
 			$debug_uidf = static::DebugStartApi();
 		
 		list($class_name, $method) = explode("::", $call_info, 2);
+		
 		if ($class_name{0} === "\\")
 			$class_name = substr($class_name, 1);
 		if (!class_exists($class_name))

@@ -71,7 +71,7 @@ trait QCodeSync2_Utility
 				opcache_invalidate($lint_cache_path);
 				
 				qvar_dumpk($errors);
-				throw new \Exception('Syntax errors');
+				throw new \Exception('Syntax errors: '.json_encode($errors));
 			}
 			// else we will save the info 
 
@@ -112,6 +112,13 @@ trait QCodeSync2_Utility
 		$ret_codes = [];
 		$process_stats = [];
 		
+		# qvar_dumpk(PHP_BINARY, PHP_MINOR_VERSION, PHP_VERSION, PHP_MAJOR_VERSION, PHP_);die;
+		$exe_path = PHP_BINDIR."/php".PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;
+		if (!file_exists($exe_path))
+			$exe_path = PHP_BINDIR."/php";
+		if (!file_exists($exe_path))
+			throw new \Exception('Unable to find PHP for LINT');
+		
 		$t1 = microtime(true);
 
 		try
@@ -122,11 +129,11 @@ trait QCodeSync2_Utility
 				$path = (($folder !== null) ? $folder : '').$file_path;
 				$pipes = [];
 				
-				$procs[$i] = $p = proc_open(PHP_BINDIR."/php -l ".escapeshellarg($path), $descriptorspec, $pipes);
+				$procs[$i] = $p = proc_open(PHP_BINDIR."/php7.3 -l ".escapeshellarg($path), $descriptorspec, $pipes);
 				$all_pipes[$i] = $pipes;
 				
 				if (!is_resource($p))
-					throw new Exception("Unable to start process with command: "."php -l ".escapeshellarg($path));
+					throw new Exception("Unable to start process with command: "."php7.3 -l ".escapeshellarg($path));
 
 				// $path = "gates/".$gate."/";
 				$proc_stat = proc_get_status($p);

@@ -114,7 +114,7 @@ class QCodeSync2
 	 */
 	public function resync($files, $changed_or_added, $removed_files, $new_files, bool $full_resync = false, array $generator_changes = null)
 	{
-		ob_start();
+		# ob_start();
 		
 		try
 		{
@@ -1066,8 +1066,8 @@ class QCodeSync2
 					}
 					else
 					{
-						qvar_dumpk($header_inf['type']);
-						throw new \Exception('Unknown type: '.$header_inf['type']);
+						# qvar_dumpk($header_inf, get_defined_vars());
+						throw new \Exception('Unknown type: '.$header_inf['type']." | ".json_encode($header_inf));
 					}
 				}	
 			}
@@ -2171,6 +2171,8 @@ class QCodeSync2
 									if ($was_moved)
 										throw new \Exception('@TODO - implement and test a moved dependency - possible a resource css/js');
 									$change_info_layer[$target_tag] = $this->changes_by_class[$target_class_name]['files'][$target_layer_tag][$target_tag] ?: $this->info_by_class[$target_class_name]['files'][$target_layer_tag][$target_tag];
+									if (empty($change_info_layer[$target_tag]))
+										throw new \Exception('Missing info for: '.$target_class_name."/".$target_layer_tag."/".$target_tag);
 									$change_info_layer[$target_tag]['status-deps'] = static::Status_Changed_Dependencies;
 								}
 							}
@@ -2197,9 +2199,16 @@ class QCodeSync2
 			{
 				foreach ($tags_list as $tag => $header_inf)
 				{
+					$cbc_info_before = $cbc_info;
+					
 					if (empty($cbc_info[$layer_tag][$tag]))
-						$cbc_info[$layer_tag][$tag] = $this->info_by_class[$full_class_name]["files"][$layer_tag][$tag];
+						$cbc_info[$layer_tag][$tag] = $this->info_by_class[$class]["files"][$layer_tag][$tag];
 					$cbc_info[$layer_tag][$tag]['status-deps'] = $header_inf['status-deps'];
+					/*if (count($cbc_info[$layer_tag][$tag]) < 2)
+					{
+						qvar_dumpk(get_defined_vars());
+						die;
+					}*/
 				}
 			}
 			unset($cbc_info);

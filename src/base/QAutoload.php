@@ -905,6 +905,9 @@ final class QAutoload
 						$list_backend = [];
 						foreach ($backend_scan_in as $backend_scan_in_itm)
 						{
+							if (!is_dir($backend_scan_in_itm))
+								continue;
+							
 							$ri_list_backend = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($backend_scan_in_itm));
 							$list_backend_templates = [];
 							

@@ -2204,25 +2204,10 @@ class QCodeSync2
 					if (empty($cbc_info[$layer_tag][$tag]))
 						$cbc_info[$layer_tag][$tag] = $this->info_by_class[$class]["files"][$layer_tag][$tag];
 					$cbc_info[$layer_tag][$tag]['status-deps'] = $header_inf['status-deps'];
-					/*if (count($cbc_info[$layer_tag][$tag]) < 2)
-					{
-						qvar_dumpk(get_defined_vars());
-						die;
-					}*/
 				}
 			}
 			unset($cbc_info);
 		}
-		
-		qvar_dumpk($this->changes_by_class);
-		die("aaaa");
-		
-		/*if ($this->changes_by_class['Omi\TFS\View\Special_Deals'])
-		{
-			qvar_dumpk('$triggered_changes', $triggered_changes, $this->info_by_class['Omi\TFS\View\Special_Deals'], 
-						$this->changes_by_class['Omi\TFS\View\Special_Deals'], $this->dependencies['Omi\TFS\View\Special_Deals']);
-			die;
-		}*/
 	}
 	
 	/**

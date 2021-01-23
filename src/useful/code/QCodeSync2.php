@@ -209,7 +209,6 @@ class QCodeSync2
 						{
 							$match_ru = null;
 							$rc_ru = preg_match("/^([^\\/]+)/uis", $rel_url, $match_ru);
-							# qvar_dumpk($match_ru, $rc_ru);
 							$rel_url = $rc_ru ? $match_ru[1] : null;
 						}
 						

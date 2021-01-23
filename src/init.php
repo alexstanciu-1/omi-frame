@@ -55,7 +55,6 @@ define("Q_FRAME_REL", substr(Q_FRAME_PATH, strlen(Q_RUNNING_PATH) - strlen(BASE_
 
 define("Q_FRAME_BREL", substr(Q_FRAME_BPATH, strlen(Q_RUNNING_PATH) - strlen(BASE_HREF)));
 define("Q_APP_REL", substr(Q_RUNNING_PATH, strlen(Q_RUNNING_PATH) - strlen(BASE_HREF)));
-
 define("Q_REQ_REL", substr($_SERVER["REQUEST_URI"], strlen(Q_APP_REL)));
 
 /**

@@ -1419,7 +1419,7 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 		
 		
 		# @TODO - secure based on security
-		if (($from === 'Properties') || ($from === 'Properties_Rooms'))
+		# if (($from === 'Properties') || ($from === 'Properties_Rooms'))
 		{
 			$c_user = \Omi\User::GetCurrentUser();
 			$prop_security_cfg = QModel_Security::Get_Security_App_Props_Config($from);

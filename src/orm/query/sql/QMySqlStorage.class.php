@@ -1417,11 +1417,35 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 
 		$use_states = QApi::SecureStates($model, $from, $state, $selector);
 		
+		
 		# @TODO - secure based on security
 		if (($from === 'Properties') || ($from === 'Properties_Rooms'))
 		{
-			# qvar_dumpk(get_defined_vars());
-			# throw new \Exception('ex');
+			$c_user = \Omi\User::GetCurrentUser();
+			$prop_security_cfg = QModel_Security::Get_Security_App_Props_Config($from);
+			if (isset($prop_security_cfg['enforcements']))
+			{
+				$enforcements = QModel_Security::Get_Security_App_Props_Config('@enforcements');
+				$from_enforcements = isset($enforcements[$prop_security_cfg['enforcements']]) ? $enforcements[$prop_security_cfg['enforcements']] : null;
+				foreach ($from_enforcements ?: [] as $exec_enforcement)
+				{
+					$action_func = QModel_Security::Get_Security_App_Props_Config('@actions')[$exec_enforcement['action']];
+					if (!$action_func)
+						throw new \Exception('Missing action function for: '.$exec_enforcement['condition']);
+					/*
+					$condition_func = null;
+					if (isset($exec_enforcement['condition']))
+					{
+						$condition_func = QModel_Security::Get_Security_App_Props_Config('@conditions')[$exec_enforcement['condition']];
+						if (!$condition_func)
+							throw new \Exception('Missing function for condition: '.$exec_enforcement['condition']);
+					}
+					else
+						$condition = true;
+					*/
+					$action_func($c_user, $data, $from);
+				}
+			}
 		}
 
 		\QApi::$DataToProcess = $model;

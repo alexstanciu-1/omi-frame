@@ -74,6 +74,23 @@ trait QModel_Security
 		return false;
 	}
 	
+	public static function Get_Security_App_Props_Config(string $app_property = null)
+	{
+		if (static::$_Security_App_Props_Config === null)
+		{
+			$cfg_path = \QAutoload::GetRuntimeFolder()."_props_security_cfg.php";
+			if (file_exists($cfg_path))
+			{
+				$__DATA = null;
+				require($cfg_path);
+				static::$_Security_App_Props_Config = $__DATA;
+			}
+			if (static::$_Security_App_Props_Config === null)
+				static::$_Security_App_Props_Config = [];
+		}
+		return isset($app_property) ? static::$_Security_App_Props_Config[$app_property] : static::$_Security_App_Props_Config;
+	}
+	
 	public static function UserCanRawRec(int $can_flag = null, array $can_list = null, array $values = null, $selector = null, array $groups = null, bool $run_static = false, \SplObjectStorage $objects = null)
 	{
 		if ($selector === false)
@@ -478,20 +495,8 @@ trait QModel_Security
 		//	then we will need relations
 		
 		$ret = [];
-			
-		if (static::$_Security_App_Props_Config === null)
-		{
-			$cfg_path = \QAutoload::GetRuntimeFolder()."_props_security_cfg.php";
-			if (file_exists($cfg_path))
-			{
-				$__DATA = null;
-				require($cfg_path);
-				static::$_Security_App_Props_Config = $__DATA;
-			}
-			if (static::$_Security_App_Props_Config === null)
-				static::$_Security_App_Props_Config = [];
-		}
-		if (($security_mode = static::$_Security_App_Props_Config[$app_property]))
+		
+		if (($security_mode = static::Get_Security_App_Props_Config($app_property)))
 		{
 			if (is_array($security_mode))
 				$security_mode = $security_mode['rule'];

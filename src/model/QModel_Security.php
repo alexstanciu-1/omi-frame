@@ -493,6 +493,9 @@ trait QModel_Security
 		}
 		if (($security_mode = static::$_Security_App_Props_Config[$app_property]))
 		{
+			if (is_array($security_mode))
+				$security_mode = $security_mode['rule'];
+			
 			$s_modes = explode(",", $security_mode);
 			
 			$defined_groups = \Omi\User::Get_All_Possible_Groups();

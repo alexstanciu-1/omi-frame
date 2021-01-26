@@ -1418,6 +1418,11 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 		$use_states = QApi::SecureStates($model, $from, $state, $selector);
 		
 		# @TODO - secure based on security
+		if (($from === 'Properties') || ($from === 'Properties_Rooms'))
+		{
+			# qvar_dumpk(get_defined_vars());
+			# throw new \Exception('ex');
+		}
 
 		\QApi::$DataToProcess = $model;
 		

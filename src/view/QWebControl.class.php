@@ -10,13 +10,11 @@ abstract class QWebControl_frame_ extends QViewBase
 {
 	
 	/**
-	 * Specify the method to be redered
-	 *
-	 * @var string
+	 * Specify the method to be rendered
 	 */
 	public $renderMethod = "render";
 	/**
-	 * True if the control should be rerendered
+	 * True if the control should be re-rendered
 	 *
 	 * @var boolean
 	 */
@@ -284,5 +282,10 @@ abstract class QWebControl_frame_ extends QViewBase
 		}
 		
 		\QWebRequest::RenderBeforeBodyEnds();
+	}
+	
+	public function setRenderMethod($renderMethod)
+	{
+		$this->renderMethod = $renderMethod;
 	}
 }

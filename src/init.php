@@ -29,7 +29,7 @@ const __IN_PHP__ = true;
  * This is a great way to ensure global unique IDs for types declarations
  */
 if (!defined("Q_FRAME_GET_ID_TYPE"))
-	define('Q_FRAME_GET_ID_TYPE', "http://www.omibit.com/API/types/");
+	define('Q_FRAME_GET_ID_TYPE', "https://www.omibit.com/API/types/");
 define('Q_FRAME_MIN_ID_TYPE', 4096);
 
 // establish frame path

@@ -673,6 +673,7 @@ trait QModel_Security
 						}
 					}
 				}
+				/*
 				if (($what === 'enforce') || (!$what))
 				{
 					switch ($s_mode)
@@ -745,7 +746,7 @@ trait QModel_Security
 						}
 					}
 				}
-				
+				*/
 			}
 			// strict-box, it means it has an owner
 			/*

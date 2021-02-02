@@ -943,9 +943,10 @@ class QApi
 	 * 
 	 * @return QIModel
 	 */
-	public static function QueryById($from, $id, $selector = null)
+	public static function QueryById($from, $id, $selector = null, array $binds = [])
 	{
-		return static::Query($from, $selector, null, true, ["Id" => $id]);
+		$binds["Id"] = $id;
+		return static::Query($from, $selector, null, true, $binds);
 	}
 		
 	/**

@@ -144,12 +144,20 @@ class QApi
 				
 				$sql_filter = \QModel::ExtractSQLFilter(reset($security_filter), \Omi\User::GetGroupsList(), \QModel::GetFinalSecurityForAppProperty($src_from, 'relation', $property_reflection));
 			}
-			
-			foreach ($src_from_types ?: [] as $src_from_types_ty)
+			else if ($security_filter === false)
 			{
-				if (method_exists($src_from_types_ty, 'GetFinalSecurityForAppProperty__ON_TOP'))
+				# full #deny
+				$sql_filter = false;
+			}
+			
+			if ($sql_filter !== false)
+			{
+				foreach ($src_from_types ?: [] as $src_from_types_ty)
 				{
-					$sql_filter = $src_from_types_ty::GetFinalSecurityForAppProperty__ON_TOP($src_from, $sql_filter, $property_reflection);
+					if (method_exists($src_from_types_ty, 'GetFinalSecurityForAppProperty__ON_TOP'))
+					{
+						$sql_filter = $src_from_types_ty::GetFinalSecurityForAppProperty__ON_TOP($src_from, $sql_filter, $property_reflection);
+					}
 				}
 			}
 			

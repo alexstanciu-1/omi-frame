@@ -499,11 +499,14 @@ trait QModel_Security
 		if (($security_mode = static::Get_Security_App_Props_Config($app_property)))
 		{
 			if (is_array($security_mode))
-				$security_mode = $security_mode['rule'];
+				$security_mode = trim($security_mode['rule']);
 			
 			$s_modes = explode(",", $security_mode);
 			
 			$defined_groups = \Omi\User::Get_All_Possible_Groups();
+			
+			if ($security_mode === '#deny')
+				return false;
 			
 			foreach ($s_modes as $_smode)
 			{
@@ -533,6 +536,18 @@ trait QModel_Security
 							break;
 						}
 						case 'tfh-box':
+						{
+							$ret['filter'][0] .= ($ret['filter'][0] ? "," : "").'is:tfhowner:of:$each';
+							# $ret['filter'][0] .= ($ret['filter'][0] ? "," : "").'owner_customer+is:owner_customer:of:$each';
+							break;
+						}
+						case 'tfh-channel':
+						{
+							$ret['filter'][0] .= ($ret['filter'][0] ? "," : "").'is:tfhchannel:of:$each';
+							# $ret['filter'][0] .= ($ret['filter'][0] ? "," : "").'owner_customer+is:owner_customer:of:$each';
+							break;
+						}
+						case 'tfh-self':
 						{
 							$ret['filter'][0] .= ($ret['filter'][0] ? "," : "").'is:owner:of:$each';
 							# $ret['filter'][0] .= ($ret['filter'][0] ? "," : "").'owner_customer+is:owner_customer:of:$each';
@@ -613,7 +628,19 @@ trait QModel_Security
 						}
 						case 'tfh-box':
 						{
-							$ret['relation'][] = 'owner (Owner.Users.Id=? OR Owner.Accessible_By.Users.Id=?)';
+							$ret['relation'][] = 'tfhowner ((Owner.Users.Id=? OR Owner.Accessible_By.Users.Id=?) AND Owner.Is_Property_Owner)';
+							# $ret['filter'][0] .= ($ret['filter'][0] ? "," : "").'owner_customer+is:owner_customer:of:$each';
+							break;
+						}
+						case 'tfh-channel':
+						{
+							$ret['relation'][] = 'tfhchannel ((Owner.Users.Id=? OR Owner.Accessible_By.Users.Id=?) AND Owner.Can_Access_Properties)';
+							# $ret['filter'][0] .= ($ret['filter'][0] ? "," : "").'owner_customer+is:owner_customer:of:$each';
+							break;
+						}
+						case 'tfh-self':
+						{
+							$ret['relation'][] = 'owner (Users.Id=? OR Accessible_By.Users.Id=?)';
 							# $ret['filter'][0] .= ($ret['filter'][0] ? "," : "").'owner_customer+is:owner_customer:of:$each';
 							break;
 						}
@@ -673,80 +700,6 @@ trait QModel_Security
 						}
 					}
 				}
-				/*
-				if (($what === 'enforce') || (!$what))
-				{
-					switch ($s_mode)
-					{
-						case 'tfh-box':
-						{
-							# for @superadmin this will fail
-							$ret['enforce'][] = function ($objects, int $user_id) {
-								
-								if ($user_id < 1)
-									return [false, 'user_id', $user_id];
-								$populate = new \QModelArray();
-								foreach ($objects ?: [] as $key => $obj)
-								{
-									$own = $obj->Owner;
-									if (!$own)
-										return [false, 'no-owner', $key, $obj];
-									$populate[] = $own;
-								}
-								
-								$populate->populate("Owner.{Users.{Id WHERE Id=?},Accessible_By.Users.{Id WHERE Id=?}} "
-														. "WHERE Owner.Users.Id=? OR Owner.Accessible_By.Users.Id=?", 
-													[$user_id, $user_id, $user_id, $user_id]);
-								
-								foreach ($objects ?: [] as $key => $obj)
-								{
-									$found = false;
-									foreach ($own->Users ?: [] as $user)
-									{
-										if ($user->Id && ($user->Id == $user_id))
-										{
-											$found = true;
-											break;
-										}
-									}
-									if (!$found)
-									{
-										foreach ($own->Accessible_By ?: [] as $acc_by)
-										{
-											foreach ($acc_by->Users ?: [] as $user)
-											{
-												if ($user->Id && ($user->Id == $user_id))
-												{
-													$found = true;
-													break;
-												}
-											}
-											if ($found)
-												break;
-										}
-									}
-									if (!$found)
-										return [false, 'bad-owner', $key, $obj];
-								}
-								
-								# if all check ok
-								return true;
-							};
-							
-							break;
-						}
-						case 'tfh-box-via-property':
-						{
-							$ret['enforce'][] = 'propertyOwner (Property.Owner.Users.Id=? OR Property.Owner.Accessible_By.Users.Id=?)';
-							break;
-						}
-						default:
-						{
-							break;
-						}
-					}
-				}
-				*/
 			}
 			// strict-box, it means it has an owner
 			/*

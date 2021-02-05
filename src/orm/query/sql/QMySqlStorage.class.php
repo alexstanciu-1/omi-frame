@@ -1425,8 +1425,12 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 			$prop_security_cfg = QModel_Security::Get_Security_App_Props_Config($from);
 			if (isset($prop_security_cfg['enforcements']))
 			{
+				$enfc_cfg = $prop_security_cfg['enforcements'];
+				if ($enfc_cfg === '#deny')
+					throw new \Exception('Access denied by rule');
+				
 				$enforcements = QModel_Security::Get_Security_App_Props_Config('@enforcements');
-				$from_enforcements = isset($enforcements[$prop_security_cfg['enforcements']]) ? $enforcements[$prop_security_cfg['enforcements']] : null;
+				$from_enforcements = isset($enforcements[$enfc_cfg]) ? $enforcements[$enfc_cfg] : null;
 				foreach ($from_enforcements ?: [] as $exec_enforcement)
 				{
 					$action_func = QModel_Security::Get_Security_App_Props_Config('@actions')[$exec_enforcement['action']];

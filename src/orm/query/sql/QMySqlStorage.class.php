@@ -1310,7 +1310,7 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 			$query = rtrim($query);
 			$query = ((substr($query, -1, 1) === '}') ? substr($query, 0, -1) : $query)." WHERE AND ({$security_filter}) }";
 		}
-		
+	
 		$return_data = QModelQuery::BindQuery($query, $parameters, null, $data_block, $skip_security, $selector);
 		$return_data = $return_data ? $return_data->$from : null;
 		

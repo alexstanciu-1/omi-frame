@@ -129,11 +129,11 @@ trait QCodeSync2_Utility
 				$path = (($folder !== null) ? $folder : '').$file_path;
 				$pipes = [];
 				
-				$procs[$i] = $p = proc_open(PHP_BINDIR."/php7.3 -l ".escapeshellarg($path), $descriptorspec, $pipes);
+				$procs[$i] = $p = proc_open($exe_path." -l ".escapeshellarg($path), $descriptorspec, $pipes);
 				$all_pipes[$i] = $pipes;
 				
 				if (!is_resource($p))
-					throw new Exception("Unable to start process with command: "."php7.3 -l ".escapeshellarg($path));
+					throw new Exception("Unable to start process with command: ".$exe_path." -l ".escapeshellarg($path));
 
 				// $path = "gates/".$gate."/";
 				$proc_stat = proc_get_status($p);

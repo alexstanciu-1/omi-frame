@@ -968,6 +968,13 @@ class QApi
 	 */
 	public static function Query($from, $selector = null, $parameters = null, $only_first = false, $id = null)
 	{
+		/*
+		if (empty($from))
+		{
+			return static::Query_App_Properties($selector = null, $parameters = null, $only_first = false, $id = null);
+		}
+		*/
+		
 		$dataCls = \QApp::GetDataClass();
 
 		$initialFrom = $from;
@@ -2572,5 +2579,26 @@ class QApi
 					static::ImportData_Remove_Duplicates($value, $replace_elements, $remove_elements, $bag);
 			}
 		}
+	}
+	
+	public static function Query_App_Properties($selector = null, $parameters = null, bool $only_first = false, $id = null)
+	{
+		$ret = new \QModelArray();
+		$app_model = \QModel::GetTypeByName(\QApp::GetDataClass());
+		
+		foreach ($app_model->properties ?: [] as $property)
+		{
+			if (in_array($property->name, ['Id', 'Del__']))
+				continue;
+			else if ($id && ($id !== $property->name))
+				continue;
+			
+			$ret[$property->name] = (object)["Name" => $property->name,
+								"Type" => $property->types . "",];
+			if ($only_first)
+				break;
+		}
+	
+		return $ret;
 	}
 }

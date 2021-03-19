@@ -541,6 +541,12 @@ trait QModel_Security
 							# $ret['filter'][0] .= ($ret['filter'][0] ? "," : "").'owner_customer+is:owner_customer:of:$each';
 							break;
 						}
+						case 'tfh-order-channel':
+						{
+							$ret['filter'][0] .= ($ret['filter'][0] ? "," : "").'is:tfhorderchannel:of:$each';
+							# $ret['filter'][0] .= ($ret['filter'][0] ? "," : "").'owner_customer+is:owner_customer:of:$each';
+							break;
+						}
 						case 'tfh-channel':
 						{
 							$ret['filter'][0] .= ($ret['filter'][0] ? "," : "").'is:tfhchannel:of:$each';
@@ -630,6 +636,11 @@ trait QModel_Security
 						{
 							$ret['relation'][] = 'tfhowner ((Owner.Users.Id=? OR Owner.Accessible_By.Users.Id=?) AND Owner.Is_Property_Owner)';
 							# $ret['filter'][0] .= ($ret['filter'][0] ? "," : "").'owner_customer+is:owner_customer:of:$each';
+							break;
+						}
+						case 'tfh-order-channel':
+						{
+							$ret['relation'][] = 'tfhorderchannel ((Channel.Users.Id=? OR Channel.Accessible_By.Users.Id=?) AND Channel.Can_Access_Properties)';
 							break;
 						}
 						case 'tfh-channel':

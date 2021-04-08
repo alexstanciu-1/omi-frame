@@ -2601,4 +2601,43 @@ class QApi
 	
 		return $ret;
 	}
+	
+	public static function Trigger_Reverse_Api(int $user_id, string $action, array $args)
+	{
+		$users = \QQuery('Users.{Id,Username,Api_Key,Reverse_APIs.{Items.*} WHERE Id=?}', [$user_id])->Users;
+		$user = $users ? $users[0] : null;
+		
+		$user_data_to_send = $user->toArray("Username,Api_Key", false, false, false);
+
+		$curl = curl_init();
+		
+		foreach ($user->Reverse_APIs->Items ?: [] as $reverse_api)
+		{
+			if ((!$reverse_api->On_Action) || (!$reverse_api->URL) || (trim($reverse_api->On_Action) !== trim($action)))
+				continue;
+			
+			$url = filter_var(trim($reverse_api->URL), FILTER_VALIDATE_URL);
+			if ((!$url) || (strtolower(substr($url, 0, strlen('https://'))) !== 'https://'))
+				continue;
+			
+			$data_to_send = ['user' => $user_data_to_send, 'action' => $action, 'args' => $args];
+			
+			curl_reset($curl);
+			curl_setopt_array($curl, [
+				
+				CURLOPT_URL => $url,
+				CURLOPT_FOLLOWLOCATION => true,
+				CURLOPT_POST => 1,
+				CURLOPT_HTTPHEADER => [
+					'Content-Type: application/json'
+				],
+				CURLOPT_POSTFIELDS => json_encode($data_to_send, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+			]);
+			curl_exec($curl);
+			
+			# @TODO - we should log issues !
+		}
+		
+		curl_close($curl);
+	}
 }

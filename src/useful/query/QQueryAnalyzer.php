@@ -18,6 +18,9 @@ final class QQueryAnalyzer
 			$query = $start_type::GetListingQuery();
 
 		$tokens = static::ParseSql($query);
+		
+		# qvar_dumpk($start_type, $tokens, $query);
+		
 		$zone = "SELECTOR";
 		$q_type = "SELECT";
 		$types = is_array($start_type) ? $start_type : [$start_type];
@@ -31,7 +34,10 @@ final class QQueryAnalyzer
 		//					else
 		//							the info is for the upper query
 		
-		return static::ExtractSqlInfoWorker($tokens, $pos, $zone, $q_type, $types);
+		$ret = static::ExtractSqlInfoWorker($tokens, $pos, $zone, $q_type, $types);
+		# qvar_dumpk('$ret', $ret);
+		# die;
+		return $ret;
 	}
 
 	protected static function ExtractSqlInfoHandleIdentifier($identifier, $types_data, &$data)
@@ -297,7 +303,7 @@ final class QQueryAnalyzer
 											"\\])|". # to be replaced if key exists
 						"(\\?+)".
 
-							"/ius", $curr, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
+							"/us", $curr, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
 				
 				$bind_data = [];
 				$binds_path = $binds_prefix;
@@ -484,8 +490,9 @@ final class QQueryAnalyzer
 				"[-+]?(?:[0-9]*\.?[0-9]+|[0-9]+)|". # number (not full validation)
 				// Keywords: AND/OR/...
 				"\bAS\b|\bSELECT\b|\bUPDATE\b|\bDELETE\b|\bINSERT\b|\bWHERE\b|\bORDER\\s+BY\b|\bHAVING\b|\bGROUP\\s+BY\b|\bAND\b|\bOR\b|\bBETWEEN\b|\bASC\b|\bDESC\b|\bLIMIT\b|".
-					"\bNULL\b|\bTRUE\b|\bFALSE\b|\bIS\\s+NULL\b|\bIS_A\b|\bIS\b|\bLIKE\b|\bCASE\b|\bBINARY\b|\bNOT\b|\bDIV\b|\bISNULL\b|\bSQL_CALC_FOUND_ROWS\b|".
+					"\bNULL\b|\bTRUE\b|\bFALSE\b|\bIS_A\b|\bIS\b|\bLIKE\b|\bCASE\b|\bBINARY\b|\bNOT\b|\bDIV\b|\bIS\\s*NULL\b|\bIS\\s*NOT\\s*NULL\b|\bSQL_CALC_FOUND_ROWS\b|".
 					"\bDISTINCT\b|\bEND\b|\bELSE\b|\bTHEN\b|\bSEPARATOR\b|".
+					"\bINTERVAL\b|\bMONTH\b|\bDAY\b|\bWEEK\b|\bHOUR\b|\bMINUTE\b|\bSECOND\b|\bYEAR\b|".
 				// FUNCTIONS: FuncName (
 				"[\\p{L&}\\$]\\w+\\s*\\("."|\\p{L&}+\\s*\\(|". // Identifiers/entities
 				"([\\`\\\"]?[\\p{L&}\\$]\\w[\\w\\\\]*[\\`\\\"]?|"."[\\`\\\"]?\\p{L&}[\\`\\\"]?+)|". # identifiers (can not start with a digit)
@@ -507,7 +514,7 @@ final class QQueryAnalyzer
 				"[\\!-\\/\\:-\\@\\[-\\^\\`\\{-\\~]{1}|". # from ASCII table we have ranges there also
 				"(\\s+)".
 
-			"/ius", $query, $tokens, PREG_SET_ORDER);
+			"/us", $query, $tokens, PREG_SET_ORDER);
 		
 		if ($stat === false)
 			throw new Exception("Parsing failed for the query");

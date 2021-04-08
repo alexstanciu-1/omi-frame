@@ -299,8 +299,8 @@ final class QAutoload
 				if (!file_exists($qp))
 				{
 					if (\QAutoload::GetDevelopmentMode())
-						qvar_dumpk('$class_name, self::$AutoloadArray[$class_name]', $class_name, self::$AutoloadArray[$class_name]);
-					throw new \Exception('Requested file does not exists.');
+						qvar_dumpk('$class_name, $qp, self::$AutoloadArray[$class_name]', $qp, $class_name, self::$AutoloadArray[$class_name]);
+					throw new \Exception('Requested file does not exists. #A');
 				}
 				require_once($qp);
 			}

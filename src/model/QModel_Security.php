@@ -640,12 +640,12 @@ trait QModel_Security
 						}
 						case 'tfh-order-channel':
 						{
-							$ret['relation'][] = 'tfhorderchannel ((Channel.Users.Id=? OR Channel.Accessible_By.Users.Id=?) AND Channel.Can_Access_Properties)';
+							$ret['relation'][] = 'tfhorderchannel ((Channel.Users.Id=? OR Channel.Accessible_By.Users.Id=?) AND Channel.Is_Channel_Owner)';
 							break;
 						}
 						case 'tfh-channel':
 						{
-							$ret['relation'][] = 'tfhchannel ((Owner.Users.Id=? OR Owner.Accessible_By.Users.Id=?) AND Owner.Can_Access_Properties)';
+							$ret['relation'][] = 'tfhchannel ((Owner.Users.Id=? OR Owner.Accessible_By.Users.Id=?) AND Owner.Is_Channel_Owner)';
 							# $ret['filter'][0] .= ($ret['filter'][0] ? "," : "").'owner_customer+is:owner_customer:of:$each';
 							break;
 						}

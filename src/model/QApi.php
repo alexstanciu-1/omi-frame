@@ -2622,6 +2622,8 @@ class QApi
 			
 			$data_to_send = ['user' => $user_data_to_send, 'action' => $action, 'args' => $args];
 			
+			$json_data = json_encode($data_to_send, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+			
 			curl_reset($curl);
 			curl_setopt_array($curl, [
 				
@@ -2631,11 +2633,29 @@ class QApi
 				CURLOPT_HTTPHEADER => [
 					'Content-Type: application/json'
 				],
-				CURLOPT_POSTFIELDS => json_encode($data_to_send, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+				CURLOPT_HEADER => 1,
+				CURLOPT_RETURNTRANSFER => 1,
+				CURLINFO_HEADER_OUT => true,
+				CURLOPT_POSTFIELDS => $json_data,
+				CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
 			]);
-			curl_exec($curl);
 			
-			# @TODO - we should log issues !
+			$rc = curl_exec($curl);
+			
+			$log_file = 'temp/log_Trigger_Reverse_Api_'.date('Y-m-d H:i:s')." - ".uniqid().".log";
+			
+			$request_headers = curl_getinfo($curl, CURLINFO_HEADER_OUT);
+			
+			if ($rc === false)
+			{
+				$err_no = curl_errno($curl);
+				$err_str = curl_error($curl);
+				file_put_contents($log_file, "ERROR:\n{$err_no}\n{$err_str}\n\n{$request_headers}");
+			}
+			else
+			{
+				file_put_contents($log_file, "REQUEST:\n{$url}\n\n{$request_headers}\n\n{$json_data}\n\n=================================================\nRESPONSE:\n{$rc}");
+			}
 		}
 		
 		curl_close($curl);

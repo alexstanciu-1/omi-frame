@@ -3077,7 +3077,11 @@ function _L($tag, $lang = null, $arg_1 = null, $arg_2 = null, $arg_3 = null, $ar
 {
 	$dt = QLanguage::$Data[$tag];
 	if ($dt === null)
+	{
+		if (is_numeric($tag))
+			return $tag;
 		return _T($tag, $tag);
+	}
 	if ($lang === null)
 		$lang = QModel::GetLanguage_Dim();
 	$data = $dt[$lang];

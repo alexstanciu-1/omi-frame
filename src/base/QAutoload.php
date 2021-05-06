@@ -1383,6 +1383,9 @@ final class QAutoload
 		{
 			try
 			{
+				ini_set('display_errors', 1);
+				ini_set('display_startup_errors', 1);
+
 				self::ScanForChanges($full_resync, $debug_mode);
 			}
 			catch (\Exception $ex)

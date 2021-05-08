@@ -123,7 +123,7 @@ class QApi
 			$selector = qParseEntity($selector);
 		
 		$result = [];
-		
+				
 		$storage_model = QApp::GetDataClass();
 		foreach ($parsed_sources as $src_key => $src_info)
 		{

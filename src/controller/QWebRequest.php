@@ -548,13 +548,13 @@ class QWebRequest
 	 * 
 	 * @return string
 	 */
-	public static function GetRequestFullUrl($with_query_string = false)
+	public static function GetRequestFullUrl($with_query_string = false, string $replace_host = null)
 	{
 		$ssl = ((!empty($_SERVER['HTTPS'])) && ($_SERVER['HTTPS'] === 'on')) ? "s" : "";
 		$port = $_SERVER['SERVER_PORT'];
 		$port = ((!$ssl && ($port == '80')) || ($ssl && ($port == '443'))) ? '' : ':'.$port;
 		
-		$url = "http{$ssl}://".$_SERVER['HTTP_HOST'].$port.self::$BaseHref.self::$OriginalRequest;
+		$url = "http{$ssl}://".($replace_host ?? $_SERVER['HTTP_HOST']).$port.self::$BaseHref.self::$OriginalRequest;
 		if ($with_query_string && (!empty($_GET)))
 			return $url."?".http_build_query($_GET);
 		else

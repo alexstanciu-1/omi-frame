@@ -1384,6 +1384,7 @@ trait QModel_Trait
 			if (!$class)
 				throw new Exception("Unable to determine type for input data");
 			$obj = new $class();
+			
 			if (($obj_id = $array["_id"]) !== null)
 				$obj->setId($obj_id);
 			$refs = [];

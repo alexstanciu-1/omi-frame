@@ -46,8 +46,7 @@ class QErrorHandler
 		}
 		else 
 		{
-			qvar_dumpk('HandleError');
-			
+			# qvar_dumpk('HandleError');
 			throw new ErrorException($errstr, 0, $errno, $errfile, $errline);
 		}
 	}
@@ -79,13 +78,28 @@ class QErrorHandler
 		if (!$headers_sent)
 			header("HTTP/1.1 500 Internal Server Error");
 		
+		$in_production = !\QAutoload::GetDevelopmentMode();
+		$err_uid = uniqid();
+		$backtrace_stack = $ex->getTrace();
 		
 		// if (!\QApp::Get_QWebRequest_HandleShutdown_Registered())
 		{
 			if (QAutoload::GetDevelopmentMode())
 			{
-				self::LogError($ex, $err_uid, $backtrace_stack);
-				echo self::GetExceptionToHtml($ex, $headers_sent ? false : true);
+				$is_ajax = (($hxrw = filter_input(INPUT_SERVER, 'HTTP_X_REQUESTED_WITH') && (strtolower($hxrw) === 'xmlhttprequest')) || 
+											(filter_input(INPUT_POST, "__qAjax__") || filter_input(INPUT_GET, "__qAjax__")));
+		
+				if ($is_ajax)
+				{
+					echo json_encode(array("errstr" => $ex->getMessage(), "erruid" => $err_uid, "errfile" => $ex->getFile(), 
+						"errline" => $ex->getLine(), "stack" => $ex->getTraceAsString(), "trace" => $backtrace_stack));
+					self::LogError($ex, $err_uid, $backtrace_stack);
+				}
+				else
+				{
+					self::LogError($ex, $err_uid, $backtrace_stack);
+					echo self::GetExceptionToHtml($ex, $headers_sent ? false : true);
+				}
 				return;
 			}
 		}
@@ -102,12 +116,6 @@ class QErrorHandler
 			}
 		}
 
-		$is_ajax = (($hxrw = filter_input(INPUT_SERVER, 'HTTP_X_REQUESTED_WITH') && (strtolower($hxrw) === 'xmlhttprequest')) || 
-											(filter_input(INPUT_POST, "__qAjax__") || filter_input(INPUT_GET, "__qAjax__")));
-		$in_production = !\QAutoload::GetDevelopmentMode();
-		$err_uid = uniqid();
-		$backtrace_stack = $ex->getTrace();
-		
 		if ($is_ajax)
 		{
 			// echo self::FrameErrorBoundyMark;

@@ -682,6 +682,7 @@ class QWebRequest
 						// we have a problem :)
 					}
 					
+					$send_json['__error_obj__'] = ['messsage' => $uncaughtException->getMessage()];
 					$send_json['__error__'] = \QErrorHandler::GetExceptionToHtml($uncaughtException, false);
 					
 					echo json_encode($send_json);

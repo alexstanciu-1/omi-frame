@@ -32,6 +32,8 @@ if (!defined("Q_FRAME_GET_ID_TYPE"))
 	define('Q_FRAME_GET_ID_TYPE', "https://www.omibit.com/API/types/");
 define('Q_FRAME_MIN_ID_TYPE', 4096);
 
+# $dc_1 = get_defined_constants();
+
 // establish frame path
 define("Q_FRAME_PATH", __DIR__."/");
 define("Q_FRAME_BPATH", dirname(__DIR__)."/");
@@ -56,6 +58,15 @@ define("Q_FRAME_REL", substr(Q_FRAME_PATH, strlen(Q_RUNNING_PATH) - strlen(BASE_
 define("Q_FRAME_BREL", substr(Q_FRAME_BPATH, strlen(Q_RUNNING_PATH) - strlen(BASE_HREF)));
 define("Q_APP_REL", substr(Q_RUNNING_PATH, strlen(Q_RUNNING_PATH) - strlen(BASE_HREF)));
 define("Q_REQ_REL", substr($_SERVER["REQUEST_URI"], strlen(Q_APP_REL)));
+
+/*$dc_2 = get_defined_constants();
+$diff = array_diff_assoc($dc_2, $dc_1);
+ksort($diff);
+
+echo "<pre>";
+var_dump($diff);
+
+die();*/
 
 /**
  * First include QObject because QAutoload needs it

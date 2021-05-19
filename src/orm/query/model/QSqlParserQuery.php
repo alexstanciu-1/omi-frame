@@ -503,7 +503,8 @@ class QSqlParserQuery
 
 					if (!$_this_f_actions)
 					{
-						var_dump($root_q->_dbg_query, $exe_q);
+						if (\QAutoload::GetDevelopmentMode())
+							qvar_dumpk($root_q->_dbg_query, $exe_q);
 						throw new Exception("No actions on query");
 					}
 

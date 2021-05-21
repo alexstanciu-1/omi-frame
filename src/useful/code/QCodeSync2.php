@@ -186,7 +186,8 @@ class QCodeSync2
 					$this->watch_folders_tags = array_flip($this->tags_to_watch_folders);
 
 					# first run a sync on the model only !!!
-					$this->sync_code($model_files ?? [], $model_changed_or_added ?? [], $model_removed_files ?? [], $model_new_files ?? []);
+					# array $files, array $changed_or_added, array $removed_files, array $new_files, bool $sync_sql_meta = false
+					$this->sync_code($model_files ?? [], $model_changed_or_added ?? [], $model_removed_files ?? [], $model_new_files ?? [], true);
 
 					// next generate all the views :-)
 					if (!defined('Q_DATA_CLASS'))
@@ -357,7 +358,7 @@ class QCodeSync2
 	 * @param array $changed_or_added List with the changed or added files
 	 * @param array $removed_files List with the removed files
 	 */
-	public function sync_code(array $files, array $changed_or_added, array $removed_files, array $new_files)
+	public function sync_code(array $files, array $changed_or_added, array $removed_files, array $new_files, bool $sync_sql_meta = false)
 	{
 		# disable it for a sec !
 		
@@ -423,7 +424,7 @@ class QCodeSync2
 		$this->sync_code__compile_02();
 		
 		# STAGE 5 - cache data
-		$this->cache_data();
+		$this->cache_data($sync_sql_meta);
 	}
 	
 	/**
@@ -1666,7 +1667,7 @@ class QCodeSync2
 		return $ret;
 	}
 	
-	function cache_data()
+	function cache_data(bool $sync_sql_meta = false)
 	{
 		\QAutoload::SetAutoloadArray($this->autoload);
 		\QAutoload::UnlockAutoload();
@@ -1795,6 +1796,20 @@ class QCodeSync2
 			$sql_statements = \QSqlModelInfoType::ResyncDataStructure($conn);
 			$dump = ob_get_clean();
 			*/
+		}
+		
+		if ($sync_sql_meta && ($this->full_sync || $this->has_model_changes))
+		{
+			$mysql = new \QMySqlStorage("sql", defined('MyProject_MysqlHost') ? MyProject_MysqlHost : "127.0.0.1", 
+							MyProject_MysqlUser, MyProject_MysqlPass, MyProject_MysqlDb, 
+							ini_get("mysqli.default_port"),
+							defined('MyProject_Mysql_Socket') ? MyProject_Mysql_Socket : ini_get("mysqli.default_socket"));
+
+			$mysql->connect();
+			$mysql->connection->query('SET NAMES utf8');
+			
+			// enable this to resync your DB structure
+			\QSqlModelInfoType::ResyncDataStructure($mysql, false);
 		}
 		
 		# $cache_folder = QAutoload::GetRuntimeFolder()."temp/types/";

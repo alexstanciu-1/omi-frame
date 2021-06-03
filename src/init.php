@@ -100,7 +100,7 @@ function __autoload($class_name)
 /**
  * Initialize
  */
-QAutoload::AddWatchFolder(Q_FRAME_PATH, false, "frame");
+QAutoload::AddWatchFolder(Q_FRAME_PATH, false, "frame", false, "frame");
 
 set_error_handler(array("QErrorHandler", "HandleError"), E_ALL & ~(E_NOTICE | E_USER_NOTICE | E_STRICT | E_DEPRECATED));
 set_exception_handler(array("QErrorHandler", "UncaughtExceptionHandler"));

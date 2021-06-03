@@ -37,6 +37,12 @@ final class QAutoload
 	 */
 	private static $WatchFoldersByTag = [];
 	/**
+	 * Watch folders tags to layer
+	 *
+	 * @var string[]
+	 */
+	private static $WatchFoldersTag_To_Layer = [];
+	/**
 	 * The list of folderes that are included as read-only
 	 *
 	 * @var string[]
@@ -176,9 +182,9 @@ final class QAutoload
 	 * @param string $path The path to be added
 	 * 
 	 */
-	public static function AddMainFolder($path, $tag = null)
+	public static function AddMainFolder(string $path, string $tag = null, string $tag_layer = null)
 	{
-		return self::AddWatchFolder($path, true, $tag);
+		return self::AddWatchFolder($path, true, $tag, false, $tag_layer);
 	}
 	
 	/**
@@ -200,7 +206,7 @@ final class QAutoload
 	 * @param string $path The path to be added
 	 * @param boolean $set_as_runtime If true the path becomes the default (runtime) folder of the application
 	 */
-	public static function AddWatchFolder($path, $set_as_runtime = false, $tag = null, $read_only = false)
+	public static function AddWatchFolder(string $path, bool $set_as_runtime = false, string $tag = null, bool $read_only = false, string $tag_layer = null)
 	{
 		if (self::$LockAddWatchFolders)
 			throw new Exception("You may not call QAutoload::AddWatchFolder() or QAutoload::LoadModule() after QAutoload::ScanForChanges() or QAutoload::EnableDevelopmentMode() was called.");
@@ -227,7 +233,12 @@ final class QAutoload
 				}
 				while (($bt_path = self::$WatchFoldersByTag[$tag]) && ($bt_path !== $path));
 			}
+						
 			self::$WatchFoldersByTag[$tag] = $path;
+			if ($tag_layer !== null)
+				self::$WatchFoldersTag_To_Layer[$tag] = $tag_layer;
+			else
+				throw new \Exception("Layer tag must be defined.");
 		}
 		
 		if ($set_as_runtime)
@@ -453,11 +464,11 @@ final class QAutoload
 	 * @param string $path
 	 * @param boolean $set_as_runtime
 	 */
-	public static function LoadModule($path, $set_as_runtime = false, $tag = null)
+	public static function LoadModule(string $path, bool $set_as_runtime = false, string $tag = null, string $layer_tag = null)
 	{
 		if (file_exists($path."include.php"))
 			require_once($path."include.php");
-		self::AddWatchFolder($path, $set_as_runtime, $tag, false);
+		self::AddWatchFolder($path, $set_as_runtime, $tag, false, $layer_tag);
 		if (file_exists($path."init.php"))
 			require_once($path."init.php");
 	}
@@ -1834,5 +1845,10 @@ final class QAutoload
 				return addslashes($new_path).substr($str_path, $old_path_len);
 		}
 		return null;
+	}
+	
+	public static function Get_WatchFoldersTag_To_Layer()
+	{
+		return static::$WatchFoldersTag_To_Layer;
 	}
 }

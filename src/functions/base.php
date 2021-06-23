@@ -3273,3 +3273,34 @@ function q_merge_conf_data(array &$__CONF, string $attr, array $selector_value)
 		$data[$attr] = $value;
 	}
 }
+
+function q_get_language_data(string $language = null)
+{
+	if ($language)
+	{
+		$_DATA__ = null;
+		if (file_exists("lang/{$language}.php"))
+			include("lang/{$language}.php");
+		return $_DATA__;
+	}
+	else
+	{
+		$ret = [];
+		
+		$langs = \QQuery('Languages.{Code}')->Languages;
+		if (!isset($langs[0]))
+			$langs = [(object)["Code" => "RO"], (object)["Code" => "EN"]];
+		foreach ($langs ?: [] as $lang)
+		{
+			$language = $lang->Code;
+			$_DATA__ = null;
+			if (file_exists("lang/{$language}.php"))
+				include("lang/{$language}.php");
+			else if (file_exists("lang/".strtoupper($language).".php"))
+				include("lang/".strtoupper($language).".php");
+			$ret[$language] = $_DATA__;
+		}
+		
+		return $ret;
+	}
+}

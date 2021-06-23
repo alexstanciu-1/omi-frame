@@ -1655,7 +1655,11 @@ trait QModel_Trait
 						}
 						case "object":
 						{
-							throw new Exception("should not be, to do ?!");
+							if (\QAutoload::GetDevelopmentMode())
+							{
+								qvar_dumpk('extractFromArray');
+								throw new Exception("should not be, to do ?!");
+							}
 						}
 					}
 				}

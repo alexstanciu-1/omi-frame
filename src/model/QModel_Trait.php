@@ -1574,7 +1574,11 @@ trait QModel_Trait
 
 									foreach ($use_v as $vk => $vv)
 									{
-										if (is_array($vv))
+										if (($vk === '_uploads') || ($vk === '_tsp') || ($vk === '_ty'))
+										{
+											# ignore
+										}
+										else if (is_array($vv))
 										{
 											$v_expected_type = null;
 											if (($vc = $vv["_ty"]) && class_exists($vc))

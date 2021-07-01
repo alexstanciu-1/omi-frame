@@ -8,7 +8,7 @@
  * - Returns the response
  * 
  */
-class QWebRequest
+final class QWebRequest
 {
 	/**
 	 * The URL that will answer to RESTful requests
@@ -111,7 +111,9 @@ class QWebRequest
 	{
 		try
 		{
-			static::$RequestId = uniqid();
+			if (!defined('Q_REQUEST_UID'))
+				define('Q_REQUEST_UID', uniqid("", true));
+			static::$RequestId = Q_REQUEST_UID;
 			self::$AjaxRequest = self::IsAjaxRequest();
 			self::$FastAjax = $fast_call = ($_POST["__qFastAjax__"] || $_GET["__qFastAjax__"]);
 			
@@ -320,16 +322,16 @@ class QWebRequest
 			else
 			{
 				echo static::$ControllerOutput;
-				if (\QAutoload::GetDevelopmentMode())
+			if (\QAutoload::GetDevelopmentMode())
+			{
+				if (self::$AjaxResponse['__hiddenOutput__'])
 				{
-					if (self::$AjaxResponse['__hiddenOutput__'])
-					{
-						echo "<script type='text/javascript'>\n";
-						foreach (array_reverse(self::$AjaxResponse['__hiddenOutput__']) as $hidden_out)
-							echo "qvar_dump(".json_encode($hidden_out).");\n"; // qvar_dump("<h4>Server Unhandled Output</h4>");
-						echo "</script>\n";
-					}
+					echo "<script type='text/javascript'>\n";
+					foreach (array_reverse(self::$AjaxResponse['__hiddenOutput__']) as $hidden_out)
+						echo "qvar_dump(".json_encode($hidden_out).");\n"; // qvar_dump("<h4>Server Unhandled Output</h4>");
+					echo "</script>\n";
 				}
+			}
 				static::$ControllerOutputSent = true;
 			}
 
@@ -683,7 +685,6 @@ class QWebRequest
 						// we have a problem :)
 					}
 					
-					# $send_json['__error_obj__'] = ['messsage' => $uncaughtException->getMessage()];
 					$send_json['__error__'] = \QErrorHandler::GetExceptionToHtml($uncaughtException, false);
 					
 					echo json_encode($send_json);

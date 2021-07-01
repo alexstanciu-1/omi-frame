@@ -46,7 +46,6 @@ class QErrorHandler
 		}
 		else 
 		{
-			# qvar_dumpk('HandleError');
 			throw new ErrorException($errstr, 0, $errno, $errfile, $errline);
 		}
 	}
@@ -116,6 +115,12 @@ class QErrorHandler
 			}
 		}
 
+		$is_ajax = (($hxrw = filter_input(INPUT_SERVER, 'HTTP_X_REQUESTED_WITH') && (strtolower($hxrw) === 'xmlhttprequest')) || 
+											(filter_input(INPUT_POST, "__qAjax__") || filter_input(INPUT_GET, "__qAjax__")));
+		$in_production = !\QAutoload::GetDevelopmentMode();
+		$err_uid = uniqid();
+		$backtrace_stack = $ex->getTrace();
+		
 		if ($is_ajax)
 		{
 			// echo self::FrameErrorBoundyMark;
@@ -374,7 +379,7 @@ class QErrorHandler
 		
 		if ($is_fatal)
 		{
-			qvar_dumpk('fatal error', $is_fatal);
+			# qvar_dumpk('fatal error', $is_fatal);
 		}
         if ($isError)
         {
@@ -390,5 +395,39 @@ class QErrorHandler
 	public static function GetUncaughtException()
 	{
 		return static::$UncaughtException;
+	}
+	
+	public static function Cleanup_On_End()
+	{
+		# @TODO - we need to close all transactions
+		
+		$storage = \QApp::GetStorage();
+		if (($storage instanceof \QSqlStorage) && ($storage->connection instanceof \mysqli))
+		{
+			# make sure we close the connection , and rollback any unfinished transactions
+			$rc_rb = $storage->connection->rollback(MYSQLI_TRANS_COR_RELEASE);
+			$rc = $storage->connection->close();
+			file_put_contents("test_connection_close.txt", "\n" . date('Y-m-d H:i:s') . ' | ' . json_encode(['rollback' => $rc_rb, 'close' => $rc]), FILE_APPEND);
+		}
+		
+		# @TODO - maybe close other resources
+		# $all_resources = get_resources();
+
+		/**
+		if (is_array($all_resources))
+		{
+			foreach ($all_resources as $resource)
+			{
+				$type = get_resource_type($resource);
+				if ($type === 'stream-context')
+					var_dump([$type => stream_context_get_options($resource)]);
+				else
+					var_dump([$type => $resource]);
+			}
+		}
+		# var_dump($all_resources);
+		$all_resources_str = ob_get_clean();
+		*/
+		# file_put_contents("test_close_resources.txt", "\n" . date('Y-m-d H:i:s') . ' | ' . json_encode(['$all_resources' => $all_resources_str]), FILE_APPEND);
 	}
 }

@@ -93,6 +93,8 @@ class QApp extends QAppModule
 	 */
 	public static function Run($controllers = null)
 	{
+		\QSecurity_Check::Audit_Request();
+		
 		$request_uri = $_SERVER["REQUEST_URI"];
 		
 		$_return = null;
@@ -251,6 +253,14 @@ class QApp extends QAppModule
 			$data->setContainers(self::$DataContainer);
 		$data->init();
 		return $data;
+	}
+	
+	/**
+	 * @return int
+	 */
+	public static function GetDataId(): int
+	{
+		return self::$DataId;
 	}
 
 	public static final function UnsetData()

@@ -1739,8 +1739,7 @@ function qDebugStackInner($args, $with_stack = false, $on_shutdown = false, stri
 	
 	$css_class = "_dbg_".uniqid();
 	
-	?><div class="<?= $css_class ?>">
-		<script type="text/javascript">
+	?><div class="<?= $css_class ?>"><script type="text/javascript">
 			if (!window._dbgFuncToggleNext)
 			{
 				window._dbgFuncToggleNext = function(dom_elem)
@@ -1758,8 +1757,7 @@ function qDebugStackInner($args, $with_stack = false, $on_shutdown = false, stri
 						next.style.display = 'block';
 				};
 			}
-		</script>
-	<style type="text/css">
+		</script><style type="text/css">
 		
 		div.<?= $css_class ?> {
 			font-family: monospace;
@@ -1834,8 +1832,7 @@ function qDebugStackInner($args, $with_stack = false, $on_shutdown = false, stri
 			color: orange;
 		}
 		
-	</style>
-	<?php
+	</style><?php
 
 	$stack = debug_backtrace();
 	// remove this call
@@ -2053,7 +2050,7 @@ function qDSDumpVar($var, $max_depth = 8, &$bag = null, $depth = 0, $accessModif
 			echo "<div>";
 
 			$_isqm = ($var instanceof \QModel);
-			$props = $_isqm ? $var->getModelType()->properties : $var;
+			$props = (array)$var; # $_isqm ? $var->getModelType()->properties : $var;
 			
 			$_refCls = $_isqm ? $var->getModelType()->getReflectionClass() : null;
 
@@ -2093,22 +2090,35 @@ function qDSDumpVar($var, $max_depth = 8, &$bag = null, $depth = 0, $accessModif
 				}
 			}
 			
-			foreach ($props as $k => $_v)
+			foreach ($props as $_k => $v)
 			{
-				if ($_isqm && (($k === "_typeIdsPath") || ($k === "_qini") || ($k === "_ty")))
-					continue;
+				$p_name = $_k;
+				if ($_k[0] === "\x00")
+				{
+					if (substr($_k, 0, 3) === "\x00*\x00")
+					{
+						$p_name = substr($_k, 3);
+						$k = $_isqm ? $p_name : $p_name."(protected)";
+					}
+					else if (substr($_k, 0, 2 + strlen($obj_class)) === "\x00{$obj_class}\x00")
+					{
+						$p_name = substr($_k, 2 + strlen($obj_class));
+						$k = $_isqm ? $p_name : $p_name."(private)";
+					}
+					else
+						$p_name = $k = $_k;
+				}
+				else
+					$p_name = $k = $_k;
 				
-				$v = $_isqm ? $var->$k : $_v;
+				if ($_isqm && (($p_name === "_typeIdsPath") || ($p_name === "_qini") || ($p_name === "_ty") || ($p_name === "_id") || ($p_name === "_wst") || ($p_name === "_ts") || ($p_name === "_tsx") || ($p_name === "_sc") || ($p_name === "Del__")))
+					continue;
 				
 				$accessModifier = null;
 				$wasSet = $_isqm ? $var->wasSet($k) : null;
-				if ($_isqm && $props[$k])
+				if ($_isqm && ($refP = $_refCls->hasProperty($p_name) ? $_refCls->getProperty($p_name) : null))
 				{
-					// $v = $var->get($k);
-					$refP = $_refCls->hasProperty($k) ? $_refCls->getProperty($k) : null;
-					// get access type for property (for now we are interested only on public, private and protected
-					if ($refP)
-						$accessModifier = $refP->isPublic() ? "public" : ($refP->isPrivate() ? "private" : ($refP->isProtected() ? "protected" : null));
+					$accessModifier = $refP->isPublic() ? "public" : ($refP->isPrivate() ? "private" : ($refP->isProtected() ? "protected" : null));
 				}
 
 				if ($v !== null)
@@ -2124,7 +2134,7 @@ function qDSDumpVar($var, $max_depth = 8, &$bag = null, $depth = 0, $accessModif
 					echo "\n";
 				}
 				else
-					$null_props[$k] = $k;
+					$null_props[$p_name] = $p_name;
 			}
 			
 			if ($null_props)
@@ -2496,6 +2506,7 @@ function qIntersectSelectorsRec($selector_1, $selector_2)
 		else 
 		{
 			// there is no * on eiter side
+			# !!!! PLEASE RESPECT THE ORDER HERE SO WE CAN INTERSECT AND COMPARE
 			foreach ($selector_1 ?: [] as $k => $v)
 			{
 				if (($sv = $selector_2[$k]) !== null)

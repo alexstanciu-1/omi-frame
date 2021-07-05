@@ -93,8 +93,6 @@ class QApp extends QAppModule
 	 */
 	public static function Run($controllers = null)
 	{
-		\QSecurity_Check::Audit_Request();
-		
 		$request_uri = $_SERVER["REQUEST_URI"];
 		
 		$_return = null;

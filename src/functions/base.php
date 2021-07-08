@@ -1739,7 +1739,7 @@ function qDebugStackInner($args, $with_stack = false, $on_shutdown = false, stri
 	
 	$css_class = "_dbg_".uniqid();
 	
-	?><div class="<?= $css_class ?>"><script type="text/javascript">
+	?><div class="<?= $css_class ?>" ><script type="text/javascript">
 			if (!window._dbgFuncToggleNext)
 			{
 				window._dbgFuncToggleNext = function(dom_elem)
@@ -1850,7 +1850,7 @@ function qDebugStackInner($args, $with_stack = false, $on_shutdown = false, stri
 	$doc_root = $_SERVER["DOCUMENT_ROOT"];
 	
 	if ($title)
-		echo "<h4>{$title}</h4>\n";
+		echo "<h4>{$title}</h4>";
 	
 	// var_dump(array_keys($args));
 	$bag = [];
@@ -1859,8 +1859,7 @@ function qDebugStackInner($args, $with_stack = false, $on_shutdown = false, stri
 	if ($with_stack)
 	{
 		// 1. print stack
-		?>
-		<h4>Stack</h4>
+		?><h4>Stack</h4>
 		<table>
 			<tr>
 				<th>Module</th>

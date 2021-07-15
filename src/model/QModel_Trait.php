@@ -2,6 +2,8 @@
 
 trait QModel_Trait
 {
+	protected static $Moved_Uploaded_Files = [];
+	
 	public static function Get_Data_Model_Caption($data)
 	{
 		if (($data instanceof \QModelArray) || (is_array($data)))
@@ -1400,6 +1402,8 @@ trait QModel_Trait
 		
 		$wst = $array["_wst"];
 		
+		$keys_to_setup = [];
+		
 		foreach($array as $k => $v)
 		{
 			switch ($k)
@@ -1437,27 +1441,47 @@ trait QModel_Trait
 							if ($prop_inf)
 							{
 								$upload_Path = $prop_inf->storage["filePath"];
-								if ($upload_Path && ($upload_info["error"] == 0) && file_exists($upload_info["tmp_name"]))
+								if ($upload_Path && ($upload_info["error"] == 0))
 								{
-									$save_dir = rtrim($upload_Path, "\\/")."/";
-									if (!is_dir($save_dir))
-										qmkdir($save_dir);
-									
-									$save_path_fn = pathinfo($upload_info["name"], PATHINFO_FILENAME);
-									$save_path_ext = pathinfo($upload_info["name"], PATHINFO_EXTENSION);
-									$index = 0;
-									// make sure we don't overwrite
-									while (file_exists($save_path = $save_dir.$save_path_fn.($index ? "-".$index : "").".".$save_path_ext))
-											$index++;
-									move_uploaded_file($upload_info["tmp_name"], $save_path);
-									
-									$upload_Mode = $prop_inf->storage["fileMode"];
-									if ($upload_Mode)
-										chmod($save_path, octdec($upload_Mode));
-									$upload_withPath = $prop_inf->storage["fileWithPath"];
-									$property_value = $upload_withPath ? $save_path : basename($save_path);
-									$this->{"set{$upload_key}"}($property_value);
-									$array[$upload_key] = $property_value;
+									if (file_exists($upload_info["tmp_name"]))
+									{
+										$save_dir = rtrim($upload_Path, "\\/")."/";
+										if (!is_dir($save_dir))
+											qmkdir($save_dir);
+
+										$save_path_fn = pathinfo($upload_info["name"], PATHINFO_FILENAME);
+										$save_path_ext = pathinfo($upload_info["name"], PATHINFO_EXTENSION);
+										$index = 0;
+										// make sure we don't overwrite
+										while (file_exists($save_path = $save_dir.$save_path_fn.($index ? "-".$index : "").".".$save_path_ext))
+												$index++;
+
+										$muf_rc = move_uploaded_file($upload_info["tmp_name"], $save_path);
+										if (!$muf_rc)
+											throw new \Exception('Unable to upload file (A): '.$upload_info["name"]);
+
+										$upload_Mode = $prop_inf->storage["fileMode"];
+										if ($upload_Mode)
+											chmod($save_path, octdec($upload_Mode));
+										$upload_withPath = $prop_inf->storage["fileWithPath"];
+										$property_value = $upload_withPath ? $save_path : basename($save_path);
+
+										static::$Moved_Uploaded_Files[$upload_info["tmp_name"]] = [$property_value, realpath($save_path)];
+
+										$this->{"set{$upload_key}"}($property_value);
+										$keys_to_setup[$upload_key] = $property_value;
+									}
+									else if (isset(static::$Moved_Uploaded_Files[$upload_info["tmp_name"]]))
+									{
+										$property_value = static::$Moved_Uploaded_Files[$upload_info["tmp_name"]][0];
+										if (isset($property_value))
+										{
+											$this->{"set{$upload_key}"}($property_value);
+											$keys_to_setup[$upload_key] = $property_value;
+										}
+									}
+									else
+										throw new \Exception('Unable to upload file (B): '.$upload_info["name"]);
 								}
 							}
 						}
@@ -1669,6 +1693,9 @@ trait QModel_Trait
 				}
 			}
 		}
+		
+		foreach ($keys_to_setup as $k => $v)
+			$array[$k] = $v;
 	}
 	
 }

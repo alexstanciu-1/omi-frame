@@ -911,6 +911,17 @@ class QModelArray extends ArrayObject implements QIModelArray
 	{
 		return $this->save($selector, $state);
 	}
+	
+	/**
+	 * Saves the model in the Storage, no other action is performed
+	 *
+	 * @param string|boolean|null $selector
+	 */
+	public function db_save($selector = null, $data = null, $state = null)
+	{
+		return $this->save($selector, $data, $state, false, false, false, false);
+	}
+	
 	/**
 	 * Saves the model in the Storage, based on it's state, the default is merge
 	 *

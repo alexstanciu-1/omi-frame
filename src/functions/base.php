@@ -2863,7 +2863,6 @@ function QQueryEach(string $collection, string $query = null, $binds = null, cal
 		if ((memory_get_usage(true)/1024) > 16384)
 		{
 			analize_mem_usage();
-			// die;
 			// while(gc_collect_cycles());
 		}*/
 	}

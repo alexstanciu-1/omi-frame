@@ -1386,11 +1386,39 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 		
 		if ($ty_selector === null)
 			$ty_selector = $dataCls::GetPropertyModelEntity($from, $state);
-		if ($ty_selector === null)
-			$ty_selector = $from_type::GetModelEntity($state);
+		
+		# if ($ty_selector === null)
+		{
+			$class_selector = $from_type::GetModelEntity($state);
+			if (is_string($class_selector))
+				$class_selector = qParseEntity($class_selector, false, true, $from_type);
+			if ($class_selector)
+			{
+				if (isset($class_selector['Del__']))
+					unset($class_selector['Del__']);
+				$ty_selector = qJoinSelectors($ty_selector, $class_selector);
+			}
+		}
+		
 		if (is_string($ty_selector))
 			$ty_selector = qParseEntity($ty_selector);
+		
+		$initial_selector = $selector;
+		
 		$selector = ($selector && qis_array($selector)) ? qIntersectSelectors($selector, $ty_selector) : $ty_selector;
+		
+		if (\QAutoload::GetDevelopmentMode())
+		{
+			# qvar_dumpk('$initial_selector', $initial_selector, $selector);
+			$missing = qSelectorsMissing($selector, $initial_selector);
+			if (isset($missing['Id']))
+				unset($missing['Id']);
+			if ($missing)
+			{
+				# qvar_dumpk('$from_type::GetModelEntity($state)', $from_type::GetModelEntity($state));
+				throw new \Exception('Missing in selector: `'.qImplodeEntity($missing).'`');
+			}
+		}
 	
 		return $selector;
 	}
@@ -1409,7 +1437,7 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 		$model = new $storage_model();
 		$model->setId(1); // @todo : we need to do it this way atm !!!
 		$model->$from = $data;
-
+		
 		$selector = $from_type ? [$from => static::GetSaveSelector($from, $from_type, $data, $state, $selector, $initialDestination)] : $from;
 		
 		if ($model->$from instanceof QModelArray)

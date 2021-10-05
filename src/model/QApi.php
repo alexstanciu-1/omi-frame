@@ -2657,10 +2657,10 @@ class QApi
 				file_put_contents($log_file, "REQUEST:\n{$url}\n\n{$request_headers}\n\n{$json_data}\n\n=================================================\nRESPONSE:\n{$rc}");
 			}
 			
-			if (\QAutoload::GetDevelopmentMode())
+			# if (\QAutoload::GetDevelopmentMode())
 			{
 				# echo "<pre>";
-				echo substr($rc, curl_getinfo($curl, CURLINFO_HEADER_SIZE));
+				# echo substr($rc, curl_getinfo($curl, CURLINFO_HEADER_SIZE));
 			}
 		}
 		

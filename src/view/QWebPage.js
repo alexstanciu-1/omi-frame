@@ -13,13 +13,15 @@ jQuery(document.body).click(function ($event)
 	for (var $i = 0; $i < $items.length; $i++)
 	{
 		var $node = $items[$i];
+		var $skipTarget = 'qSkipHideOnClickAway';
+		var $targetJq = jQuery($event.target);
 		
-		if (!$node.contains($event.target))
+		if (!$node.contains($event.target) && (!$targetJq.hasClass($skipTarget)))
 		{
 			var $node_jq = jQuery($node);
 			var $container = $node_jq.find(".qHideOnClickAway-container, .q-hide-on-click-away-container").not(
 					$node_jq.find(".qHideOnClickAway .qHideOnClickAway-container, .q-hide-on-click-away .q-hide-on-click-away-container"));
-			
+		
 			if ($container && $container.length)
 			{
 				if ($container.hasClass("qHideOnClickAway-remove") || $container.hasClass("q-hide-on-click-away-remove"))

@@ -43,13 +43,15 @@ jQuery(document.body).click(function ($event)
 						$possible_parent.remove();
 					else
 						$possible_parent.hide();
+					
+					jQuery('body').trigger('on-qHideOnClickAway-remove');
 				}
 				else
 				{
 					if ($node_jq.hasClass("qHideOnClickAway-remove") || $node_jq.hasClass("q-hide-on-click-away-remove"))
 						$node_jq.remove();
 					else
-						$node_jq.hide();
+						$node_jq.hide();					
 				}
 			}
 		}

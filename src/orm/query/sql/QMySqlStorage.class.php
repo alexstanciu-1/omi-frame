@@ -38,11 +38,32 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 	 *
 	 * @param boolean $reconnect
 	 */
-	public function connect($reconnect = false)
+	public function connect($reconnect = false, bool $throw_error_on_fail = false)
 	{
 		if ($reconnect)
 			$this->disconnect();
-		$this->connection = new \QMySqlConnection($this->host, $this->user, $this->pass, $this->default_db, $this->port);
+		
+		# $co = new mysqli('localhost', 'alex', 'Hope44better!', 'test_orm', NULL, '/run/mysqld/mysqld.sock');
+		$this->connection = new \QMySqlConnection($this->host, $this->user, $this->pass, $this->default_db, $this->port, $this->socket);
+		if ($this->connection->connect_errno)
+		{
+			if ($throw_error_on_fail)
+			{
+				$error_message = "[{$this->connection->connect_errno}] Unable to connect to the DB service. ".(\QAutoload::GetDevelopmentMode() ? 
+										$this->connection->connect_error : "");
+				throw new \Exception($error_message);
+			}
+			else
+			{
+				if (\QAutoload::GetDevelopmentMode())
+					qvar_dumpk("Connect error: ", $this->connection->connect_errno, $this->connection->connect_error);
+				return false;
+			}
+		}
+		else
+		{
+			return true;
+		}
 	}
 
 	/**
@@ -616,7 +637,7 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 			$query .= " NULL";
 		else 
 			$query .= " NOT NULL";
-			
+		
 		if ($field->default !== null)
 		{
 			if ($field->default instanceof QSqlNull)

@@ -2105,7 +2105,7 @@ function qDSDumpVar($var, $max_depth = 8, &$bag = null, $depth = 0, $accessModif
 						$k = $_isqm ? $p_name : $p_name."(private)";
 					}
 					else
-						$p_name = $k = $_k;
+						$p_name = $k = trim($_k, "\x00");
 				}
 				else
 					$p_name = $k = $_k;

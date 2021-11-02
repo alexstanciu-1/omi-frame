@@ -353,9 +353,10 @@ class QModel implements QIModel, Iterator
 		
 		if (is_string($property))
 		{
-			if ($property{0} == "_")
+			if ($property[0] == "_")
 				return $this->$property;
-			return ($get = ($this->_ty ? $this->_ty->properties[$property]->getter : $this->getModelType()->properties[$property]->getter)) ? $this->$get() : $this->$property;
+			else
+				return ($get = ($this->_ty ? $this->_ty->properties[$property]->getter : $this->getModelType()->properties[$property]->getter)) ? $this->$get() : $this->$property;
 		}
 		else if (!$property)
 		{
@@ -2680,7 +2681,7 @@ class QModel implements QIModel, Iterator
 	public function __set($property, $value)
 	{	
 		//echo "<div style='color: blue;'>SET :: {$property} = ".(is_scalar($value) ? $value : gettype($value))."</div>";
-		if ($property{0} === '_')
+		if ($property[0] === '_')
 			$this->$property = $value;
 		else
 			$this->{"set{$property}"}($value);

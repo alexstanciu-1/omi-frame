@@ -1698,5 +1698,29 @@ trait QModel_Trait
 			$array[$k] = $v;
 	}
 	
+	public static function transaction(callable $callback, array $args = [])
+	{
+		try
+		{
+			$ok = false;
+			$in_trans = false;
+			
+			\QApp::GetStorage()->begin();
+			$in_trans = true;
+			
+			$ret = $callback(...$args);
+			
+			\QApp::GetStorage()->commit();
+			$in_trans = false;
+			$ok = true;
+			
+			return $ret;
+		}
+		finally
+		{
+			if ($in_trans && (!$ok))
+				\QApp::GetStorage()->rollback();
+		}
+	}
+	
 }
-

@@ -142,7 +142,7 @@ class QApi
 				if (count($security_filter) > 1)
 					throw new \Exception('Multiple filters are not supported');
 				
-				$sql_filter = \QModel::ExtractSQLFilter(reset($security_filter), \Omi\User::GetGroupsList(), \QModel::GetFinalSecurityForAppProperty($src_from, 'relation', $property_reflection));
+				$sql_filter = \QModel::ExtractSQLFilter(reset($security_filter), \Omi\User::GetGroupsList() ?: [], \QModel::GetFinalSecurityForAppProperty($src_from, 'relation', $property_reflection));
 			}
 			else if ($security_filter === false)
 			{
@@ -739,9 +739,10 @@ class QApi
 	 * 
 	 * @return QIModel
 	 */
-	public static function QSync($from, $selector = null, $parameters = null)
+	public static function QSync($from, $selector = null, $parameters = null, array $ids_list = null, bool $apply_binds = true, array &$data_block = null, array &$used_app_selectors = null, string $query_by_data_type = null)
 	{
-		return static::__QSync($from, $selector, $parameters);
+		# __QSync($from, $selector = null, $parameters = null, $only_first = false, $id = null)
+		return static::__QSync($from, $selector, $parameters, false, null, $ids_list, $apply_binds, $data_block, $used_app_selectors, $query_by_data_type);
 	}
 	
 	/**
@@ -782,7 +783,7 @@ class QApi
 	 * @return QIModel
 	 * @throws Exception
 	 */
-	private static function __QSync($from, $selector = null, $parameters = null, $only_first = false, $id = null)
+	private static function __QSync($from, $selector = null, $parameters = null, $only_first = false, $id = null, array $ids_list = null, bool $apply_binds = true, array &$data_block = null, array &$used_app_selectors = null, string $query_by_data_type = null)
 	{
 		$dataCls = \QApp::GetDataClass();
 
@@ -809,8 +810,10 @@ class QApi
 				($id || $only_first) ? $dataCls::GetFormEntity_Final($initialFrom) : $dataCls::GetListEntity_Final($initialFrom) : null;
 		}
 
-		$fromParams = ($id || $only_first) ? $dataCls::GetFormBinds($initialFrom) : $dataCls::GetListBinds($initialFrom);
-
+		$fromParams = null;
+		if ($apply_binds)
+			$fromParams = ($id || $only_first) ? $dataCls::GetFormBinds($initialFrom) : $dataCls::GetListBinds($initialFrom);
+		
 		if ($fromParams)
 		{
 			if (!$parameters)
@@ -822,7 +825,9 @@ class QApi
 		{
 			if (!static::$_Caller_Company_In_Callee_Box->BuyPriceProfile)
 				throw new \Exception('Missing price profile on partner');
-			$parameters["PartnerPriceProfile"] = static::$_Caller_Company_In_Callee_Box->BuyPriceProfile->getId();
+			
+			if ($apply_binds)
+				$parameters["PartnerPriceProfile"] = static::$_Caller_Company_In_Callee_Box->BuyPriceProfile->getId();
 		}
 
 		$parsed_sources = $from ? static::ParseSourceInfo($from) : [null, null];
@@ -840,7 +845,7 @@ class QApi
 			$storage = QApp::GetStorage($src_key);
 			$storage_model = QApp::GetDataClass();
 			$src_from_types = static::DetermineFromTypes($storage_model, $src_from);
-			$result[$src_key] = $storage::ApiQuerySync($storage_model, $src_from, $src_from_types, $selector, $parameters, $only_first, $id);
+			$result[$src_key] = $storage::ApiQuerySync($storage_model, $src_from, $src_from_types, $selector, $parameters, $only_first, $id, $ids_list, $data_block, $used_app_selectors, $query_by_data_type);
 		}
 		
 		$ret = !$result ? null : ((count($result) === 1) ? reset($result) : $result);
@@ -857,7 +862,7 @@ class QApi
 	 * @return mixed
 	 * @throws Exception
 	 */
-	public static function Import($destination, $data, $selector = true)
+	public static function Import($destination, $data, $selector = true, bool $explicit_selector = false)
 	{
 		static::$_InImportProcess = true;
 		$parsed_sources = $destination ? static::ParseSourceInfo($destination) : [null, null];
@@ -905,7 +910,7 @@ class QApi
 					$data[] = $_item;
 				}
 			}
-			$result[$src_key] = $storage::ApiImport($storage_model, $src_from, $src_from_types, $data, QIModel::TransformMerge, $selector);
+			$result[$src_key] = $storage::ApiImport($storage_model, $src_from, $src_from_types, $data, QIModel::TransformMerge, $selector, $explicit_selector);
 		}
 
 		static::$_InImportProcess = false;
@@ -1359,16 +1364,15 @@ class QApi
 
 		try
 		{
-			if (headers_sent())
-				throw new \Exception('headers_sent() we will not be able to login');
-			
+			#if (headers_sent())
+			#	throw new \Exception('headers_sent() we will not be able to login');
 			ob_start();
 			// unset data
 			\QApp::UnsetData();
 
 			// public static function Logout($user_or_email = null, $session_id = null, bool $reset_context = true)
 			\Omi\User::Logout(null, null, false);
-			session_write_close();
+			# session_write_close();
 			
 			/* $is_my_partner = \QQuery("Partners.{Id WHERE Id=? AND Owner.Id=?}", [$partner->getId(), $owner->getId()])->Partners;
 			$is_my_partner = $is_my_partner ? $is_my_partner[0] : null;
@@ -1412,8 +1416,9 @@ class QApi
 
 			//  valid characters are a-z, A-Z, 0-9 and '-,'
 			$new_session_id = preg_replace("/[^a-zA-Z0-9\\-]/us", '-', uniqid("", true));
-			session_id($new_session_id);
-			session_start();
+			\Omi\User::Set_Temporary_Session($new_session_id);
+			# session_id($new_session_id);
+			# session_start();
 
 			\QWebRequest::RestoreStaticContext([
 								"FastAjax" => true,
@@ -1428,7 +1433,13 @@ class QApi
 			
 			if (!$remote_user)
 				throw new \Exception('Missing remote user. Owner['.$owner->getId().']: '.$owner->getModelCaption().'; Partner['.$partner->getId().']: '.$partner->getModelCaption());
-						
+			
+			if (!$remote_user->Active) # ungly fix to restore user !
+			{
+				$remote_user->setActive(true);
+				$remote_user->db_save('Active');
+			}
+			
 			$user_or_email = $remote_user->Username;
 			if (!$user_or_email)
 				throw new \Exception('Missing remote user username. Owner['.$owner->getId().']: '.$owner->getModelCaption().'; Partner['.$partner->getId().']: '.$partner->getModelCaption());
@@ -1436,23 +1447,19 @@ class QApi
 			if (!$password)
 				throw new \Exception('Missing remote user password. Owner['.$owner->getId().']: '.$owner->getModelCaption().'; Partner['.$partner->getId().']: '.$partner->getModelCaption());
 
-			$login_res = \Omi\User::LoginInternal($user_or_email, $password, session_id(), false);
-
-			//qvardump("\Active logins", \Omi\User::$ActiveLogins);
-			//$identity = \Omi\User::CheckLogin();
-			//qvardump("\$identity", $identity);
-
-
-			//qvardump("IDENTITY BEFORE :: ", $identity, $current_identity);
+			$login_res = \Omi\User::LoginInternal($user_or_email, $password, $new_session_id /* session_id() */, false, true);
 
 			if ($login_res !== true)
 			{
+				# if (\QAutoload::GetDevelopmentMode())
+				# qvar_dump($login_res, $user_or_email, $password, $new_session_id);
 				if (\QAutoload::GetDevelopmentMode())
-					qvar_dump($login_res);
-				throw new \Exception('Login failed for: '.$user_or_email);
+					throw new \Exception('Login failed for: '.$user_or_email . " | " . var_export([$remote_user->Id, $login_res, $user_or_email, $password, $new_session_id], true));
+				else
+					throw new \Exception('Login failed for: '.$user_or_email);
 			}
 			
-			$login_identity = \Omi\User::CheckLogin();
+			$login_identity = \Omi\User::CheckLogin($new_session_id);
 			if (!$login_identity)
 				throw new \Exception('Login identity failed for: '.$user_or_email);
 
@@ -1482,35 +1489,43 @@ class QApi
 		{
 			static::$_Caller_Company_In_Callee_Box = $saved_caller_owner;
 			
-			\Omi\User::Logout();
-			session_write_close();
+			\Omi\User::Logout(null, null, false);
+			# session_write_close();
 			
-			session_id($saved_context['session_id']);
-			session_start();
+			\Omi\User::Set_Temporary_Session($saved_context['session_id']);
+			
+			# session_id($saved_context['session_id']);
+			# session_start();
 			// session_id($saved_context['session_id']);
+			
 			foreach ($saved_context['session'] as $k => $v)
 				$_SESSION[$k] = $v;
 			
-			$exit_impersonate = QQuery('Users.{Impersonate.Id WHERE Id=?}', $enter_impersonate->getId())->Users;
-			$exit_impersonate = $exit_impersonate ? reset($exit_impersonate) : null;
-			
-			$enter_impersonate_id = $enter_impersonate->Impersonate ? $enter_impersonate->Impersonate->getId() : null;
-			$exit_impersonate_id = $exit_impersonate->Impersonate ? $exit_impersonate->Impersonate->getId() : null;
-			if ($enter_impersonate_id != $exit_impersonate_id)
+			if ($enter_impersonate && isset($enter_impersonate->Id))
 			{
-				if ($enter_impersonate)
-				{
-					$enter_impersonate->setImpersonate($enter_impersonate->Impersonate);
-					$enter_impersonate->save("Impersonate");
+				$exit_impersonate = QQuery('Users.{Impersonate.Id WHERE Id=?}', $enter_impersonate->getId())->Users;
+				$exit_impersonate = $exit_impersonate ? reset($exit_impersonate) : null;
 
-					\Omi\App::GetSecurityUser(true);
+				$enter_impersonate_id = $enter_impersonate->Impersonate ? $enter_impersonate->Impersonate->getId() : null;
+				$exit_impersonate_id = $exit_impersonate->Impersonate ? $exit_impersonate->Impersonate->getId() : null;
+				if ($enter_impersonate_id != $exit_impersonate_id)
+				{
+					if ($enter_impersonate)
+					{
+						$enter_impersonate->setImpersonate($enter_impersonate->Impersonate);
+						$enter_impersonate->save("Impersonate");
+
+						\Omi\App::GetSecurityUser(true);
+					}
 				}
 			}
 			
-			$login_res = \Omi\User::LoginInternal($user->Username, $user->Password, $saved_context['session_id'], false);
+			# $login_res = \Omi\User::LoginInternal($user_or_email, $password, $new_session_id /* session_id() */, false, true);
+			$login_res = \Omi\User::LoginInternal($user->Username, $user->Password, $saved_context['session_id'], false, true);
+			
 			if (!$login_res)
 				throw new \Exception('Login failed for: '.$user->Username);
-			$login_identity = \Omi\User::CheckLogin();
+			$login_identity = \Omi\User::CheckLogin($saved_context['session_id']);
 			if (!$login_identity)
 				throw new \Exception('Login identity failed for: '.$user->Username);
 

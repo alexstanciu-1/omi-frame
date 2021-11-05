@@ -764,10 +764,12 @@ function execQB($filter = null, $instance = null)
 				throw new Exception("Type does not exists {$class}");
 			else if (!method_exists($class, $method))
 				throw new Exception("Method does not exists {$class}::{$method}");
-			
+				
 			$m_type_meth = $m_type ? $m_type->methods[$method] : null;
 			if ((!$m_type_meth) || (!$m_type->methodHasApiAccess($method)))
 			{
+				if (\QAutoload::GetDevelopmentMode())
+					qvar_dumpk($m_type);
 				throw new Exception("You do not have access to {$class}::{$method}");
 			}
 			
@@ -1739,7 +1741,7 @@ function qDebugStackInner($args, $with_stack = false, $on_shutdown = false, stri
 	
 	$css_class = "_dbg_".uniqid();
 	
-	?><div class="<?= $css_class ?>" ><script type="text/javascript">
+	?><div class="<?= $css_class ?>"><script type="text/javascript">
 			if (!window._dbgFuncToggleNext)
 			{
 				window._dbgFuncToggleNext = function(dom_elem)

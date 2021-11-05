@@ -18,9 +18,6 @@ final class QQueryAnalyzer
 			$query = $start_type::GetListingQuery();
 
 		$tokens = static::ParseSql($query);
-		
-		# qvar_dumpk($start_type, $tokens, $query);
-		
 		$zone = "SELECTOR";
 		$q_type = "SELECT";
 		$types = is_array($start_type) ? $start_type : [$start_type];
@@ -35,8 +32,6 @@ final class QQueryAnalyzer
 		//							the info is for the upper query
 		
 		$ret = static::ExtractSqlInfoWorker($tokens, $pos, $zone, $q_type, $types);
-		# qvar_dumpk('$ret', $ret);
-		# die;
 		return $ret;
 	}
 

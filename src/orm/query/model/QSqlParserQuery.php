@@ -423,9 +423,9 @@ class QSqlParserQuery
 		 * http://bugs.mysql.com/bug.php?id=18454
 		 */
 		// define("MYSQL_USE_SQL_CALC_FOUND_ROWS", true);
-		$exe_q = $this->toSQL((defined("MYSQL_USE_SQL_CALC_FOUND_ROWS") && MYSQL_USE_SQL_CALC_FOUND_ROWS) ? false : true);
+		$exe_q = $this->toSQL(defined("MYSQL_USE_SQL_CALC_FOUND_ROWS") ? MYSQL_USE_SQL_CALC_FOUND_ROWS : true);
 
-		if (false && \QAutoload::GetDevelopmentMode())
+		if ($_GET['deeeebug'] && \QAutoload::GetDevelopmentMode())
 		{
 			echo "<hr/>";
 			/*
@@ -444,6 +444,7 @@ class QSqlParserQuery
 		{
 			$t1 = microtime(true);
 			$result = $conn->query($exe_q);
+			
 			# qvar_dumpk($exe_q);
 			if (static::$_DebugOn)
 				qvar_dumpk($exe_q);
@@ -452,6 +453,11 @@ class QSqlParserQuery
 		finally
 		{
 			\QTrace::End_Trace([], [$result ? true : false, $t2 - $t1], ["query", "sql"]);
+		}
+		
+		if ($_GET['deeeebug'] && \QAutoload::GetDevelopmentMode())
+		{
+			qvar_dumpk($t2 - $t1);
 		}
 		
 		if (($t2 - $t1) >= 30) # slow query log
@@ -744,6 +750,12 @@ class QSqlParserQuery
 										else
 											$object->{$prop_name} = $prop_val;
 									}
+									else if (defined('Q_FLAG_WAS_SET_FOR_NULLS') && Q_FLAG_WAS_SET_FOR_NULLS && ($prop_val === null) && array_key_exists($prop_opts["\$"], $row) &&
+													(static::$SettersDefined[$object_class][$prop_name] ?? (static::$SettersDefined[$object_class][$prop_name] = method_exists($object, "set{$prop_name}"))))
+									{
+										# public function setId($id, $check = true, $null_on_fail = false)
+										$object->{"set{$prop_name}"}(null, true, false);
+									}
 								}
 								// reference
 								else if ($p_type_name && $p_type_id)
@@ -802,6 +814,19 @@ class QSqlParserQuery
 					}
 					else
 						$calc_res = $conn->query("SELECT FOUND_ROWS() AS `FOUND_ROWS`;");
+					
+					if ($calc_res === false)
+					{
+						if (\QAutoload::GetDevelopmentMode())
+							qvar_dumpk($this->_count_q ?: "SELECT FOUND_ROWS() AS `FOUND_ROWS`;");
+
+						throw new Exception($conn->error);
+					}
+					
+					if ($_GET['deeeebug'] && \QAutoload::GetDevelopmentMode())
+					{
+						qvar_dumpk($this->_count_q);
+					}
 
 					$found_rows = $calc_res->fetch_assoc();
 					$collection_arr->setQueryCount((int)$found_rows["FOUND_ROWS"]);

@@ -162,7 +162,6 @@ class QModel implements QIModel, Iterator
 	
 	public static $__Cache = null;
 
-
 	/**
 	 * Sets the identifier of the object
 	 * 
@@ -180,6 +179,5 @@ class QModel implements QIModel, Iterator
 			$id = null;
 		$this->_id = $this->Id = $id;
 	}
-	
 }
 

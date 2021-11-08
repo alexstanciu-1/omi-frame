@@ -4594,7 +4594,12 @@ trait QModel_Methods
 	public static function GetListingSyncQuery($selector = null)
 	{
 		$selector = $selector ?: static::GetListingSyncEntity();
-		return (is_array($selector) ? qImplodeEntity($selector) : $selector)." ??LIMIT[LIMIT ?,?]";
+		return (is_array($selector) ? qImplodeEntity($selector) : $selector)." 
+				 WHERE 1 
+				 ??Id?<AND[Id=?] 
+				 ??Id_IN?<AND[Id IN(?)] 
+
+				 ??LIMIT[LIMIT ?,?]";
 	}
 	/**
 	 * Gets a default for a listing selector if none was specified

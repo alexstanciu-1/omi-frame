@@ -94,6 +94,7 @@ QAutoload::AddWatchFolder(Q_FRAME_PATH, false, "frame", false, "frame");
 set_error_handler(array("QErrorHandler", "HandleError"), E_ALL & ~(E_NOTICE | E_USER_NOTICE | E_STRICT | E_DEPRECATED));
 set_exception_handler(array("QErrorHandler", "UncaughtExceptionHandler"));
 register_shutdown_function(array("QErrorHandler", "OnShutdown"));
+
 register_shutdown_function(function () {
 	# yes, we need to make sure it runs last!
 	register_shutdown_function(['QErrorHandler', 'Cleanup_On_End']);

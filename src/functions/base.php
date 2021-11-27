@@ -3315,3 +3315,27 @@ function q_get_language_data(string $language = null)
 		return $ret;
 	}
 }
+
+function q_index_array(string $property, iterable $elements = null, bool $as_array = false)
+{
+	if ($elements === null)
+		return null;
+	else if ($elements === false)
+		return false;
+	else if (is_array($elements))
+	{
+		$ret = [];
+		foreach ($elements as $e)
+			$ret[$e[$property]] = $e;
+		return $ret;
+	}
+	else if (is_object($elements))
+	{
+		$ret = $as_array ? [] : (new $elements);
+		foreach ($elements as $e)
+			$ret[$e->$property] = $e;
+		return $ret;
+	}
+	else
+		throw new \Exception("Import is not supported.");
+}

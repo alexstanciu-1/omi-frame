@@ -1850,6 +1850,30 @@ abstract class QPHPToken
 		}
 	}
 	
+	/**
+	 * Gets a list with all the PHP classes definitions (only one level deep, not anonym classes)
+	 * 
+	 * @param string $class
+	 * 
+	 * @return QPHPTokenClass[]
+	 */
+	public function find_All_PHP_Classes($class = null, array &$list = null)
+	{
+		foreach ($this->children as $child)
+		{
+			if (($child instanceof QPHPTokenClass) && ($class ? ($child->className === $class) : true))
+			{
+				if ($list === null)
+					$list = [];
+				$list[] = $child;
+			}
+			else if ($child instanceof QPHPToken)
+				$child->find_All_PHP_Classes($class, $list);
+		}
+		
+		return $list;
+	}
+	
 	public function findMethod($name)
 	{
 		if ($this instanceof QPHPTokenClass)

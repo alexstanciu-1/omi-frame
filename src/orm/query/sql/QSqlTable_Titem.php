@@ -4,6 +4,9 @@
  */
 final class QSqlTable_Titem
 {
+	public static $array_q_time = 0;
+	public static $array_q_count = 0;
+	
 	protected static $_MergeByInfo = [];
 	protected static $__Tmp_Model_Id = 0;
 	/**
@@ -130,8 +133,10 @@ final class QSqlTable_Titem
 						# Merge by properties must be in the save selector for elements without an id
 						if (empty($selector))
 						{
-							# qvar_dumpk($this->path, $merge_by_meta);
-							throw new \Exception('Merge by properties must be in the save selector for elements without an id (A).');
+							if (\QAutoload::GetDevelopmentMode())
+								qvar_dumpk($this->path, $merge_by_meta);
+							throw new \Exception('Merge by properties must be in the save selector for elements without an id (A). => '. 
+										$this->path.".{".implode(",", array_keys($merge_by_meta))."}");
 						}
 						else if ($selector !== true)
 						{
@@ -139,7 +144,8 @@ final class QSqlTable_Titem
 							{
 								if (qSelectorsMissing($selector, $merge_by_meta_sel))
 								{
-									qvar_dumpk($this->path, $selector, $merge_by_meta_sel);
+									if (\QAutoload::GetDevelopmentMode())
+										qvar_dumpk($this->path, $selector, $merge_by_meta_sel);
 									throw new \Exception('Merge by properties must be in the save selector for elements without an id (B).');
 								}
 							}
@@ -162,9 +168,13 @@ final class QSqlTable_Titem
 				{
 					if (!$walk_struct)
 						$walk_struct = reset($merge_by_meta)[0];
-					list (/*$data, */$valid, $mby_key) = $this->extract_data_from_path($walk_struct, $model);
+					list (/*$data, */, $valid, $mby_key) = $this->extract_data_from_path($walk_struct, $model);
 					if (!$valid)
+					{
+						if (\QAutoload::GetDevelopmentMode())
+							qvar_dumpk('$model', $model, $walk_struct, $mby_key, $parent_class_name_or_zero, $this->path);
 						throw new \Exception('The object does not have all data for merge by (B): '.reset($merge_by_meta)[6].' | '.$mby_key);
+					}
 				}
 				
 				$merge_by_linked[$parent_class_name_or_zero][$parent_model_object->getId()][$parent_property_name][$mby_key] = true;
@@ -1847,12 +1857,14 @@ final class QSqlTable_Titem
 		
 		$str_for_nulls = null;
 		$cont_cols = count($columns_splitted);
+		# $cont_grps = 
 		
 		foreach ($key_val_data as $parent_obj_id => $in_pairs)
 		{
 			$prepend_bra = false;
-			if ($cont_cols > 1)
-				$str_in = "(";	
+			# $str_in = ($cont_cols > 1) ? "(" : "";
+			$str_in = "";
+			
 			foreach($in_pairs as $grp)
 			{
 				if ($prepend_bra)
@@ -1931,8 +1943,9 @@ final class QSqlTable_Titem
 					$prepend_bra = true;
 				}
 			}
-			if ($cont_cols > 1)
-				$str_in .= ")";
+
+			# if ($cont_cols > 1)
+			#	$str_in .= ")";
 			
 			if ($prepend_bra) # do not concat if we did not add to it
 			{
@@ -1956,8 +1969,12 @@ final class QSqlTable_Titem
 		}
 		else if ($has_nulls_str)
 			$str = $str_for_nulls;
+		
+		# qvar_dumpk('$mby_info', $mby_info);
 
-		$query_str = "{$app_prop}.{{$mby_info[6]} WHERE {$str} GROUP BY {$mby_info[6]}}".($count_arr > 1 ? ",`{$collection_backref_column}`" : "");
+		$query_str = "{$app_prop}.{{$mby_info[6]} WHERE {$str} GROUP BY {$mby_info[6]}}"; # .($count_arr > 1 ? ",`{$collection_backref_column}`" : "");
+		
+		# what was the idea to select the column ?
 		
 		/*if (substr($query_str, 0, strlen('Merch_Categories.{')) === 'Merch_Categories.{')
 		{
@@ -1966,8 +1983,11 @@ final class QSqlTable_Titem
 			# throw new \Exception('ex');
 		}*/
 		
-		# $t1 = microtime(true);
+		$t1 = microtime(true);
 		$array->query($query_str);
+		static::$array_q_count++;
+		static::$array_q_time += (microtime(true) - $t1);
+		
 		$merge_by_needs_insert = $mby_info[10] ? true :  false;
 			
 		# some will be in the collection, some will not ve

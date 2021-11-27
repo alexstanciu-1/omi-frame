@@ -636,7 +636,7 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 			$query .= " NULL";
 		else 
 			$query .= " NOT NULL";
-			
+		
 		if ($field->default !== null)
 		{
 			if ($field->default instanceof QSqlNull)

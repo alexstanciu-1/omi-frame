@@ -26,11 +26,17 @@ class QModelQuery
 	 */
 	public static function Query($query, $from = null, &$dataBlock = null, $skip_security = true, $binds = null, $initial_query = null, $filter_selector = null, $populate_only = false, \QIStorage $storage = null)
 	{
-		\QTrace::Begin_Trace([],
-					[$query, $binds, $skip_security, $populate_only], ["query"]);
-		
 		try
 		{
+			$t1 = microtime(true);
+			# if (defined('QQQ_START_Qsss') && QQQ_START_Qsss)
+			#	qvar_dumpk($query);
+			
+			# $t1_log = microtime(true);
+			
+			\QTrace::Begin_Trace([],
+					[$query, $binds, $skip_security, $populate_only], ["query"]);
+		
 			if (is_string($filter_selector))
 				$filter_selector = qParseEntity($filter_selector);
 			// Execute the query
@@ -115,7 +121,14 @@ class QModelQuery
 		}
 		finally
 		{
+			$t2 = microtime(true);
+			
+			# if ($t2 - $t1 > 1)
+			#	qvar_dumpk($t2 - $t1, $query, $binds);
+			
 			\QTrace::End_Trace([], ['return' => $from]);
+			
+			# file_put_contents("test_alex_log_qq.txt", date("Y-m-d H:i:s.u")." | ".(microtime(true) - $t1_log).": [".json_encode($binds)."] ".str_replace("\n", " ", $query)."\n", FILE_APPEND);
 		}
 	}
 	
@@ -250,11 +263,13 @@ class QModelQuery
 				# Escaped identifiers have priority
 				"'(?:(?:[^\\\\\']+|(?:\\\\.)+)*)\'|". # string
 				"[-+]?(?:[0-9]*\.?[0-9]+|[0-9]+)|". # number (not full validation)
+				
+				"`(?:(?:[^\\\\\`]+|(?:\\\\.)+)*)\`|". # escaped identifier
 				// Keywords: AND/OR/...
 				"\bAS\b|\bSELECT\b|\bUPDATE\b|\bDELETE\b|\bINSERT\b|\bWHERE\b|\bORDER\\s+BY\b|\bHAVING\b|\bGROUP\\s+BY\b|\bAND\b|\bOR\b|\bBETWEEN\b|\bASC\b|\bDESC\b|\bLIMIT\b|".
 					"\bNULL\b|\bTRUE\b|\bFALSE\b|\bIS_A\b|\bIS\b|\bLIKE\b|\bCASE\b|\bBINARY\b|\bNOT\b|\bDIV\b|\bIS\\s*NULL\b|\bIS\\s*NOT\\s*NULL\b|\bSQL_CALC_FOUND_ROWS\b|".
 					"\bDISTINCT\b|\bEND\b|\bELSE\b|\bTHEN\b|\bSEPARATOR\b|".
-					"\bINTERVAL\b|\bMONTH\b|\bDAY\b|\bWEEK\b|\bHOUR\b|\bMINUTE\b|\bSECOND\b|\bYEAR\b|".
+					"\bINTERVAL\b|\bMONTH\b|\bDAY\b|\bWEEK\b|\bHOUR\b|\bMINUTE\b|\bSECOND\b|\bYEAR\b|\bUNSIGNED\b|\bSIGNED\b|\bCAST\b|\bINT\b|".
 				// FUNCTIONS: FuncName (
 				"[\\p{L&}\\$]\\w+\\s*\\("."|\\p{L&}+\\s*\\(|".
 				// Identifiers/entities
@@ -1003,7 +1018,8 @@ class QModelQuery
 			// HANDLE AS
 			if ($preceded_by_AS)
 			{
-				$as_name = $from_q->getNextAlias();
+				// $as_name = $from_q->getNextAlias();
+				$as_name = $idf_name;
 				$from->action_prop[$c_prop]["as"] = $as_name;
 				$from_q->parts[$from_q->p_index][] = " `".$as_name."`";
 				$from_q->pp_comma = (($from_q->p_index !== 2) && ($from_q->p_index !== 4));

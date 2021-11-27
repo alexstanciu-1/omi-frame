@@ -1850,6 +1850,30 @@ abstract class QPHPToken
 		}
 	}
 	
+	/**
+	 * Gets a list with all the PHP classes definitions (only one level deep, not anonym classes)
+	 * 
+	 * @param string $class
+	 * 
+	 * @return QPHPTokenClass[]
+	 */
+	public function find_All_PHP_Classes($class = null, array &$list = null)
+	{
+		foreach ($this->children as $child)
+		{
+			if (($child instanceof QPHPTokenClass) && ($class ? ($child->className === $class) : true))
+			{
+				if ($list === null)
+					$list = [];
+				$list[] = $child;
+			}
+			else if ($child instanceof QPHPToken)
+				$child->find_All_PHP_Classes($class, $list);
+		}
+		
+		return $list;
+	}
+	
 	public function findMethod($name)
 	{
 		if ($this instanceof QPHPTokenClass)
@@ -2799,10 +2823,14 @@ abstract class QPHPToken
 		
 		// htmlspecialchars($string, ENT_HTML5 | ENT_COMPAT | ENT_SUBSTITUTE)
 		$reg_exp = "/\\{\\{\\s*(\\$(?:[a-zA-Z0-9\\_\\s\\[\\]\\\"\\'\\$]|(?:\\-\\>))+)\\s*\\}\\}/us"; // matching vars & adding isset
-		$template = preg_replace($reg_exp, "<?= isset(\$1) ? htmlspecialchars(\$1) : \"\" ?>", $template);
+		$template = preg_replace($reg_exp, "<?= isset(\$1) ? htmlspecialchars(\$1, ENT_QUOTES | ENT_HTML5, 'UTF-8') : \"\" ?>", $template);
+		
+		# handle empty elements like {{ }}
+		$reg_exp = "/\\{\\{(\\s*)\\}\\}/us"; // matching expressions
+		$template = preg_replace($reg_exp, "", $template);
 		
 		$reg_exp = "/\\{\\{\\s*(.*?)\\s*\\}\\}/us"; // matching expressions
-		$template = preg_replace($reg_exp, "<?= htmlspecialchars(\$1) ?>", $template);
+		$template = preg_replace($reg_exp, "<?= htmlspecialchars(\$1, ENT_QUOTES | ENT_HTML5, 'UTF-8') ?>", $template);
 		
 		$predicates = ["@\\$", "@var", "@php", "@code", "@endcode", "@if", "@elseif", "@else", "@endif", "@endforeach", 
 					"@endfor", "@endwhile", "@endswitch", "@break", "@continue", "@endeach", "@foreach", 
@@ -2812,8 +2840,8 @@ abstract class QPHPToken
 		foreach ($predicates as $k => $p)
 			$predicates[$k] = str_replace(["@"], ["\\@"], $p);
 
-		$pred_exp = "(".implode("|", $predicates).")";
-		$reg_exp = "/{$pred_exp}(.*?)?(\\r?\\n|\$)|".
+		$pred_exp = "(".implode("\\b|", $predicates)."\\b)";
+		$reg_exp = "/{$pred_exp}(.*?)?(\\r?\\n|\$)".
 				// "(\\{\\{\\s*(?:.*?)\\s*\\}\\})". // matching vars
 				"/us";
 		

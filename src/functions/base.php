@@ -764,10 +764,12 @@ function execQB($filter = null, $instance = null)
 				throw new Exception("Type does not exists {$class}");
 			else if (!method_exists($class, $method))
 				throw new Exception("Method does not exists {$class}::{$method}");
-			
+				
 			$m_type_meth = $m_type ? $m_type->methods[$method] : null;
 			if ((!$m_type_meth) || (!$m_type->methodHasApiAccess($method)))
 			{
+				if (\QAutoload::GetDevelopmentMode())
+					qvar_dumpk($m_type);
 				throw new Exception("You do not have access to {$class}::{$method}");
 			}
 			
@@ -1739,7 +1741,7 @@ function qDebugStackInner($args, $with_stack = false, $on_shutdown = false, stri
 	
 	$css_class = "_dbg_".uniqid();
 	
-	?><div class="<?= $css_class ?>" ><script type="text/javascript">
+	?><div class="<?= $css_class ?>"><script type="text/javascript">
 			if (!window._dbgFuncToggleNext)
 			{
 				window._dbgFuncToggleNext = function(dom_elem)
@@ -2105,7 +2107,7 @@ function qDSDumpVar($var, $max_depth = 8, &$bag = null, $depth = 0, $accessModif
 						$k = $_isqm ? $p_name : $p_name."(private)";
 					}
 					else
-						$p_name = $k = $_k;
+						$p_name = $k = trim($_k, "\x00");
 				}
 				else
 					$p_name = $k = $_k;
@@ -3312,4 +3314,28 @@ function q_get_language_data(string $language = null)
 		
 		return $ret;
 	}
+}
+
+function q_index_array(string $property, iterable $elements = null, bool $as_array = false)
+{
+	if ($elements === null)
+		return null;
+	else if ($elements === false)
+		return false;
+	else if (is_array($elements))
+	{
+		$ret = [];
+		foreach ($elements as $e)
+			$ret[$e[$property]] = $e;
+		return $ret;
+	}
+	else if (is_object($elements))
+	{
+		$ret = $as_array ? [] : (new $elements);
+		foreach ($elements as $e)
+			$ret[$e->$property] = $e;
+		return $ret;
+	}
+	else
+		throw new \Exception("Import is not supported.");
 }

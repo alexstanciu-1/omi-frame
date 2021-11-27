@@ -3,6 +3,7 @@
 
 /**
  * @class.name QStorageEntry
+ * @class.abstract true
  */
 abstract class QStorageEntry_frame_ extends QModel implements QIStorageEntry
 {

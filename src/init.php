@@ -32,8 +32,6 @@ if (!defined("Q_FRAME_GET_ID_TYPE"))
 	define('Q_FRAME_GET_ID_TYPE', "https://www.omibit.com/API/types/");
 define('Q_FRAME_MIN_ID_TYPE', 4096);
 
-# $dc_1 = get_defined_constants();
-
 // establish frame path
 define("Q_FRAME_PATH", __DIR__."/");
 define("Q_FRAME_BPATH", dirname(__DIR__)."/");
@@ -58,15 +56,6 @@ define("Q_FRAME_REL", substr(Q_FRAME_PATH, strlen(Q_RUNNING_PATH) - strlen(BASE_
 define("Q_FRAME_BREL", substr(Q_FRAME_BPATH, strlen(Q_RUNNING_PATH) - strlen(BASE_HREF)));
 define("Q_APP_REL", substr(Q_RUNNING_PATH, strlen(Q_RUNNING_PATH) - strlen(BASE_HREF)));
 define("Q_REQ_REL", substr($_SERVER["REQUEST_URI"], strlen(Q_APP_REL)));
-
-/*$dc_2 = get_defined_constants();
-$diff = array_diff_assoc($dc_2, $dc_1);
-ksort($diff);
-
-echo "<pre>";
-var_dump($diff);
-
-die();*/
 
 /**
  * First include QObject because QAutoload needs it
@@ -105,6 +94,11 @@ QAutoload::AddWatchFolder(Q_FRAME_PATH, false, "frame", false, "frame");
 set_error_handler(array("QErrorHandler", "HandleError"), E_ALL & ~(E_NOTICE | E_USER_NOTICE | E_STRICT | E_DEPRECATED));
 set_exception_handler(array("QErrorHandler", "UncaughtExceptionHandler"));
 register_shutdown_function(array("QErrorHandler", "OnShutdown"));
+
+register_shutdown_function(function () {
+	# yes, we need to make sure it runs last!
+	register_shutdown_function(['QErrorHandler', 'Cleanup_On_End']);
+});
 
 if (defined('Q_DEBUG_API_KEY') && (strlen(Q_DEBUG_API_KEY) >= 40) && (isset($_GET[Q_DEBUG_API_KEY]) || isset($_POST[Q_DEBUG_API_KEY])))
 {

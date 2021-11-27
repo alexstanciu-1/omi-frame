@@ -235,6 +235,7 @@ final class QAutoload
 			}
 						
 			self::$WatchFoldersByTag[$tag] = $path;
+			
 			if ($tag_layer !== null)
 				self::$WatchFoldersTag_To_Layer[$tag] = $tag_layer;
 			else
@@ -975,7 +976,7 @@ final class QAutoload
 							throw new \Exception('Unable to save files state');
 						opcache_invalidate($save_state_path, true);
 					}
-					else if ($full_resync || $new || $changed || $files_state || $generator_changes)
+					else if ($full_resync || $new || $changed || $files_state || $generator_changes || (defined('Q_RUN_CODE_UPGRADE_TO_TRAIT') && Q_RUN_CODE_UPGRADE_TO_TRAIT))
 					{
 						static::$HasChanges = true;
 						// based on some files dependency the code sync should be able to manage the issues 

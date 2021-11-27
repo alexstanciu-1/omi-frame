@@ -14,7 +14,7 @@
  */
 abstract class QSqlTable_frame_ extends QStorageTable
 {
-	
+	use QSqlTable_New;
 	
 	protected static $Max_Allowed_Packet;
 	protected static $_MergeByInfo = [];
@@ -192,6 +192,9 @@ abstract class QSqlTable_frame_ extends QStorageTable
 		$storage->begin();
 
 		$all_objects = array();
+		
+		$transaction_was_commited = false;
+		
 		try
 		{
 			if ($trigger_events || $trigger_provision)
@@ -200,7 +203,22 @@ abstract class QSqlTable_frame_ extends QStorageTable
 					$model->afterBeginTransaction($selector, ($transform_state !== null) ? $transform_state : ($model->_ts));
 			}
 			
-			$this->recurseTransactionList($mysqli, $model_list, $transform_state, $selector);
+			$m1 = memory_get_usage();
+			$t1 = microtime(true);
+			if (($selector !== true) && defined('QQQQQ_TEST_NEW_TRANSFORM') && QQQQQ_TEST_NEW_TRANSFORM && \QAutoload::GetDevelopmentMode())
+			{
+				$this->recurseTransactionList_New($mysqli, $model_list, $transform_state, $selector);
+				
+				$t2 = microtime(true);
+				$m2 = memory_get_usage();
+
+				/*qvar_dumpk("mem: " . round(($m2 - $m1) / 1024),
+						"time: " . round(($t2 - $t1), 5), $mysqli->_stats);*/
+			}
+			else
+			{
+				$this->recurseTransactionList($mysqli, $model_list, $transform_state, $selector);
+			}
 			
 			if ($trigger_events || $trigger_provision)
 			{
@@ -209,6 +227,7 @@ abstract class QSqlTable_frame_ extends QStorageTable
 			}
 
 			$this->getStorage()->commit();
+			$transaction_was_commited = true;
 			
 			if ($trigger_import)
 			{
@@ -225,10 +244,17 @@ abstract class QSqlTable_frame_ extends QStorageTable
 		catch (Exception $ex)
 		{
 			$this->getStorage()->rollback();
+			$transaction_was_commited = true;
 			throw $ex;
 		}
 		finally
 		{
+			if (!$transaction_was_commited)
+			{
+				$rc_rb = $this->getStorage()->rollback(); # make sure we rollback
+				# file_put_contents("test_alex_rollback_on_die.txt", "\n" . date('Y-m-d H:i:s') . ' | ' . json_encode(['rollback' => $rc_rb]), FILE_APPEND);
+			}
+			
 			\QModel::TransactionFlagEnd();
 			// do a cleanup
 			foreach ($all_objects as $obj)
@@ -244,7 +270,7 @@ abstract class QSqlTable_frame_ extends QStorageTable
 		}
 	}
 	
-	private function extractTypeIdForVariable($var)
+	protected function extractTypeIdForVariable($var)
 	{
 		if ($var instanceof QIModel)
 			return $this->getStorage()->getTypeIdInStorage($var->getModelType()->class);
@@ -699,6 +725,7 @@ abstract class QSqlTable_frame_ extends QStorageTable
 							continue;
 
 						$value = $model->$p_name;
+						$old_sc_val = null;
 
 						$scalar_was_changed = false;
 						if ($cols_inf["val"] && (($old_sc_val = $record[$cols_inf["val"]]) !== $value))
@@ -724,8 +751,10 @@ abstract class QSqlTable_frame_ extends QStorageTable
 								$one_to_one_ops[$class_name][$p_name][] = [$model, $p_name, $one_to_one];
 							}
 
-							if ($p_name !== "_type")
-								$model->_ols[$p_name] = "n/a";
+							if (($p_name !== "_type") && (!isset($model->_ols[$p_name])))
+							{
+								$model->_ols[$p_name] = $old_sc_val ?? "n/a";
+							}
 						}
 					}
 
@@ -1413,6 +1442,8 @@ abstract class QSqlTable_frame_ extends QStorageTable
 			// we only do it for global merge by
 			if (($model->getId() === null) && (!$parent_prop_merge_by) && ($type_mergeBy = static::GetMergeByInfo($class_name)))
 			{
+				# @TODO - $type_mergeBy + "shallow delete" ==> NOT GOOD !!! the deleted object will remain in the table , only 'de-linked'
+				
 				// global merge by
 				if ($property && ($app_property = $property->getAppPropertyFor($class_name)))
 					$class_property = $app_property;
@@ -1537,6 +1568,7 @@ abstract class QSqlTable_frame_ extends QStorageTable
 		// select in bulk, update/delete in bulk
 		// pp statements
 		// Here we 'walk' the model and prepare data for the next steps
+		
 		$pure_populate = [];
 		foreach ($model_list as $model)
 			$this->recurseObjects($model, null, null, $selector, $all_objects, $all_objects_grouped, $merge_by_models, "", null, $populate, null, $pure_populate, $populate_before_merge_by);

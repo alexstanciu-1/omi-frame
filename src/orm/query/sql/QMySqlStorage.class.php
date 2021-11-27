@@ -1,4 +1,3 @@
-
 <?php
 
 
@@ -14,7 +13,7 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 	 *
 	 * @var boolean
 	 */
-	private $_typeIdsIncluded = false;
+	protected $_typeIdsIncluded = false;
 	
 	public $_typeIds = [];
 	public $_typeIdsFlip = [];
@@ -38,11 +37,32 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 	 *
 	 * @param boolean $reconnect
 	 */
-	public function connect($reconnect = false)
+	public function connect($reconnect = false, bool $throw_error_on_fail = false)
 	{
 		if ($reconnect)
 			$this->disconnect();
-		$this->connection = new \QMySqlConnection($this->host, $this->user, $this->pass, $this->default_db, $this->port);
+		
+		# $co = new mysqli('localhost', 'alex', 'Hope44better!', 'test_orm', NULL, '/run/mysqld/mysqld.sock');
+		$this->connection = new \QMySqlConnection($this->host, $this->user, $this->pass, $this->default_db, $this->port, $this->socket);
+		if ($this->connection->connect_errno)
+		{
+			if ($throw_error_on_fail)
+			{
+				$error_message = "[{$this->connection->connect_errno}] Unable to connect to the DB service. ".(\QAutoload::GetDevelopmentMode() ? 
+										$this->connection->connect_error : "");
+				throw new \Exception($error_message);
+			}
+			else
+			{
+				if (\QAutoload::GetDevelopmentMode())
+					qvar_dumpk("Connect error: ", $this->connection->connect_errno, $this->connection->connect_error);
+				return false;
+			}
+		}
+		else
+		{
+			return true;
+		}
 	}
 
 	/**
@@ -282,7 +302,7 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 	 * @param string $field_type
 	 * @return array
 	 */
-	private function parseFieldType($field_type)
+	protected function parseFieldType($field_type)
 	{
 		$f_type = null;
 		$f_length = null;
@@ -595,7 +615,7 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 		return $this->connection->real_escape_string($str);
 	}
 	
-	private function getFieldModelString(QSqlTableColumn $field, $for_field_update = false)
+	protected function getFieldModelString(QSqlTableColumn $field, $for_field_update = false)
 	{
 		$query = self::EncodeFieldType( $field->type );
 
@@ -967,7 +987,7 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 	 * @param string $collation
 	 * @return string
 	 */
-	private function getCharsetFromCollation($collation)
+	protected function getCharsetFromCollation($collation)
 	{
 		$collation = strtolower($collation);
 		$pos = 0;
@@ -1273,7 +1293,10 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 				$query = $only_first ? $from_type::GetItemQuery(null, $selector) : $from_type::GetListingQuery($selector);
 			
 			// secure parameters (not possible atm ... needs a new implementation)
-			$query = $from.".{".(($id || $only_first) ? "" : "SQL_CALC_FOUND_ROWS, ").$query."}";
+			
+			$calc_found_rows = (!defined('Q_API_QUERY_SQL_CALC_FOUND_ROWS')) || Q_API_QUERY_SQL_CALC_FOUND_ROWS;
+			
+			$query = $from.".{".(($id || $only_first || (!$calc_found_rows)) ? "" : "SQL_CALC_FOUND_ROWS, ").$query."}";
 			
 			if ($selector !== null)
 			{
@@ -1310,7 +1333,7 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 			$query = rtrim($query);
 			$query = ((substr($query, -1, 1) === '}') ? substr($query, 0, -1) : $query)." WHERE AND ({$security_filter}) }";
 		}
-	
+		
 		$return_data = QModelQuery::BindQuery($query, $parameters, null, $data_block, $skip_security, $selector);
 		$return_data = $return_data ? $return_data->$from : null;
 		
@@ -1328,7 +1351,7 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 	 * @return mixed
 	 * @throws Exception
 	 */
-	public static function ApiImport($storage_model, $from, $from_type, $data, $state = null, $selector = null)
+	public static function ApiImport($storage_model, $from, $from_type, $data, $state = null, $selector = null, bool $explicit_selector = false)
 	{
 		foreach ($data ?: [] as $d)
 		{
@@ -1340,18 +1363,26 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 		$model->setId(1); // @todo : we need to do it this way atm !!!
 		$model->$from = $data;
 		// get the selector
-		$selector = $from_type ? [$from => static::GetSaveSelector($from, $from_type, $data, $state, $selector)] : $from;
+		if (!$explicit_selector)
+			$selector = $from_type ? [$from => static::GetSaveSelector($from, $from_type, $data, $state, $selector)] : $from;
 
 		if ($model->$from instanceof QModelArray)
 			$model->$from->setModelProperty($from, $model);
 
-		$use_states = QApi::SecureStates($model, $from, $state, $selector);
+		# $use_states = QApi::SecureStates($model, $from, $state, $selector);
 		
 		\QApi::$DataToProcess = $model;
 
 		//$t1 = microtime(true);
 		// trigger before import
 		// $model->beforeImport(true);
+		if ($explicit_selector)
+		{
+			$use_states = null;
+			$selector = [$from => is_string($selector) ? qParseEntity($selector) : $selector];
+		}
+		
+		#	bool $trigger_provision = true, bool $trigger_events = true, bool $trigger_save = false, bool $trigger_import = false
 		
 		$return_data = $model->save($selector, null, $use_states, true, true, false, true);
 
@@ -1499,7 +1530,7 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 	 * 
 	 * @return QIModel
 	 */
-	public static function ApiQuerySync($storage_model, $from, $from_type, $selector = null, $parameters = null, $only_first = false, $id = null)
+	public static function ApiQuerySync($storage_model, $from, $from_type, $selector = null, $parameters = null, $only_first = false, $id = null, array $ids_list = null, array &$data_block = null, array &$used_app_selectors = null, string $query_by_data_type = null)
 	{
 		$called_class = get_called_class();
 		if (method_exists($called_class, "ApiQuery_in_"))

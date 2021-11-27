@@ -26,15 +26,15 @@ class QSqlModelInfoType
 	 */
 	public $children;
 	
-	private static $TableTypeList;
-	private static $TablePropertyList;
-	private static $TablePropertyTypesList;
-	private static $TablePropertyTypesList_Reverse;
-	private static $PropertiesWithTypes;
-	private static $PropertiesWithRefs;
-	private static $TableToTypes;
+	protected static $TableTypeList;
+	protected static $TablePropertyList;
+	protected static $TablePropertyTypesList;
+	protected static $TablePropertyTypesList_Reverse;
+	protected static $PropertiesWithTypes;
+	protected static $PropertiesWithRefs;
+	protected static $TableToTypes;
 	
-	private static $ColumnsTypeInfo;
+	protected static $ColumnsTypeInfo;
 	
 	public $db_table = null;
 	
@@ -128,7 +128,7 @@ class QSqlModelInfoType
 				
 				$root->_multitype[$orig_tname][$rowid_name] = $typ_col_name;
 				
-				QSqlModelInfoProperty::SetupSqlColumn(QSqlTableIndex::IndexNormal, $db_table, $typ_col_name, QSqlTableColumn::TypeSmallint, null, null, null, null, null, true, true, false, "Type column for table entry role");
+				QSqlModelInfoProperty::SetupSqlColumn(null, $db_table, $typ_col_name, QSqlTableColumn::TypeSmallint, null, null, null, null, null, true, true, false, "Type column for table entry role");
 			}
 			else if (!$root->_multitype[$orig_tname][$rowid_name])
 			{
@@ -1174,7 +1174,7 @@ class QSqlModelInfoType
 		return self::$TablePropertyList;
 	}
 	
-	private static function LoadTableTypeCache($forced = false)
+	protected static function LoadTableTypeCache($forced = false)
 	{
 		if ($forced || is_null(self::$TablePropertyList))
 		{

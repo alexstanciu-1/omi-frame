@@ -493,7 +493,7 @@ class QSqlParserQuery
 			{
 				$_this_f_actions = $this->cleanup_F_Actions();
 		
-				while ($row = $result->fetch_assoc())
+				while (($row = $result->fetch_assoc()))
 				{
 					// $row_index_tmp++;
 					// echo "Row: ".$row_index_tmp."<br/>";
@@ -652,6 +652,7 @@ class QSqlParserQuery
 														$coll_arr->_key = max($coll_arr->_key, (int)$carr_k + 1);
 												}
 											}
+											
 											$coll_parent->{"set{$prop_name}_Item_"}($object, $coll_arr->_key++, $item_rowid, false);
 										}
 										else

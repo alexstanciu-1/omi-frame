@@ -473,10 +473,10 @@ class QSqlModelInfoProperty
 		
 		QSqlModelInfoType::SetPropertyWithType($db_table->name.".".$using_prop->name.($under_collection ? "[]" : ""));
 		
-		return QSqlModelInfoProperty::SetupSqlColumn(QSqlTableIndex::IndexNormal, $db_table, $name, QSqlTableColumn::TypeSmallint, null, null, null, null, null, true, true, false, $comment);
+		return QSqlModelInfoProperty::SetupSqlColumn(null, $db_table, $name, QSqlTableColumn::TypeSmallint, null, null, null, null, null, true, true, false, $comment);
 	}
 	
-	private static function GetDefaultColumnLength($type)
+	protected static function GetDefaultColumnLength($type)
 	{
 		if ($type === QSqlTableColumn::TypeVarchar)
 			return 255;
@@ -484,7 +484,7 @@ class QSqlModelInfoProperty
 			return null;
 	}
 	
-	private static function GetDefaultColumnCharsetAndCollation()
+	protected static function GetDefaultColumnCharsetAndCollation()
 	{
 		// default for the table
 		return null;

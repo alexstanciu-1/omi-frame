@@ -3,6 +3,7 @@
 
 /**
  * @class.name QStorageFolder
+ * @class.abstract true
  */
 abstract class QStorageFolder_frame_ extends QStorageEntry implements QIStorageFolder 
 {

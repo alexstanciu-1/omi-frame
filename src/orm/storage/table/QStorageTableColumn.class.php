@@ -3,6 +3,7 @@
 
 /**
  * @class.name QStorageTableColumn
+ * @class.abstract true
  */
 abstract class QStorageTableColumn_frame_ extends QModel
 {

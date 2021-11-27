@@ -62,17 +62,17 @@ abstract class QSqlStorage_frame_ extends QFolderStorage
 	 */
 	public $port;
 	/**
+	 * The socket
+	 *
+	 * @var string
+	 */
+	public $socket;
+	/**
 	 * The name of the default database
 	 *
 	 * @var string
 	 */
 	public $default_db;
-	/**
-	 * The connection socket
-	 * 
-	 * @var string
-	 */
-	public $socket;
 	/**
 	 * The connection resource object
 	 *
@@ -110,8 +110,8 @@ abstract class QSqlStorage_frame_ extends QFolderStorage
 		$this->user = $user;
 		$this->pass = $pass;
 		$this->port = $port;
-		$this->default_db = $default_db;
 		$this->socket = $socket;
+		$this->default_db = $default_db;
 	}
 	/**
 	 * Gets the default database as an object

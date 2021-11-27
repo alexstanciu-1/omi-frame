@@ -26,11 +26,17 @@ class QModelQuery
 	 */
 	public static function Query($query, $from = null, &$dataBlock = null, $skip_security = true, $binds = null, $initial_query = null, $filter_selector = null, $populate_only = false, \QIStorage $storage = null)
 	{
-		\QTrace::Begin_Trace([],
-					[$query, $binds, $skip_security, $populate_only], ["query"]);
-		
 		try
 		{
+			$t1 = microtime(true);
+			# if (defined('QQQ_START_Qsss') && QQQ_START_Qsss)
+			#	qvar_dumpk($query);
+			
+			# $t1_log = microtime(true);
+			
+			\QTrace::Begin_Trace([],
+					[$query, $binds, $skip_security, $populate_only], ["query"]);
+		
 			if (is_string($filter_selector))
 				$filter_selector = qParseEntity($filter_selector);
 			// Execute the query
@@ -115,7 +121,14 @@ class QModelQuery
 		}
 		finally
 		{
+			$t2 = microtime(true);
+			
+			# if ($t2 - $t1 > 1)
+			#	qvar_dumpk($t2 - $t1, $query, $binds);
+			
 			\QTrace::End_Trace([], ['return' => $from]);
+			
+			# file_put_contents("test_alex_log_qq.txt", date("Y-m-d H:i:s.u")." | ".(microtime(true) - $t1_log).": [".json_encode($binds)."] ".str_replace("\n", " ", $query)."\n", FILE_APPEND);
 		}
 	}
 	

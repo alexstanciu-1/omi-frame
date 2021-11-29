@@ -282,7 +282,7 @@ class QCodeSync2
 										}
 										else if (file_exists(Omi_Mods_Path.'generators/control/Grid/Grid.php'))
 										{
-											require_once Omi_Mods_Path . 'generators/IGenerator.php';
+											require_once Omi_Mods_Path . 'generators/control/Grid/IGenerator.php';
 											require_once Omi_Mods_Path . 'generators/control/Grid/Grid_Config_.php';
 											require_once Omi_Mods_Path . 'generators/control/Grid/GridTpls.php';
 											require_once Omi_Mods_Path . 'generators/control/Grid/Grid.php';

@@ -1,0 +1,87 @@
+
+/*
+.QDevModeModelCtrl table tbody tr::nth-child(odd) {
+	background-color: #f3f3f3;
+}
+*/
+ 
+
+.QDevModeModelCtrl .searchable_heading {
+	
+}
+
+.QDevModeModelCtrl table tr th h5 {
+	text-align: left;
+}
+
+.QDevModeModelCtrl .searchable_heading .QDevModeSelectCtrl {
+	display: inline-block;
+}
+
+.QDevModeModelCtrl .searchable_heading .QDevModeSelectCtrl ul.classesList {
+	display: none;
+	position: absolute;
+	background-color: white;
+	border: 1px solid #0B879E;
+	border-radius: 2px;
+	list-style: none;
+	padding: 10px 10px;
+	z-index: 10000;
+}
+
+
+.QDevModeModelCtrl table th:first-child {
+	padding: 1px 20px;
+	white-space: nowrap;
+}
+
+.QDevModeModelCtrl table thead th {
+	vertical-align: top;
+	color: #243e85;
+	font-family: "Source Sans Pro","Helvetica Neue",Helvetica,Arial,sans-serif;
+	font-size: 15px;
+	padding-right: 10px;
+	padding-left: 5px;
+	font-weight: normal;
+}
+
+.QDevModeModelCtrl table td {
+	padding-right: 10px;
+	padding-left: 5px;
+}
+
+.QDevModeModelCtrl table tbody th {
+	
+	font-weight: bold;
+	font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+}
+
+.QDevModeModelCtrl table tbody th h5 {
+	font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+	font-size: 13px;
+	
+}
+
+.QDevModeModelCtrl table tbody th h5 i {
+	
+}
+
+.QDevModeModelCtrl table tbody th h5.clickable {
+	cursor: pointer;
+	-webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.QDevModeModelCtrl table tbody th h5 i.transparent {
+	color: transparent;
+	cursor: default;
+}
+
+.QDevModeModelCtrl table th:nth-child(even), .QDevModeModelCtrl table td:nth-child(even) {
+	background-color: #f6f6f6;
+}
+

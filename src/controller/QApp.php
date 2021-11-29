@@ -81,7 +81,7 @@ class QApp extends QAppModule
 	/**
 	 * This is a static class do not create instances for it
 	 */
-	private function __construct()
+	protected function __construct()
 	{
 		
 	}

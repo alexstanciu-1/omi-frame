@@ -964,10 +964,11 @@ final class QAutoload
 					self::IncludeClassesInFolder(Q_FRAME_PATH."useful/parsers/", true);
 					self::IncludeClassesInFolder(Q_FRAME_PATH."controller/", true);
 					// self::IncludeClassesInFolder(Q_FRAME_PATH."controller/", true);
-
+					
 					// changed files : $changed
 					// removed files : $files_state
-					if ((!$full_resync) && (!$generator_changes) && $changed && (!$new) && (!$files_state) && $changed[Q_FRAME_PATH] && (count($changed) === 1))
+					if (((!$full_resync) && (!$generator_changes) && $changed && (!$new) && (!$files_state) && $changed[Q_FRAME_PATH] && (count($changed) === 1)) 
+								&& (!Q_RUN_CODE_UPGRADE_TO_TRAIT))
 					{
 						# frame only changes will not trigger any sync ! It should not be patched anywhere !
 						# if in the frame, do not do any complicated sync
@@ -978,6 +979,7 @@ final class QAutoload
 					}
 					else if ($full_resync || $new || $changed || $files_state || $generator_changes || (defined('Q_RUN_CODE_UPGRADE_TO_TRAIT') && Q_RUN_CODE_UPGRADE_TO_TRAIT))
 					{
+						
 						static::$HasChanges = true;
 						// based on some files dependency the code sync should be able to manage the issues 
 						$Q_RUN_CODE_NEW_AS_TRAITS = defined('Q_RUN_CODE_NEW_AS_TRAITS') && Q_RUN_CODE_NEW_AS_TRAITS;
@@ -1045,7 +1047,8 @@ final class QAutoload
 						{
 							if ($removed_files)
 							{
-								if ((!defined('Q_RUN_CODE_NEW_AS_TRAITS')) || (!Q_RUN_CODE_NEW_AS_TRAITS))
+								if (((!defined('Q_RUN_CODE_NEW_AS_TRAITS')) || (!Q_RUN_CODE_NEW_AS_TRAITS))
+										&& ((!defined('Q_RUN_CODE_UPGRADE_TO_TRAIT') || (!Q_RUN_CODE_UPGRADE_TO_TRAIT))))
 								{
 									qvar_dumpk($removed_files);
 									throw new \Exception('Some files were removed. We will not start a full resync unless is explicit.');

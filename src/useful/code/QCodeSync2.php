@@ -14,7 +14,7 @@ class QCodeSync2
 	const Status_Removed = 'removed';
 	
 	public static $PHP_LINT_CHECK = true;
-	public static $PHP_LINT_CHECK_TPL = true;
+	public static $PHP_LINT_CHECK_TPL = false;
 	
 	public $upgrage_mode = null;
 	public $full_sync = false;
@@ -97,6 +97,10 @@ class QCodeSync2
 	 * @var boolean
 	 */
 	protected $has_model_changes = false;
+	/**
+	 * @var float
+	 */
+	protected $start_time = null;
 	
 	public function init()
 	{
@@ -116,6 +120,8 @@ class QCodeSync2
 	{
 		# ob_start();
 		
+		$this->start_time = microtime(true);
+		
 		try
 		{
 			$this->init();
@@ -124,26 +130,40 @@ class QCodeSync2
 			if ($changed_or_added || $removed_files || $new_files)
 				echo ('RESYNC STARTS @AT: '. (($this->sync_started_at - $_SERVER['REQUEST_TIME_FLOAT']) * 1000) . ' ms'), "<br/>\n";
 
-			if ($this->upgrage_mode === null)
+			if (($this->upgrage_mode === null) && (defined('Q_RUN_CODE_UPGRADE_TO_TRAIT') && Q_RUN_CODE_UPGRADE_TO_TRAIT))
 			{
-				if (defined('Q_RUN_CODE_UPGRADE_TO_TRAIT') && Q_RUN_CODE_UPGRADE_TO_TRAIT)
-					$this->upgrage_mode = true;
+				$this->upgrage_mode = true;
 			}
-
+			
+			# just for testing now @TODO - remove it from here
+			# else if (file_exists(".upgrade_possible_parent_issues.json"))
+			# {
+			#	static::after_upgrade();
+			#	die;
+			# }
+			
 			if ($this->upgrage_mode)
 			{
+				ob_end_flush();
+				ob_end_flush();
+				
 				$this->full_sync = true;
 				$this->run_upgrade($files, $changed_or_added, $removed_files, $new_files);
 				// exit after upgrade
-				return;
+				
+				# throw new \Exception('finished upgrade');
+				# return;
+				die('FINISH UPGRADE');
 			}
 
 			if (defined('Q_RUN_CODE_NEW_AS_TRAITS') && Q_RUN_CODE_NEW_AS_TRAITS)
 			{
 				$this->full_sync = $full_resync;
 				$this->do_not_allow_empty_extended_by = false;
-				if ($this->full_sync)
-					$this->empty_gens = true; # for testing
+
+				# if ($this->full_sync) # this should only be triggerd explicitly
+				#	$this->empty_gens = true; # for testing
+				
 				$this->run_backend_fix = false;
 				$this->model_only_run = true;
 				
@@ -252,10 +272,25 @@ class QCodeSync2
 
 									if (!$generator_classes_included)
 									{
-										require_once(Omi_Mods_Path . 'gens/IGenerator.php');
-										require_once(Omi_Mods_Path . 'gens/Grid_Config_.php');
-										require_once(Omi_Mods_Path . 'gens/GridTpls.php');
-										require_once(Omi_Mods_Path . 'gens/Grid.php');
+										if (file_exists(Omi_Mods_Path . 'gens/IGenerator.php'))
+										{
+											# new way (may change)
+											require_once(Omi_Mods_Path . 'gens/IGenerator.php');
+											require_once(Omi_Mods_Path . 'gens/Grid_Config_.php');
+											require_once(Omi_Mods_Path . 'gens/GridTpls.php');
+											require_once(Omi_Mods_Path . 'gens/Grid.php');
+										}
+										else if (file_exists(Omi_Mods_Path.'generators/control/Grid/Grid.php'))
+										{
+											require_once Omi_Mods_Path . 'generators/IGenerator.php';
+											require_once Omi_Mods_Path . 'generators/control/Grid/Grid_Config_.php';
+											require_once Omi_Mods_Path . 'generators/control/Grid/GridTpls.php';
+											require_once Omi_Mods_Path . 'generators/control/Grid/Grid.php';
+										}
+										else
+										{
+											throw new \Exception('Unable to locate grid generator');
+										}
 
 										$generator_classes_included = true;
 									}
@@ -338,10 +373,21 @@ class QCodeSync2
 
 				return true;
 			}
+			
+			# if ($this->full_sync && file_exists(".upgrade_possible_parent_issues.json"))
+			{
+				# static::after_upgrade();
+			}
 		}
 		finally
 		{
+			echo "<hr/>\n";
+			echo "EXEC TIME FOR SYNC: ".round(microtime(true) - $this->start_time, 3)." sec";
+			echo "<hr/>\n";
+			echo "MEM PEAK: ".round(memory_get_peak_usage()/1024/1024, 2)." MB";
+			
 			$out_string = ob_get_clean();
+			
 			if ($_GET['force_resync'])
 				echo $out_string;
 			else
@@ -803,8 +849,11 @@ class QCodeSync2
 			{
 				# ($resources && (!$has_plain_class)) => we will allow resources for plain classes!
 				if ($has_plain_class)
+				{
+					qvar_dumpk('$full_class_name, $info', $full_class_name, $info);
 					throw new \Exception("Can not compile class `{$full_class_name}` because the definition in file "
 											. "	`{$has_plain_class}` already uses the desired compile name.");
+				}
 				
 				$gens_dir = $info['gens_dir'];
 				if (!is_dir($gens_dir))
@@ -1031,12 +1080,15 @@ class QCodeSync2
 						{
 							if (!($has_tpl || $has_url))
 							{
-								echo "compile_model :: {$full_class_name}<br/>\n";
-								list($trait_name, $trait_path) = $this->compile_model($full_class_name, $header_inf, $info, $added_or_changed);
-								if ($trait_name)
-									$traits_on_gen[$trait_name] = $trait_path;
-								$php_class_done = true;
-								$this->model_types[$full_class_name] = $full_class_name;
+								# if ($this->model_only_run) # @TODO - this was a fix for empty view classes !!! not sure if this is a good idea ?!!
+								{
+									echo "compile_model :: {$full_class_name}<br/>\n";
+									list($trait_name, $trait_path) = $this->compile_model($full_class_name, $header_inf, $info, $added_or_changed);
+									if ($trait_name)
+										$traits_on_gen[$trait_name] = $trait_path;
+									$php_class_done = true;
+									$this->model_types[$full_class_name] = $full_class_name;
+								}
 							}
 							$this->cache_types[$full_class_name] = $full_class_name;
 						}
@@ -1343,13 +1395,13 @@ class QCodeSync2
 		$full_class_name = \QPHPToken::ApplyNamespaceToName($header_inf["final_class"], $header_inf["namespace"]);
 		if (!$full_class_name)
 		{
-			qvar_dumpk($header_inf);
+			qvar_dumpk("AAZ", $header_inf);
 			throw new \Exception('Unable to determine full, final class name');
 		}
 		$gens_dir = $this->info_by_class[$full_class_name]['gens_dir'];
 		if (!$gens_dir)
 		{
-			qvar_dumpk($header_inf);
+			qvar_dumpk("AA_QQ", $header_inf);
 			throw new \Exception('Unable to find gens dir for');
 		}
 		
@@ -1369,7 +1421,12 @@ class QCodeSync2
 			// does not work inside a template !!!!
 		}*/
 		
-		file_put_contents($gens_dir.$include_name, $xml_tokens->toString(false, true));
+		$xml_tokens_str = $xml_tokens->toString(false, true);
+		# here we apply the namespace
+		if (isset($header_inf['namespace']))
+			$xml_tokens_str = "<?php\nnamespace {$header_inf['namespace']};\n?>" . $xml_tokens_str;
+		
+		file_put_contents($gens_dir.$include_name, $xml_tokens_str);
 		opcache_invalidate($gens_dir.$include_name);
 	}
 	
@@ -1460,7 +1517,7 @@ class QCodeSync2
 		{
 			if (empty($header_inf) || empty($header_inf['class_full']) || empty($header_inf['layer']) || empty($header_inf['tag']))
 			{
-				qvar_dumpk(get_defined_vars());
+				qvar_dumpk("zzzzzz", get_defined_vars());
 				throw new \Exception('not ok!');
 			}
 			
@@ -1518,13 +1575,24 @@ class QCodeSync2
 					$prev_header_info = $gen_info->__tpl_header_info ?: $header_inf;
 					$patch_header_info = $this->find_file_to_patch($prev_header_info);
 					
+					$missing_dependency = false;
+					
 					$dependencies_stack[] = $prev_header_info;
 					foreach ($dependencies_stack as $dep_header_info)
 					{
 						if (empty($patch_header_info) || empty($patch_header_info['class_full']) || empty($patch_header_info['layer']) || empty($patch_header_info['tag']))
 						{
-							qvar_dumpk(get_defined_vars());
-							throw new \Exception('not ok!');
+							if (defined('Q_RUN_CODE_NEW_IGNORE_MISSING_PATCHES') && Q_RUN_CODE_NEW_IGNORE_MISSING_PATCHES)
+							{
+								qvar_dumpk("WARNING :: MISSING CLASS TO PATCH `\$header_inf`=".var_export($header_inf, true).";");
+								$missing_dependency = true;
+								break;
+							}
+							else
+							{
+								qvar_dumpk("mmmmmm", $header_inf, $patch_header_info, $dependencies_stack);
+								throw new \Exception('not ok!');
+							}
 						}
 						
 						$this->dependencies[$patch_header_info['class_full']][$patch_header_info['layer']][$patch_header_info['tag']]
@@ -1533,14 +1601,22 @@ class QCodeSync2
 					
 					if (!$patch_header_info)
 					{
-						// it's asking for a patch but we can not find one
-						qvar_dumpk(['Unable to find a parent for patching', 
-								'$patch_header_info' => $patch_header_info, 
-								'xml-requesting' => $xml_node->getRoot()]);
+						if (defined('Q_RUN_CODE_NEW_IGNORE_MISSING_PATCHES') && Q_RUN_CODE_NEW_IGNORE_MISSING_PATCHES)
+						{
+							
+						}
+						else
+						{
+							// it's asking for a patch but we can not find one
+							qvar_dumpk(['Unable to find a parent for patching', 
+									'$patch_header_info' => $patch_header_info, 
+									'xml-requesting' => $xml_node->getRoot()]);
+						}
 						return null;
 						// @TODO - we should throw an error, or at least do not render it !!!
 						// throw new \Exception('Unable to find a parent for patching');
 					}
+					
 					echo "------ USING TPL TO PATCH :".$patch_header_info['layer']." # ".$patch_header_info['file']." @@@ ".$patch_header_info['tag']."<br/>\n";
 		
 					$patch_obj = new \stdClass();

@@ -170,12 +170,16 @@ class QPHPTokenClass extends QPHPToken
 		
 		$tok = $tokens[$pos];
 		$last_t_string_pos = false;
+		
+		$inside_use_stmt = false;
+		$inside_use_stmt_block = false;
+		
 		// 2. Property/Method/Const
 		while ($tok)
 		{
 			$type = is_array($tok) ? $tok[0] : null;
 			
-			if ($tok === '}')
+			if (($tok === '}') && (!$inside_use_stmt_block))
 			{
 				// we are done with the class
 				$this->children[] = $tok;
@@ -208,6 +212,24 @@ class QPHPTokenClass extends QPHPToken
 			}
 			else
 			{
+				if ($type === T_USE)
+				{
+					$inside_use_stmt = true;
+				}
+				else if ($inside_use_stmt && ($tok === ';') && (!$inside_use_stmt_block))
+				{
+					$inside_use_stmt = false;
+				}
+				else if ($inside_use_stmt && ($tok === '{'))
+				{
+					$inside_use_stmt_block = true;
+				}
+				else if ($inside_use_stmt && $inside_use_stmt_block&& ($tok === '}'))
+				{
+					$inside_use_stmt = false;
+					$inside_use_stmt_block = false;
+				}
+
 				// if NAMESPACED 
 				if ($type === T_NS_SEPARATOR)
 				{

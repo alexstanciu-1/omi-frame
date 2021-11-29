@@ -255,7 +255,7 @@ class QObfuscator
 		}
 	}
 	
-	private static function HandleVar(&$vars, &$vars_index, $var_name, $prev)
+	protected static function HandleVar(&$vars, &$vars_index, $var_name, $prev)
 	{
 		if (($var_name === "\$this") || (substr($var_name, 0, 2) === "\$Q") || 
 				((substr($var_name, 0, 2) === "\$_") && ($var_name{3} && (strtoupper($var_name{3}) === $var_name{3}))) || 

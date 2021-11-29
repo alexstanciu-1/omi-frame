@@ -298,7 +298,7 @@ final class QQueryAnalyzer
 											"\\])|". # to be replaced if key exists
 						"(\\?+)".
 
-							"/us", $curr, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
+							"/ius", $curr, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
 				
 				$bind_data = [];
 				$binds_path = $binds_prefix;
@@ -485,7 +485,7 @@ final class QQueryAnalyzer
 				"[-+]?(?:[0-9]*\.?[0-9]+|[0-9]+)|". # number (not full validation)
 				// Keywords: AND/OR/...
 				"\bAS\b|\bSELECT\b|\bUPDATE\b|\bDELETE\b|\bINSERT\b|\bWHERE\b|\bORDER\\s+BY\b|\bHAVING\b|\bGROUP\\s+BY\b|\bAND\b|\bOR\b|\bBETWEEN\b|\bASC\b|\bDESC\b|\bLIMIT\b|".
-					"\bNULL\b|\bTRUE\b|\bFALSE\b|\bIS_A\b|\bIS\b|\bLIKE\b|\bCASE\b|\bBINARY\b|\bNOT\b|\bDIV\b|\bIS\\s*NULL\b|\bIS\\s*NOT\\s*NULL\b|\bSQL_CALC_FOUND_ROWS\b|".
+					"\bNULL\b|\bTRUE\b|\bFALSE\b|\bIS_A\b|\bIS\b|\bLIKE\b|\bCASE\b|\bBINARY\b|\bNOT\b|\bDIV\b|\bIS\\s*NULL\b|\bIS\b|\bIS\\s*NOT\\s*NULL\b|\bSQL_CALC_FOUND_ROWS\b|".
 					"\bDISTINCT\b|\bEND\b|\bELSE\b|\bTHEN\b|\bSEPARATOR\b|".
 					"\bINTERVAL\b|\bMONTH\b|\bDAY\b|\bWEEK\b|\bHOUR\b|\bMINUTE\b|\bSECOND\b|\bYEAR\b|".
 				// FUNCTIONS: FuncName (

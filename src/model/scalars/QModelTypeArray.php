@@ -7,7 +7,7 @@ class QModelTypeArray extends QModelTypeScalar
 	 *
 	 * @var ModelTypeArray
 	 */
-	private static $type;
+	protected static $type;
 	
 	/**
 	 * The protected constructor

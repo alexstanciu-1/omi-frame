@@ -7,7 +7,7 @@ class QModelTypeBoolean extends QModelTypeScalar
 	 *
 	 * @var QModelTypeBoolean
 	 */
-	private static $type;
+	protected static $type;
 	
 	/**
 	 * The protected constructor

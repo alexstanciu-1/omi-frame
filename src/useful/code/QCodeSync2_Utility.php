@@ -249,10 +249,10 @@ trait QCodeSync2_Utility
 		return $to_str;
 	}
 
-	public function check_if_class_extends(string $class, string $extends, string $class_extends, array $extends_map)
+	public function check_if_class_extends(string $class, string $extends, string $class_extends = null, array $info_by_class = null)
 	{
-		if (!$class_extends)
-			$class_extends = $extends_map[$class];
+		#if (!$class_extends)
+		#	$class_extends = $extends_map[$class];
 		if (!$class_extends)
 			return false;
 		
@@ -264,7 +264,7 @@ trait QCodeSync2_Utility
 				// echo "Class `{$class}` - YES!<br/>\n";
 				return true;
 			else
-				$class_extends = $extends_map[$class_extends];
+				$class_extends = $info_by_class[$class_extends]["extends"];
 			
 			$loops++;
 			if ($loops > $max_loops)
@@ -275,6 +275,12 @@ trait QCodeSync2_Utility
 		}
 		// echo "Class `{$class}` - NO!<br/>\n";
 		return false;
+	}
+	
+	public function check_if_class_implements(string $class, string $implements, array $class_implements = null, array $files_info_map = null)
+	{
+		qvar_dumpk(get_defined_vars());
+		throw new \Exception('@TODO - check_if_class_implements not implemented');
 	}
 	
 	function print_info_by_class(array $data, callable $filter_classes = null, callable $filter_files = null)

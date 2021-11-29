@@ -4,6 +4,11 @@ trait QModel_Trait
 {
 	protected static $Moved_Uploaded_Files = [];
 	
+	public function isDelete()
+	{
+		return ($this->_to_rm || ($this->_to_rm = ($this->getTransformState() === \QIModel::TransformDelete)));
+	}
+			
 	public static function Get_Data_Model_Caption($data)
 	{
 		if (($data instanceof \QModelArray) || (is_array($data)))
@@ -19,7 +24,7 @@ trait QModel_Trait
 		else if (is_scalar($data))
 			return (string)$data;
 	}
-	
+		
 	/**
 	 * Transforms the object into a PHP array. 
 	 * The selector is mandatory.
@@ -750,6 +755,15 @@ trait QModel_Trait
 			if ($entityLoaded)
 			{
 				$syncItm = $_all_objects[$data->getId()."|". get_class($data)];
+				# if ($syncItm === null)
+				# 	file_put_contents("test_alex_GetRemoteSyncedData_nulls.txt", $data->getId()."|". get_class($data)."\n", FILE_APPEND);
+				/*
+				if ($syncItm === null)
+				{
+					# qvar_dumpk($data->getId()."|". get_class($data));
+					throw new \Exception('yexception!');
+				}
+				*/
 			}
 			else
 			{
@@ -800,6 +814,10 @@ trait QModel_Trait
 			}
 			else
 				$syncItm->setId($data->getId());
+		}
+		else
+		{
+			
 		}
 		
 		// set remote id
@@ -935,8 +953,25 @@ trait QModel_Trait
 					$syncItm->query($pName . ".{Id" . (($ref_sync_selector && (strlen($ref_sync_selector) > 0)) ? ", " . $ref_sync_selector : "") . "}");
 				}
 				
-				$syncItm->{"set".$pName}($value::GetRemoteSyncedData($value, is_array($selector) ? $selector[$pName] : $selector, $_prop, $includeNonModelProps,
-						$syncItm->{$pName}, $syncItm, $_bag, $entityLoaded, $_all_objects));
+				$skip_setup = false;
+				
+				# if ($_GET['debug'])
+				{
+					if (isset($syncItm->{$pName}->Gid) && ($syncItm->{$pName}->Gid != $value->Id))
+					{
+						$in_db_sync_item = $value::GetRemoteSyncedData($value, is_array($selector) ? $selector[$pName] : $selector, 
+											$_prop, $includeNonModelProps,
+											null, $syncItm, $_bag, false, $_all_objects);
+						$syncItm->{"set".$pName}($in_db_sync_item);
+						$skip_setup = true;
+					}
+				}
+				
+				if (!$skip_setup)
+				{
+					$syncItm->{"set".$pName}($value::GetRemoteSyncedData($value, is_array($selector) ? $selector[$pName] : $selector, $_prop, $includeNonModelProps,
+							$syncItm->{$pName}, $syncItm, $_bag, $entityLoaded, $_all_objects));
+				}
 			}
 		}
 		return $syncItm;
@@ -954,8 +989,15 @@ trait QModel_Trait
 	 * 
 	 * @return null
 	 */
-	public static function SetupToSendData($appData, $currentData = null, &$_bag = null, &$_byAppPropItems = null, string $path = "")
+	public static function SetupToSendData($appData, $currentData = null, &$_bag = null, &$_byAppPropItems = null, string $path = "", array &$new_app_items = null, bool $set_on_app = true)
 	{
+		if ($new_app_items === null)
+			$new_app_items = [];
+		# @TODO - UGLY FIX, recursive selector !!! This method should not recurse in depth, but go level by level
+		if ((substr($path, -strlen('.IncompatibleWith.IncompatibleWith')) === '.IncompatibleWith.IncompatibleWith') || ($path === '.IncompatibleWith.IncompatibleWith') ||
+				(substr($path, -strlen('.Items.Merch.DefaultOffer.Items.Merch.DefaultOffer')) === '.Items.Merch.DefaultOffer.Items.Merch.DefaultOffer'))
+			throw new \Exception('this should not be again!');
+		
 		if (!$_bag)
 			$_bag = [];
 
@@ -994,15 +1036,15 @@ trait QModel_Trait
 			foreach ($currentData as $value)
 			{
 				($value && ($value instanceof \QIModel)) ? 
-					$value::SetupToSendData($appData, $value, $_bag, $_byAppPropItems, $path) : 
-					\QModel::SetupToSendData($appData, $value, $_bag, $_byAppPropItems, $path);
+					$value::SetupToSendData($appData, $value, $_bag, $_byAppPropItems, $path, $new_app_items, $set_on_app) : 
+					\QModel::SetupToSendData($appData, $value, $_bag, $_byAppPropItems, $path, $new_app_items, $set_on_app);
 			}
 			return;
 		}
 		// if data is \QModelArray then call the method on \QModelArray class
 		else if ($currentData instanceof \QModelArray)
 		{
-			$currentData::SetupToSendData($appData, $currentData, $_bag, $_byAppPropItems, $path);
+			$currentData::SetupToSendData($appData, $currentData, $_bag, $_byAppPropItems, $path, $new_app_items, $set_on_app);
 			return;
 		}
 
@@ -1063,10 +1105,17 @@ trait QModel_Trait
 												(substr($prop_path, 0, strlen("Offers.Products.")) === 'Offers.Products.')))
 			{
 				# dirty workaround but I do now want to re-write everything, we re-map Offers.Services/Products to Offers.Items
-				$expand_in_props = static::$Sync_Mapping["Offers.Items." . substr($prop_path, strlen("Offers.Services."))];
+				# $expand_in_props = static::$Sync_Mapping["Offers.Items." . substr($prop_path, strlen("Offers.Services."))];
+				throw new \Exception('should not be needed!');
 			}
 			
+			if ($expand_in_props === true) # We skip
+				continue;
+			
 			$act_on_elements = ($value instanceof \QIModelArray) ? $value : [$value];
+			
+			$continue_on_elements = [];
+			
 			foreach ($act_on_elements as $itm)
 			{
 				$itm_class = get_class($itm);
@@ -1084,25 +1133,33 @@ trait QModel_Trait
 							." | class: ".(get_class($itm)));
 				}
 
-				foreach ($eep ?: [] as $itmAppProp)
+				if (!$eep)
 				{
-					// init the main data for the app property if necessary
-					if (!$appData->$itmAppProp)
-						$appData->{"set{$itmAppProp}"}(new \QModelArray());
-
-					if (!$_byAppPropItems[$itmAppProp])
-						$_byAppPropItems[$itmAppProp] = [];
-
-					if (!isset($_byAppPropItems[$itmAppProp][$itm->getId()]))
+					$continue_on_elements[] = $itm;
+				}
+				else
+				{
+					foreach ($eep ?: [] as $itmAppProp)
 					{
-						$appData->{"set{$itmAppProp}_Item_"}($itm);
-						$_byAppPropItems[$itmAppProp][$itm->getId()] = $itm;
+						// init the main data for the app property if necessary
+						if (!$appData->$itmAppProp)
+							$appData->{"set{$itmAppProp}"}(new \QModelArray());
+
+						if (!$_byAppPropItems[$itmAppProp])
+							$_byAppPropItems[$itmAppProp] = [];
+
+						if (!isset($_byAppPropItems[$itmAppProp][$itm->getId()]))
+						{
+							$appData->{"set{$itmAppProp}_Item_"}($itm);
+							$_byAppPropItems[$itmAppProp][$itm->getId()] = $itm;
+							$new_app_items[$itmAppProp][get_class($itm)][$itm->getId()] = $itm;
+						}
 					}
 				}
 			}
 			
-			foreach ($act_on_elements as $itm)
-				$itm::SetupToSendData($appData, $itm, $_bag, $_byAppPropItems, $prop_path);
+			foreach ($continue_on_elements as $itm)
+				$itm::SetupToSendData($appData, $itm, $_bag, $_byAppPropItems, $prop_path, $new_app_items, $set_on_app);
 			
 			if (false)
 			{
@@ -1385,8 +1442,8 @@ trait QModel_Trait
 			$class = (($c = $array["_ty"]) && class_exists($c)) ? $c : (((($type{0} === "\\") || ($type{0} !== strtolower($type{0}))) && class_exists($type)) ? $type : null);
 			if (!$class)
 				throw new Exception("Unable to determine type for input data");
-			$obj = new $class();
 			
+			$obj = new $class();
 			if (($obj_id = $array["_id"]) !== null)
 				$obj->setId($obj_id);
 			$refs = [];
@@ -1693,9 +1750,447 @@ trait QModel_Trait
 				}
 			}
 		}
+	}
+
+	public static function GetSystemSyncedData_NEW(\QIModel $src, \QIModel $dest, array $selector = null, array &$data_gid_and_type = [], 
+													array &$type_data_by_gid = [], array &$ids_in_supplier = [], \SplObjectStorage $_bag = null, array &$collected_data = null, 
+													string $path = "")
+	{
+		if ($_bag === null)
+		{
+			$_bag = new \SplObjectStorage();
+			if ($collected_data === null)
+				$collected_data = [];
+		}
+		if ($selector === null)
+		{
+			if (isset($_bag[$src]))
+				return $collected_data;
+			$_bag[$src] = true;
+		}
 		
-		foreach ($keys_to_setup as $k => $v)
-			$array[$k] = $v;
+		if ($src instanceof \QIModelArray)
+		{
+			$dest_by_gid = [];
+			$matched_dest_keys = [];
+			
+			$is_top_level_collection = (strpos($path, ".") === false);
+			
+			foreach ($dest as $dest_k => $v)
+			{
+				if ($v instanceof \QIModel)
+					$dest_by_gid[$v->Gid ?: 0][$dest_k] = $v;
+			}
+			
+			$add_to_dest = []; # we put the info in an array so we don't messup the delete !!!
+			
+			foreach ($src as $v)
+			{
+				if ($v instanceof \QIModel)
+				{
+					$dest_posib = $dest_by_gid[$v->Id];
+					if (!$dest_posib)
+					{
+						# try to find it, why not
+						$found = $data_gid_and_type[$v->Id][get_class($v)];
+						if (!$found)
+						{
+							$found = ($tmp = $type_data_by_gid[get_class($v)][$v->Id]) ? reset($tmp) : null;
+							$data_gid_and_type[$v->Id][get_class($v)] = $found;
+							# if ($found)
+							#	throw new \Exception('NOT TESTED, also the data is only id/gid | is it ok ?!');
+						}
+						if ($found)
+						{
+							$add_to_dest[] = $found;
+						}
+						else
+						{
+							$found = new $v;
+							$found->setGid($v->Id);
+							$data_gid_and_type[$v->Id][get_class($v)] = $found;
+							$add_to_dest[] = $found;
+						}
+
+						static::GetSystemSyncedData_NEW($v, $found, $selector, $data_gid_and_type, $type_data_by_gid, $ids_in_supplier, $_bag, $collected_data, $path);
+					}
+					else if (count($dest_posib) === 1)
+					{
+						$matched_dest_keys[key($dest_posib)] = reset($dest_posib);
+						static::GetSystemSyncedData_NEW($v, reset($dest_posib), $selector, $data_gid_and_type, $type_data_by_gid, $ids_in_supplier, $_bag, $collected_data, $path);
+					}
+					else
+					{
+						# make sure we keep the first one
+						uasort($dest_posib, function ($a, $b) {return $a->Id <=> $b->Id;});
+
+						$keeping_val = null;
+						foreach ($dest_posib as $dest_k => $dest_val)
+						{
+							if ($keeping_val)
+							{
+								# flag it for delete
+								$dest->setTransformState(\QModel::TransformDelete, $dest_k);
+								# also set it as processed !
+								$matched_dest_keys[$dest_k] = $dest_val;
+							}
+							else
+							{
+								$keeping_val = $dest_val;
+								$matched_dest_keys[$dest_k] = $dest_val;
+							}
+						}
+
+						static::GetSystemSyncedData_NEW($v, $keeping_val, $selector, $data_gid_and_type, $type_data_by_gid, $ids_in_supplier, $_bag, $collected_data, $path);
+					}
+				}
+				else
+				{
+					throw new \Exception('@TODO :: scalars or misc in collection !!!');
+				}
+			}
+			
+			if ((!$is_top_level_collection) && isset($dest_by_gid[0]))
+			{
+				foreach ($dest_by_gid[0] as $dest_k => $v)
+				{
+					$dest->setTransformState(\QModel::TransformDelete, $dest_k);
+				}
+			}
+			
+			foreach ($dest as $dest_k => $v)
+			{
+				if (!isset($matched_dest_keys[$dest_k]))
+				{
+					# ON APP elements, only delete if Gid and Gid in supplier
+					if ((!$is_top_level_collection) || (($v->Gid) && $ids_in_supplier[get_class($v)][$v->Gid])) # || $ids_in_supplier[$isd->Id][get_class($isd)] = true;
+					{
+						$dest->setTransformState(\QModel::TransformDelete, $dest_k);
+					}
+				}
+			}
+			
+			foreach ($add_to_dest as $add_elem)
+				$dest[] = $add_elem;
+		}
+		else if ($src instanceof \QIModel)
+		{
+			if (($selector === null) || $selector) # avoid looping on an empty array
+			{
+				$skipSyncSelector = $src::SkipSyncSelector();
+				if ($skipSyncSelector && is_string($skipSyncSelector))
+					$skipSyncSelector = qParseEntity($skipSyncSelector);
+				
+				$loop_keys = ($selector !== null) ? $selector : \QModel::GetTypeByName(get_class($src))->properties;
+				foreach ($loop_keys as $k => $_misc)
+				{
+					$next_sel = null;
+					if (($k[0] === "_") || (($selector !== null) && (($next_sel = $_misc) === null)) || ($k === 'Id') || ($k === 'Gid') || ($k === 'Owner') || ($k === 'Del__') || ($k === 'MTime'))
+						continue;
+
+					$v = $src->$k;
+					$v_dest = $dest->$k;
+					
+					if (isset($skipSyncSelector[$k]))
+					{
+						$dest->{"_{$k}_"} = $v;
+					}
+					else if ($v === null)
+					{
+						# make sure we don't throw an error if null
+						# if ($v_dest !== null)
+						# $dest->{"set{$k}"}($v, false, true);
+						# @TODO - what do we do with integrity errors !!!
+						# product -> code / manuf
+						# if (\QAutoload::GetDevelopmentMode())
+						#	$dest->{"set{$k}"}($v);
+					}
+					else if ($v instanceof \QIModelArray)
+					{
+						if (!$v_dest instanceof \QIModelArray)
+						{
+							$v_dest = new $v;
+							$dest->{"set{$k}"}($v_dest);
+						}
+						static::GetSystemSyncedData_NEW($v, $v_dest, $next_sel, $data_gid_and_type, $type_data_by_gid, $ids_in_supplier, $_bag, $collected_data, ($path ? $path.".".$k : $k));
+					}
+					else if ($v instanceof \QIModel)
+					{
+						if (($v_dest instanceof \QIModel) && ($v_dest->Gid == $v->Id))
+						{
+							static::GetSystemSyncedData_NEW($v, $v_dest, $next_sel, $data_gid_and_type, $type_data_by_gid, $ids_in_supplier, $_bag, $collected_data, ($path ? $path.".".$k : $k));
+						}
+						else
+						{
+							# try to find it, why not
+							$found = $data_gid_and_type[$v->Id][get_class($v)];
+							if (!$found)
+							{
+								$found = ($tmp = $type_data_by_gid[get_class($v)][$v->Id]) ? reset($tmp) : null;
+								$data_gid_and_type[$v->Id][get_class($v)] = $found;
+								# if ($found)
+								#	throw new \Exception('NOT TESTED, also the data is only id/gid | is it ok ?!');
+							}
+							if ($found)
+								$dest->{"set{$k}"}($found);
+							else
+							{
+								$found = new $v;
+								$found->setGid($v->Id);
+								$data_gid_and_type[$v->Id][get_class($v)] = $found;
+								$dest->{"set{$k}"}($found);
+							}
+							static::GetSystemSyncedData_NEW($v, $found, $next_sel, $data_gid_and_type, $type_data_by_gid, $ids_in_supplier, $_bag, $collected_data, ($path ? $path.".".$k : $k));
+						}
+					}
+					else if ($v !== $v_dest)
+					{
+						$dest->{"set{$k}"}($v);
+					}
+				}
+			}
+		}
+	}
+	
+	/**
+	 * @param mixed $data
+	 * @param string|array|boolean $selector
+	 * @param \QModelProperty $prop
+	 * @param boolean $includeNonModelProps
+	 * @param \QModel $syncItm
+	 * @param \QModel|QModelArray $parent
+	 * @param array $_bag
+	 * @return \QModel
+	 * @throws \Exception
+	 */
+	public static function GetSystemSyncedData($data, $selector = true, $prop = null, $includeNonModelProps = false, $syncItm = null, $parent = null, &$_bag = null)
+	{
+		// if we don't have data or we have scalar data then return it
+		if (!$data || is_scalar($data) || is_resource($data))
+			return $data;
+
+		// if data is not a QIModel it can be only object or array (from above we know that is not a scalar or a resource)
+		if (!($data instanceof \QIModel))
+		{
+			$_isarr = is_array($data);
+			foreach ($data as $_k => $_v)
+			{
+				$_sd = ($_v && ($_v instanceof \QIModel)) ? 
+						$_v::GetSystemSyncedData($_v, $selector, $prop, $includeNonModelProps, $syncItm, $parent, $_bag) : 
+						\QModel::GetSystemSyncedData($_v, $selector, $prop, $includeNonModelProps, $syncItm, $parent, $_bag);
+				$_isarr ? ($data[$_k] = $_sd) : ($data->{$_k} = $_sd);
+			}
+			return $data;
+		}
+
+		// if the selector is provided then parse it
+		if (is_string($selector))
+			$selector = qParseEntity($selector);
+
+		//init the bag
+		// bag will be used to set references but only for QModels and not for QModelArrays
+		if (!$_bag)
+			$_bag = [];
+
+		$dcls = get_called_class();
+
+		//$use_selector = ($selector === true) ? $dcls::GetModelEntity() : $selector;
+		$use_selector = ($selector === true) ? [] : $selector;
+		$is_str_use_selector = is_string($use_selector);
+		$use_selector_str = $is_str_use_selector ? $use_selector : qImplodeEntity($use_selector);
+		$use_selector_arr = $is_str_use_selector ? qParseEntity($use_selector) : $use_selector;
+
+		// if the item was already processed then return it
+		$_dindx = $dcls."~".($data->getId() ? $data->getId() : $data->getTemporaryId());
+		if (isset($_bag[$_dindx]))
+			return $_bag[$_dindx];
+
+		// we must know if the property is subpart (fk expanded)
+		// if it is subpart there is no need to load by gid or setup gid property
+		$_isSubpart = ($prop && $prop->storage && $prop->storage["dependency"] && ($prop->storage["dependency"] === "subpart"));
+
+		// use gid for finding the element
+		// we need to use gid when is not a subpart element (be aware that we still need to use gid if subpart element but in collection)
+		$_useGid = ($data->Gid && (!$_isSubpart || ($prop && $prop->hasCollectionType())));
+
+		// if we don't have sync item then look for it only if is not subpart
+		$owner = \Omi\App::GetCurrentOwner();
+		if (!$syncItm && $_useGid)
+		{
+			if (!$owner)
+				throw new \Exception("Cannot get sync data without owner!");
+
+ 			//$syncItm = $dcls::QueryFirst("Id, Gid WHERE Id=? AND Owner.Id=?", [$data->Gid, $owner->getId()]);
+			$_sitmLoaded = new $dcls();
+
+			$syncItm = $_sitmLoaded->_synchronizable ? 
+				$dcls::QueryFirst("Id, Gid" . ((strlen($use_selector_str) > 0) ? ", " . $use_selector_str : "") .  
+					" WHERE Id=? AND Owner.Id=?", [$data->Gid, $owner->getId()]) : null;;
+		}
+
+		// if the sync item was not found create a new one
+		if (!$syncItm)
+		{
+			$syncItm = new $dcls();
+			if (!$syncItm->_synchronizable)
+				$syncItm->setId($data->getId());
+		}
+
+		// always set the owner
+		if ($syncItm->_synchronizable)
+			$syncItm->setOwner($owner);
+
+		// set remote id
+		$syncItm->__rid = $data->getId();
+
+		$dataCls = \QApp::GetDataClass();
+		// do this only for removal for now
+		if ($dataCls::$_SYNC_ITEMS_ON_PROCESS && ($data->getTransformState() == \QIModel::TransformDelete))
+			$syncItm->setTransformState($data->getTransformState());
+
+		// index here only QIModels
+		$_bag[$_dindx] = $syncItm;
+
+		// go through properties and update data
+		foreach ($data as $pName => $value)
+		{
+			$_prop = $data->getModelType()->properties[$pName];
+
+			//echo $pName."<br/>";
+			//die();
+
+			// if we don't have prop (it means is a hidden property of the model) and we don't want to include non model prop or
+			if ((!$_prop && !$includeNonModelProps) || 
+				// prop exists but was not set or
+				($_prop && !$data->wasSet($pName)) || 
+					// is id or
+					in_array($pName, ["Id", "id", "_id", "Gid", "Owner", "MTime"]) || 
+					// not in selector
+					(!$selector || (is_array($selector) && !isset($selector["*"]) && !isset($selector[$pName]))))
+				continue;
+
+			// if we don't have property then it is a non model flag
+			if (!$_prop)
+			{
+				$syncItm->{$pName} = \QModel::GetSystemSyncedData($value, is_array($selector) ? $selector[$pName] : $selector, $_prop, 
+					$includeNonModelProps, null, $syncItm, $_bag);
+				continue;
+			}
+
+			$_iscollection = $_prop->hasCollectionType();
+			$_isreference = $_prop->hasReferenceType();
+
+			// if we don't have value or we have value and the value is a scalar then setup the value and continue
+			if (!$value || (!$_iscollection && !$_isreference))
+			{
+				$syncItm->{"set".$pName}($value);
+				continue;
+			}
+
+			// the property is collection
+			if ($_iscollection)
+			{
+				// check if property is scalar
+				$_isScalar = $_prop->isScalar();
+
+				// get class
+				$_vcls = get_class($value); // it should be QModelArray
+
+				// we need to be able to sync one by one items in collection
+				$_singleItmSync = ($data->{$pName} && $data->{$pName}->_singleSync);
+				$_singleItm = $_singleItmSync ? reset($data->{$pName}) : null;
+
+				// load collection data only if item has id
+				if ($syncItm->getId() && !$syncItm->{$pName})
+				{
+					$coll_sync_selector = $use_selector_arr ? $use_selector_arr[$pName] : null;
+					if ($coll_sync_selector && !is_string($coll_sync_selector))
+						$coll_sync_selector = qImplodeEntity($coll_sync_selector);
+					
+					
+					$syncItm->query($_isScalar ? 
+						$pName . ($_singleItmSync ? "" : "") : 
+						//$pName . ".{Id, Gid" . ($_singleItmSync ? " WHERE Id='".(($_singleItm && $_singleItm->Gid) ? $_singleItm->Gid: 0)."'" : "")." ORDER BY Id DESC}"
+						$pName . ".{Id, Gid" . (($coll_sync_selector && (strlen($coll_sync_selector) > 0)) ? ", " . $coll_sync_selector : "") . 
+							($_singleItmSync ? " WHERE Id='".(($_singleItm && $_singleItm->Gid) ? $_singleItm->Gid: 0)."'" : "")." ORDER BY Id DESC}"
+					);
+				}
+
+				// if we don't have collection data - init data here
+				if (!$syncItm->{$pName})
+					$syncItm->{"set".$pName}(new $_vcls());
+				//echo "<div style='color: red;'>Collection: {$pName}</div>";
+				//qvardump($syncItm->{$pName});
+
+				// just call get sync data and within the call we pass the parent - so the collection items will be pushed straight on parent 
+				// by calling set{CollName}_Item_ method
+				$value::GetSystemSyncedData($value, is_array($selector) ? $selector[$pName] : $selector, $_prop, $includeNonModelProps, $syncItm->{$pName}, $syncItm, $_bag);
+				//qvardump($value);
+			}
+			// if the property is reference and it is a subpart then query for data to update if already exists (avoid spamming the database)
+			else if ($_isreference)
+			{
+				// load reference data only if id
+				if ($syncItm->getId() && !$syncItm->{$pName} && ($_prop->storage && $_prop->storage["dependency"] && ($_prop->storage["dependency"] === "subpart")))
+				{
+					$ref_sync_selector = $use_selector_arr ? $use_selector_arr[$pName] : null;
+					if ($ref_sync_selector && !is_string($ref_sync_selector))
+						$ref_sync_selector = qImplodeEntity($ref_sync_selector);
+
+					//if (\QModel::$Dump)
+					//	qvardump("load reference {$pName}", $syncItm);
+
+					//$syncItm->query($pName . ".Id");
+					$syncItm->query($pName . ".{Id" . (($ref_sync_selector && (strlen($ref_sync_selector) > 0)) ? ", " . $ref_sync_selector : "") . "}");
+				}
+
+				$syncItm->{"set".$pName}($value::GetSystemSyncedData($value, is_array($selector) ? $selector[$pName] : $selector, $_prop, $includeNonModelProps,
+					$syncItm->{$pName}, $syncItm, $_bag));
+			}
+		}
+		return $syncItm;
+	}
+	
+	public static function GetRemoteSyncedData_Populate_All_Objects(array &$_all_objects, $syncItms)
+	{
+		if (($syncItms === null) || is_scalar($syncItms))
+			return;
+		
+		else if (is_array($syncItms) || ($syncItms instanceof \QIModelArray))
+		{
+			foreach ($syncItms as $si)
+				static::GetRemoteSyncedData_Populate_All_Objects($_all_objects, $si);
+		}
+		else if ($syncItms instanceof \QIModel)
+		{
+			if ($syncItms->_synchronizable)
+			{
+				if ($_all_objects[$syncItms->getId()."|". get_class($syncItms)])
+					return;
+				else
+					$_all_objects[$syncItms->getId()."|". get_class($syncItms)] = $syncItms;
+			}
+			
+			foreach ($syncItms as $k => $v)
+			{
+				if (($v === null) || is_scalar($v) || ($k{0} === '_'))
+					continue;
+				static::GetRemoteSyncedData_Populate_All_Objects($_all_objects, $v);
+			}
+			/*
+			if ($_all_objects[$syncItms->getId()."|". get_class($syncItms)])
+				return;
+			else
+			{
+				$_all_objects[$syncItms->getId()."|". get_class($syncItms)] = $syncItms;
+				foreach ($syncItms as $k => $v)
+				{
+					if (($v === null) || is_scalar($v) || ($k{0} === '_'))
+						continue;
+					static::GetRemoteSyncedData_Populate_All_Objects($_all_objects, $v);
+				}
+			}*/
+		}
 	}
 	
 	public static function transaction(callable $callback, array $args = [])
@@ -1723,4 +2218,345 @@ trait QModel_Trait
 		}
 	}
 	
+	public function updateSyncProps($syncProps, $selector = null)
+	{
+		$this->doOnSelector($selector, function ($obj, $syncProps) {
+			if ($obj->_synchronizable)
+				$obj->extractFromArray($syncProps);
+		}, $syncProps);
+	}
+
+	public function clearSyncProps($syncPropsSelector = null, $selector = null, &$_bag = [])
+	{
+		if (!$syncPropsSelector)
+			$syncPropsSelector = $this::GetSyncProps();
+
+		if (is_scalar($syncPropsSelector))
+			$syncPropsSelector = qParseEntity($syncPropsSelector);
+		else if (!is_array($syncPropsSelector))
+			throw new \Exception("Sync props selector not provided!");
+
+		// use the callback
+		$this->doOnSelector($selector, function ($obj, $syncPropsSelector) {
+			// unset properties here
+			foreach ($syncPropsSelector as $sp => $sv)
+			{
+				$obj->unsetProp($sp);
+			}
+		}, $syncPropsSelector);
+	}
+	
+	/**
+	 * Setup sync props in selector
+	 * 
+	 * @param string|boolean|array $selector
+	 * @return null
+	 */
+	protected function setupSyncPropsInSelector(&$selector, &$bag = [], $depth = 0)
+	{
+		if (!$bag)
+			$bag = [];
+
+		// selector can't be null at this stage
+		if (($selector === null) || ($selector === true) || isset($bag[$this->getTemporaryId()]))
+			return;
+
+		$bag[$this->getTemporaryId()] = $this;
+
+		$is_root = ($depth === 0);
+		$depth++;
+
+		if (!$this->_synchronizable && !$is_root)
+			return;
+
+		if (!$selector)
+			$selector = [];
+		else if (is_string($selector))
+			$selector = qParseEntity($selector);
+
+		if ($this->_synchronizable)
+			$selector = array_merge($selector, qParseEntity($this::GetSyncProps()));
+
+		foreach ($this as $k => $itms)
+		{
+			if ((!($itms instanceof \QIModel)) || ($selector[$k] === null))
+				continue;
+
+			if (qis_array($itms))
+			{
+				foreach ($itms as $itm)
+				{
+					if ($itm instanceof \QModel)
+						$itm->setupSyncPropsInSelector($selector[$k], $bag, $depth);
+				}
+			}
+			else
+				$itms->setupSyncPropsInSelector($selector[$k], $bag, $depth);
+		}
+	}
+	
+	protected static $Sync_Mapping = [
+		"Offers.NuviaOffer" => ["Nuvia_Offers"],
+		"Offers.NuviaOffer.Item" => false,
+		"Offers.NuviaOffer.Items" => false,
+		"Offers.NuviaOffer.Item.Merch" => ['Omi\Nuvia\Service' => ["Nuvia_Services"], 'Omi\Nuvia\Product' => ["Nuvia_Products"]],
+		"Offers.Items" => false,
+		"Offers.Items.Merch" => ['Omi\Comm\Service' => ["Services"], 'Omi\Comm\Product' => ["Products"]],
+		"Offers.Items.Merch.ProvisioningSettings" => false,
+		"Offers.Items.Merch.Content" => false,
+		"MerchItems.ProvisioningSettings" => false,
+		"MerchItems.Content" => false,
+		"Offers.Products" => false,
+		"Offers.Services" => false,
+		
+		"Offers.Products.Merch" => ['Omi\Comm\Service' => ["Services"], 'Omi\Comm\Product' => ["Products"]],
+		"Offers.Services.Merch" => ['Omi\Comm\Service' => ["Services"], 'Omi\Comm\Product' => ["Products"]],
+		
+		"Offers.Content" => false,
+		"Offers.Items.Merch.DefaultOffer" => ["Offers"],
+		"Offers.Items.Merch.Manufacturer" => ["Manufacturers"],
+		"Offers.Items.Merch.Term" => ["Terms"],
+		"Offers.Items.Merch.Categories" => ["MerchCategories"],
+		"Offers.Items.Merch.Categories.Content" => false,
+		"Offers.Items.Merch.IncompatibleWith" => ['Omi\Comm\Service' => ["Services"], 'Omi\Comm\Product' => ["Products"]],
+		"Offers.Items.Merch.AvailableOptions" => ['Omi\Comm\Service' => ["Services"], 'Omi\Comm\Product' => ["Products"]],
+		"Offers.Items.Merch.AvailableOptions.ProvisioningSettings" => false,
+		"Offers.Items.Merch.AvailableOptions.Content" => false,
+		"Offers.Items.Merch.AvailableOptions.Categories" => ["MerchCategories"],
+		
+		"Offers.Items.Merch.Categories.Parent" => ["MerchCategories"],
+		"Offers.Items.Merch.Categories.Parent.Parent" => ["MerchCategories"],
+		"Offers.Items.Merch.Categories.Parent.Parent.Content" => false,
+		"Offers.Items.Merch.Categories.Parent.Content" => false,
+		"MerchItems.DefaultOffer" => ["Offers"],
+		"MerchItems.Manufacturer" => ["Manufacturers"],
+		"MerchItems.Term" => ["Terms"],
+		"MerchItems.Categories" => ["MerchCategories"],
+		"MerchCategories.Content" => false,
+		"MerchItems.IncompatibleWith" => ['Omi\Comm\Service' => ["Services"], 'Omi\Comm\Product' => ["Products"]],
+		"MerchItems.AvailableOptions" => ['Omi\Comm\Service' => ["Services"], 'Omi\Comm\Product' => ["Products"]],
+		"MerchItems.AvailableOptions.ProvisioningSettings" => false,
+		"MerchItems.AvailableOptions.Content" => false,
+		"MerchItems.AvailableOptions.Categories" => ["MerchCategories"],
+		
+		"MerchCategories.Parent" => ["MerchCategories"],
+		"MerchCategories.Parent.Parent" => ["MerchCategories"],
+		"MerchCategories.Parent.Parent.Content" => false,
+		"MerchCategories.Parent.Content" => false,
+		
+		"MerchCategories.Brochures" => false,
+		
+		"MerchItems.IncompatibleFor" => ['Omi\Comm\Service' => ["Services"], 'Omi\Comm\Product' => ["Products"]],
+
+		"Offers.Items.Merch.IncompatibleWith.DefaultOffer" => ["Offers"],
+		"Offers.Items.Merch.IncompatibleWith.DefaultOffer.Items" => false,
+		"Offers.Items.Merch.IncompatibleWith.DefaultOffer.Items.Merch" => ['Omi\Comm\Service' => ["Services"], 'Omi\Comm\Product' => ["Products"]],
+		"Offers.Items.Merch.IncompatibleWith.DefaultOffer.Content" => false,		
+		
+		"Offers.Items.Merch.IncompatibleWith.Content" => false,
+		"Offers.Items.Merch.IncompatibleWith.Categories.Content" => false,
+		"Offers.Items.Merch.IncompatibleWith.Categories" => ["MerchCategories"],
+		"Offers.Items.Merch.IncompatibleWith.Categories.Parent" => ["MerchCategories"],
+		"Offers.Items.Merch.IncompatibleWith.Manufacturer" => ["Manufacturers"],
+		"Offers.Items.Merch.IncompatibleWith.IncompatibleWith" => ['Omi\Comm\Service' => ["Services"], 'Omi\Comm\Product' => ["Products"]],
+		
+		"Offers.Items.Merch.DefaultOffer.Items" => false,
+		"Offers.Items.Merch.DefaultOffer.Items.Merch" => ['Omi\Comm\Service' => ["Services"], 'Omi\Comm\Product' => ["Products"]],
+		"Offers.Items.Merch.DefaultOffer.Content" => false,		
+		"Offers.Items.Merch.IncompatibleWith.Categories.Parent.Parent" => ["MerchCategories"],
+		"Offers.Items.Merch.IncompatibleWith.Categories.Parent.Content" => false,
+
+		"Offers.Items.Merch.DefaultOffer.Items.Merch.ProvisioningSettings" => false,
+		"Offers.Items.Merch.DefaultOffer.Items.Merch.Content" => false,
+
+		"Offers.Items.Merch.DefaultOffer.Items.Merch.DefaultOffer" => ["Offers"],
+		"Offers.Items.Merch.DefaultOffer.Items.Merch.Categories" => ["MerchCategories"],
+		"Offers.Items.Merch.DefaultOffer.Items.Merch.Categories.Content" => false,
+		
+		"Offers.Items.Merch.DefaultOffer.Items.Merch.Categories.Parent" => ["MerchCategories"],
+		"Offers.Items.Merch.DefaultOffer.Items.Merch.Categories.Parent.Parent" => ["MerchCategories"],
+		"Offers.Items.Merch.DefaultOffer.Items.Merch.Categories.Parent.Parent.Content" => false,
+		"Offers.Items.Merch.DefaultOffer.Items.Merch.Categories.Parent.Content" => false,
+
+		"Offers.Items.Merch.DefaultOffer.Services" => false,
+		"Offers.Items.Merch.DefaultOffer.Products" => false,
+		
+		"Offers.Items.Merch.DefaultOffer.Services.Merch" => ['Omi\Comm\Service' => ["Services"], 'Omi\Comm\Product' => ["Products"]],
+		"Offers.Items.Merch.DefaultOffer.Products.Merch" => ['Omi\Comm\Service' => ["Services"], 'Omi\Comm\Product' => ["Products"]],
+
+		"MerchItems.IncompatibleWith.DefaultOffer" => ["Offers"],
+		"MerchItems.IncompatibleWith.DefaultOffer.Items" => false,
+		"MerchItems.IncompatibleWith.DefaultOffer.Items.Merch" => ['Omi\Comm\Service' => ["Services"], 'Omi\Comm\Product' => ["Products"]],
+		"MerchItems.IncompatibleWith.DefaultOffer.Content" => false,		
+		
+		"MerchItems.IncompatibleWith.Content" => false,
+		"MerchItems.IncompatibleWith.Categories.Content" => false,
+		"MerchItems.IncompatibleWith.Categories" => ["MerchCategories"],
+		"MerchItems.IncompatibleWith.Categories.Parent" => ["MerchCategories"],
+		"MerchItems.IncompatibleWith.Manufacturer" => ["Manufacturers"],
+		"MerchItems.IncompatibleWith.IncompatibleWith" => ['Omi\Comm\Service' => ["Services"], 'Omi\Comm\Product' => ["Products"]],
+		
+		"MerchItems.DefaultOffer.Items" => false,
+		"MerchItems.DefaultOffer.Items.Merch" => ['Omi\Comm\Service' => ["Services"], 'Omi\Comm\Product' => ["Products"]],
+		"MerchItems.DefaultOffer.Content" => false,		
+		"MerchItems.IncompatibleWith.Categories.Parent.Parent" => ["MerchCategories"],
+		"MerchItems.IncompatibleWith.Categories.Parent.Content" => false,
+
+		"MerchItems.DefaultOffer.Items.Merch.ProvisioningSettings" => false,
+		"MerchItems.DefaultOffer.Items.Merch.Content" => false,
+
+		"MerchItems.DefaultOffer.Items.Merch.DefaultOffer" => ["Offers"],
+		"MerchItems.DefaultOffer.Items.Merch.Categories" => ["MerchCategories"],
+		"MerchItems.DefaultOffer.Items.Merch.Categories.Content" => false,
+		
+		"MerchItems.DefaultOffer.Items.Merch.Categories.Parent" => ["MerchCategories"],
+		"MerchItems.DefaultOffer.Items.Merch.Categories.Parent.Parent" => ["MerchCategories"],
+		"MerchItems.DefaultOffer.Items.Merch.Categories.Parent.Parent.Content" => false,
+		"MerchItems.DefaultOffer.Items.Merch.Categories.Parent.Content" => false,
+
+		"MerchItems.DefaultOffer.Services" => false,
+		"MerchItems.DefaultOffer.Products" => false,
+		
+		"MerchItems.DefaultOffer.Services.Merch" => ['Omi\Comm\Service' => ["Services"], 'Omi\Comm\Product' => ["Products"]],
+		"MerchItems.DefaultOffer.Products.Merch" => ['Omi\Comm\Service' => ["Services"], 'Omi\Comm\Product' => ["Products"]],
+		
+		# Owners
+		"Offers.Owner" => ["Suppliers"],
+		"Offers.Content.Owner" => ["Suppliers"],
+		"Offers.Products.Merch.Owner" => ["Suppliers"],
+		"Offers.Products.Owner" => ["Suppliers"],
+		# "Owner" => ["Suppliers"],
+		"Offers.Items.Merch.Content.Owner" => ["Suppliers"],
+		"Offers.Items.Merch.Owner" => ["Suppliers"],
+		"MerchItems.Content.Owner" => ["Suppliers"],
+		"MerchItems.Owner" => ["Suppliers"],
+		"Offers.Items.Owner" => ["Suppliers"],
+		"Offers.Items.Merch.Manufacturer.Owner" => ["Suppliers"],
+		"MerchItems.Manufacturer.Owner" => ["Suppliers"],
+		"Offers.Services.Owner" => ["Suppliers"],
+		"Offers.Services.Merch.Owner" => ["Suppliers"],
+		"Offers.Items.Merch.Categories.Content.Owner" => ["Suppliers"],
+		"Offers.Items.Merch.Categories.Owner" => ["Suppliers"],
+		"Offers.Items.Merch.AvailableOptions.Owner" => ["Suppliers"],
+		"MerchCategories.Content.Owner" => ["Suppliers"],
+		"MerchCategories.Owner" => ["Suppliers"],
+		"MerchItems.AvailableOptions.Owner" => ["Suppliers"],
+		
+		"MerchCategories.Brochures.Owner" => ["Suppliers"],
+		"Manufacturers.Owner" => ["Suppliers"],
+		
+		"Offers.Items.Merch.Categories.Parent.Parent.Owner" => ["Suppliers"],
+		"Offers.Items.Merch.Categories.Parent.Owner" => ["Suppliers"],
+		"Offers.Items.Merch.IncompatibleWith.Categories.Owner" => ["Suppliers"],
+		"Offers.Items.Merch.IncompatibleWith.Owner" => ["Suppliers"],
+		"Offers.Items.Merch.IncompatibleWith.Manufacturer.Owner" => ["Suppliers"],
+		"Offers.Items.Merch.IncompatibleWith.Content.Owner" => ["Suppliers"],
+		"Offers.Items.Merch.Categories.Parent.Content.Owner" => ["Suppliers"],
+		"Offers.Items.Merch.DefaultOffer.Items.Owner" => ["Suppliers"],
+		"Offers.Items.Merch.DefaultOffer.Content.Owner" => ["Suppliers"],
+		"Offers.Items.Merch.DefaultOffer.Owner" => ["Suppliers"],
+
+		"Offers.Items.Merch.Categories.Parent.Parent.Owner" => ["Suppliers"],
+		"Offers.Items.Merch.Categories.Parent.Owner" => ["Suppliers"],
+		"Offers.Items.Merch.IncompatibleWith.Categories.Owner" => ["Suppliers"],
+		"Offers.Items.Merch.IncompatibleWith.Owner" => ["Suppliers"],
+		"Offers.Items.Merch.IncompatibleWith.Manufacturer.Owner" => ["Suppliers"],
+		"Offers.Items.Merch.IncompatibleWith.Content.Owner" => ["Suppliers"],
+		"Offers.Items.Merch.Categories.Parent.Content.Owner" => ["Suppliers"],
+		"Offers.Items.Merch.DefaultOffer.Items.Owner" => ["Suppliers"],
+		"Offers.Items.Merch.DefaultOffer.Content.Owner" => ["Suppliers"],
+		"Offers.Items.Merch.DefaultOffer.Owner" => ["Suppliers"],
+		
+		"Offers.Items.Merch.Categories.Parent.Parent.Content.Owner" => ["Suppliers"],
+		"Offers.Items.Merch.IncompatibleWith.Categories.Content.Owner" => ["Suppliers"],
+		"Offers.Items.Merch.IncompatibleWith.Categories.Parent.Owner" => ["Suppliers"],
+		"Offers.Items.Merch.IncompatibleWith.Categories.Parent.Content.Owner" => ["Suppliers"],
+		"Offers.Items.Merch.AvailableOptions.Content.Owner" => ["Suppliers"],
+		
+		"Offers.Items.Merch.DefaultOffer.Items.Merch.Content.Owner" => ["Suppliers"],
+		"Offers.Items.Merch.DefaultOffer.Items.Merch.Owner" => ["Suppliers"],
+		
+		"Offers.Items.Merch.IncompatibleWith.DefaultOffer.Items.Owner" => ["Suppliers"],
+		"Offers.Items.Merch.IncompatibleWith.DefaultOffer.Content.Owner" => ["Suppliers"],
+		"Offers.Items.Merch.IncompatibleWith.DefaultOffer.Owner" => ["Suppliers"],
+		
+		"Offers.Items.Merch.DefaultOffer.Items.Merch.Categories.Content.Owner" => ["Suppliers"],
+		"Offers.Items.Merch.DefaultOffer.Items.Merch.Categories.Owner" => ["Suppliers"],
+		
+		"MerchCategories.Parent.Parent.Owner" => ["Suppliers"],
+		"MerchCategories.Parent.Owner" => ["Suppliers"],
+		"MerchItems.IncompatibleWith.Categories.Owner" => ["Suppliers"],
+		"MerchItems.IncompatibleWith.Owner" => ["Suppliers"],
+		"MerchItems.IncompatibleWith.Manufacturer.Owner" => ["Suppliers"],
+		"MerchItems.IncompatibleWith.Content.Owner" => ["Suppliers"],
+		"MerchCategories.Parent.Content.Owner" => ["Suppliers"],
+		"MerchItems.DefaultOffer.Items.Owner" => ["Suppliers"],
+		"MerchItems.DefaultOffer.Content.Owner" => ["Suppliers"],
+		"MerchItems.DefaultOffer.Owner" => ["Suppliers"],
+		
+		"MerchCategories.Parent.Parent.Content.Owner" => ["Suppliers"],
+		"MerchItems.IncompatibleWith.Categories.Content.Owner" => ["Suppliers"],
+		"MerchItems.IncompatibleWith.Categories.Parent.Owner" => ["Suppliers"],
+		"MerchItems.IncompatibleWith.Categories.Parent.Content.Owner" => ["Suppliers"],
+		"MerchItems.AvailableOptions.Content.Owner" => ["Suppliers"],
+		
+		"MerchItems.DefaultOffer.Items.Merch.Content.Owner" => ["Suppliers"],
+		"MerchItems.DefaultOffer.Items.Merch.Owner" => ["Suppliers"],
+		
+		"MerchItems.IncompatibleWith.DefaultOffer.Items.Owner" => ["Suppliers"],
+		"MerchItems.IncompatibleWith.DefaultOffer.Content.Owner" => ["Suppliers"],
+		"MerchItems.IncompatibleWith.DefaultOffer.Owner" => ["Suppliers"],
+		
+		"MerchItems.DefaultOffer.Items.Merch.Categories.Content.Owner" => ["Suppliers"],
+		"MerchItems.DefaultOffer.Items.Merch.Categories.Owner" => ["Suppliers"],
+		
+		"PricingIntervals.Owner" => ["Suppliers"],
+		"PricingIntervals.Owner.WhiteLabel" => false,
+		
+		# Partners
+		
+		"Resellers.HeadOffice" => false,
+		"Resellers.HeadOffice.Country" => ["Countries"],
+		"Resellers.HeadOffice.County" => ["Counties"],
+		"Resellers.HeadOffice.City" => ["Cities"],
+		"Resellers.Sites.Address.Country" => ["Countries"],
+		"Resellers.Sites.Address.County" => ["Counties"],
+		"Resellers.Sites.Address.City" => ["Cities"],
+		"Resellers.Suppliers" => ["Suppliers"],
+		"Resellers.Suppliers.WhiteLabel" => false,
+		"Resellers.WhiteLabel" => false,
+		"Resellers.Sites" => false,
+		"Resellers.Sites.Address" => false,
+		
+		# "Resellers.Suppliers" => ["Suppliers"],
+		"Suppliers.WhiteLabel" => false,
+		"Products.Owner" => ["Suppliers"],
+		"Services.Owner" => ["Suppliers"],
+		
+		"Nuvia_Offers.Content" => false,
+		"Nuvia_Offers.Item" => false,
+		"Nuvia_Offers.Item.Merch" => ["Nuvia_Services"],
+		"Nuvia_Offers.Items" => false,
+		"Nuvia_Offers.Currency" => ["Currencies"],
+		"Nuvia_Offers.CostCurrency" => ["Currencies"],
+		"Nuvia_Offers.Offer" => ["Offers"],
+		"Nuvia_Offers.Owner" => ["Suppliers"],
+		"Nuvia_Offers.CreatedBy" => ["Users"],
+		
+		"Nuvia_Offers.SuppliedBy" => ["Suppliers"],
+		"Nuvia_Services.SuppliedBy" => ["Suppliers"],
+		"Users.SuppliedBy" => ["Suppliers"],
+			
+		
+		"Nuvia_Services.Owner" => ["Suppliers"],
+		
+		"Nuvia_Services.CreatedBy" => ["Users"],
+		"Users.Person" => false,
+		"Users.Owner" => ["Suppliers"],
+		"Users.CreatedBy" => ["Users"],
+		"Users.Impersonate" => true,
+		"Users.Context" => true,
+		
+	];
 }
+

@@ -42,7 +42,6 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 		if ($reconnect)
 			$this->disconnect();
 		
-		# $co = new mysqli('localhost', 'alex', 'Hope44better!', 'test_orm', NULL, '/run/mysqld/mysqld.sock');
 		$this->connection = new \QMySqlConnection($this->host, $this->user, $this->pass, $this->default_db, $this->port, $this->socket);
 		if ($this->connection->connect_errno)
 		{
@@ -1476,9 +1475,7 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 
 		$use_states = QApi::SecureStates($model, $from, $state, $selector);
 		
-		
 		# @TODO - secure based on security
-		# if (($from === 'Properties') || ($from === 'Properties_Rooms'))
 		{
 			$c_user = \Omi\User::GetCurrentUser();
 			$prop_security_cfg = QModel_Security::Get_Security_App_Props_Config($from);
@@ -1550,10 +1547,24 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 			if (!$query)
 			{
 				$query = $only_first ? $from_type::GetItemSyncQuery() : $from_type::GetListingSyncQuery();
+				
+				if ($used_app_selectors !== null)
+					$used_app_selectors[$from][$from_type][] = \Omi\App::Fix_Sync_Listing_Entity($from_type, $only_first ? $from_type::GetModelSyncEntity() : $from_type::GetListingSyncEntity());
 				// secure parameters (not possible atm ... needs a new implementation)
-				$query = $from.".{".$query."}";
+				if (!$query_by_data_type)
+					$query = $from.".{".$query."}";
 				if (is_array($selector))
 					$selector = [$from => $selector];
+				
+				# qvar_dumpk($only_first ? 'GetItemSyncQuery' : 'GetListingSyncQuery', $from_type, $query);
+			}
+			else
+			{
+				if ($used_app_selectors !== null)
+				{
+					$used_app_selectors[$from_type][] = $query;
+					throw new \Exception('Not expected. The parameter added is not a selector.');
+				}
 			}
 		}
 		else // scalars
@@ -1573,10 +1584,32 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 				$parameters = $id;
 		}
 
-		$data_block = [];
-
-		$return_data = QModelQuery::BindQuery($query, $parameters, null, $data_block, true, $selector);
-		$return_data = $return_data ? $return_data->$from : null;
+		if ($data_block === null)
+			$data_block = [];
+		
+		if (is_array($ids_list))
+		{
+			if (strpos($query, "??Id_IN?") === false)
+			{
+				if (\QAutoload::GetDevelopmentMode())
+				{
+					qvar_dumpk($query, $ids_list, $only_first, $from_type, $storage_model, $storage_model::GetSyncPropertyListingQuery($from), $from_type::GetListingSyncQuery());
+				}
+				throw new \Exception('Missing ??Id_IN? for `'.$from.'`');
+			}
+			$parameters['Id_IN'] = [$ids_list];
+		}
+		
+		if ($query_by_data_type)
+		{
+			# return QModelQuery::BindQuery($query, $binds, $this ?: get_called_class(), $dataBlock, $skip_security);
+			$return_data = \QModelQuery::BindQuery($query, $parameters, $query_by_data_type, $data_block, true, $selector);
+		}
+		else
+		{
+			$return_data = QModelQuery::BindQuery($query, $parameters, null, $data_block, true, $selector);
+			$return_data = $return_data ? $return_data->$from : null;
+		}
 
 		if (method_exists($called_class, "ApiQuery_out_"))
 			$called_class::ApiQuery_out_();

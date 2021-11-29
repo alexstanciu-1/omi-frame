@@ -7,7 +7,7 @@ class QModelTypeFile extends QModelTypeScalar
 	 *
 	 * @var QModelTypeFile
 	 */
-	private static $type;
+	protected static $type;
 	
 	/**
 	 * The protected constructor

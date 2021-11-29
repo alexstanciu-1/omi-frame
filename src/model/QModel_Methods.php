@@ -311,6 +311,12 @@ trait QModel_Methods
 	 */
 	public function populate($query = null, $binds = null, &$dataBlock = null, $skip_security = true, \QIStorage $storage = null)
 	{
+		if (false && isset($this) && (!$this->getId()) && \QAutoload::GetDevelopmentMode())
+		{
+			//qvar_dumpk($this, func_get_args(), debug_backtrace());
+			//throw new \Exception("we need to see these cases! @populate");
+		}
+	
 		if (($query === null) && ($binds === null) && ($iid = $this->getId()))
 		{
 			$selector = static::GetModelEntity();
@@ -322,7 +328,7 @@ trait QModel_Methods
 		//  static function BindQuery($query, $binds, $from = null,    &$dataBlock = null, $skip_security = true, $filter_selector = null, $populate_only = false)
 		return QModelQuery::BindQuery($query, $binds, $this ?: get_called_class(), $dataBlock, $skip_security, null, true, $storage);
 	}
-
+	
 	/**
 	 * 
 	 * Queries the object to get more data
@@ -337,6 +343,12 @@ trait QModel_Methods
 	 */
 	public function query($query, $binds = null, &$dataBlock = null, $skip_security = true)
 	{
+		if (false && isset($this) && (!$this->getId()) && \QAutoload::GetDevelopmentMode())
+		{
+			//qvar_dumpk($this, func_get_args(), debug_backtrace());
+			//throw new \Exception("we need to see these cases! @query");
+		}
+
 		// var_dump(get_called_class(), __CLASS__, get_class($this));
 		// public static function BindQuery($query, $binds, QIModel $from = null, &$dataBlock = null, $skip_security = false)
 		return QModelQuery::BindQuery($query, $binds, $this ?: get_called_class(), $dataBlock, $skip_security);
@@ -1340,6 +1352,7 @@ trait QModel_Methods
 	{
 		return ($this->getId() === $object->getId()) && (get_class($this) === get_class($object));
 	}
+
 	/**
 	 * 
 	 * @param string|array $selector
@@ -1348,7 +1361,7 @@ trait QModel_Methods
 	 * @return \QIModel
 	 * @throws Exception
 	 */
-	public function getClone($selector = null, &$_bag = [], bool $skip_mark_for_removal = false)
+	public function getClone($selector = null, &$_bag = [], bool $skip_mark_for_removal = false, bool $keep_leaf_ids = false, bool $keep_lead_reference = false)
 	{
 		if ($selector === null)
 			$selector = static::GetModelEntity();
@@ -1390,18 +1403,25 @@ trait QModel_Methods
 			// we no longer loop
 			$data = $selector["*"];
 		}
-
+		
+		$props_count = 0;
+		$props_last = null;
+		
 		while ($prop)
 		{
 			//echo "<div style='color: red;'>".$prop."</div>";
 			// setup the property only if is accepted by the model
 			if ($modelType->properties[$prop])
 			{
+				$props_count++;
+				$props_last = $prop;
+				
 				$val = $this->{$prop};
 				if ($val !== null)
 				{
 					if ($val instanceof QIModel)
 					{
+						$selector_prop = $selector[$prop];
 						// the collection - it can be a collection of models or a scalar collection
 						if ($val instanceof QIModelArray)
 						{
@@ -1414,12 +1434,14 @@ trait QModel_Methods
 									continue;
 								
 								if ($item instanceof QIModel)
-									$item = $item->getClone($selector[$prop], $_bag);
+									$item = $item->getClone($selector_prop, $_bag, false, $keep_leaf_ids, $keep_lead_reference);
 								$clone->$p_meth($item, $k);
 							}
 						}
 						else
-							$clone->{"set{$prop}"}($val->getClone($selector[$prop], $_bag));
+						{
+							$clone->{"set{$prop}"}($val->getClone($selector_prop, $_bag, false, $keep_leaf_ids, $keep_lead_reference));
+						}
 					}
 					else
 						$clone->{"set{$prop}"}($val);
@@ -1439,6 +1461,25 @@ trait QModel_Methods
 				$prop = key($selector);
 			}
 		}
+		
+		if (($keep_leaf_ids || $keep_lead_reference) && (($props_count === 0) || (($props_count === 1) && ($props_last === 'Id'))))
+		{
+			if ($keep_leaf_ids)
+			{
+				if ($keep_lead_reference)
+					throw new \Exception('$keep_leaf_ids is not compatbile with $keep_lead_reference');
+				if (($tmp_id = $this->getId()))
+					$clone->setId($tmp_id);
+			}
+			else
+			{
+				if ($keep_leaf_ids)
+					throw new \Exception('$keep_leaf_ids is not compatbile with $keep_lead_reference');
+				# we return a reference
+				$clone = $this;
+			}
+		}
+		
 		return $clone;
 	}
 	
@@ -3338,9 +3379,9 @@ trait QModel_Methods
 	{
 		return \QModel::$TransactionFlag;
 	}
-		
+	
 	######## QMODEL PATCH #############
-
+	
 	public function isNew(bool $test_with_merge_by = false, string $app_prop = null)
 	{
 		if (!$test_with_merge_by)
@@ -3831,7 +3872,7 @@ trait QModel_Methods
 	 * @param type $refs
 	 * @param type $refs_no_class
 	 */
-	private static function NMtoJSON($data, $selector = null, $include_nonmodel_properties = false, $with_type = true, 
+	protected static function NMtoJSON($data, $selector = null, $include_nonmodel_properties = false, $with_type = true, 
 		$with_hidden_ids = true, $ignore_nulls = true, &$refs = null, &$refs_no_class = null)
 	{
 		if (!$data || (count($data) === 0))
@@ -3937,7 +3978,7 @@ trait QModel_Methods
 			$this->setupSyncPropsInSelector($recurse);
 		return $this->frame_transform($parameters, $containers, $recurse, $backtrace, $as_simulation, $issues, $root_issues, $trigger_provision, $trigger_events, $trigger_save, $trigger_import);
 	}
-	
+
 	/**
 	 * 
 	 * @param boolean|string|array $selector
@@ -3970,7 +4011,7 @@ trait QModel_Methods
 			// however when we are in import process the owner must always be set as current owner
 			if (\QApi::InImportProcess())
 				$this->setOwner(\Omi\App::GetCurrentOwner());
-			$this->setMTime(date("Y-m-d H:i:s"));
+			# $this->setMTime(date("Y-m-d H:i:s"));
 		}
 	}
 
@@ -4242,10 +4283,21 @@ trait QModel_Methods
 		foreach ($itms as $itm)
 		{
 			$itm->setToBeSynced(true);
-			$app->$appProp[] = $itm;
+			# if (\QAutoload::GetDevelopmentMode())
+			{
+				$itm->db_save('ToBeSynced');
+			}
+			# $app->$appProp[] = $itm;
 		}
 		
-		$app->save($appProp . ".ToBeSynced");
+		/*
+		if (\QAutoload::GetDevelopmentMode())
+		{
+			# $app->$appProp->db_save('ToBeSynced');
+		}
+		else
+			$app->save($appProp . ".ToBeSynced");
+		*/
 	}
 
 	/**
@@ -4262,7 +4314,7 @@ trait QModel_Methods
 		$dataCls = \QApp::GetDataClass();
 
 		// if the sync items process was staSyncghrrted and the item is not new, is synchronizable, must be kept in sync and is starting point
-		if ($is_starting_point && $appProp && $this->_synchronizable && $this->_keepInSync && $dataCls::$_SYNC_ITEMS_ON_PROCESS && !$this->isNew())
+		if ($is_starting_point && $appProp && $dataCls::$_SYNC_ITEMS_ON_PROCESS && !$this->isNew() && $this->_synchronizable && $this->_keepInSync)
 		{
 			// if we edit a single element - trigger the synchronization progress - only on save
 			if (\QApi::$DataToProcess && \QApi::$DataToProcess->{$appProp} && ((count(\QApi::$DataToProcess->{$appProp}) === 1)) && !$import)
@@ -4297,7 +4349,7 @@ trait QModel_Methods
 		$dataCls = \QApp::GetDataClass();
 
 		// if the sync items process was started and the item is not new, is synchronizable, must be kept in sync and is starting point
-		if ($is_starting_point && $this->_synchronizable && $this->_keepInSync && $appProp && $dataCls::$_SYNC_ITEMS_ON_PROCESS && !$this->isNew())
+		if ($is_starting_point && $appProp && $dataCls::$_SYNC_ITEMS_ON_PROCESS && !$this->isNew() && $this->_synchronizable && $this->_keepInSync)
 		{
 			// if we edit a single element - trigger the synchronization progress
 			if (\QApi::$DataToProcess && \QApi::$DataToProcess->{$appProp} && (count(\QApi::$DataToProcess->{$appProp}) === 1))
@@ -4694,232 +4746,6 @@ trait QModel_Methods
 		}
 	}
 
-	/**
-	 * @param mixed $data
-	 * @param string|array|boolean $selector
-	 * @param \QModelProperty $prop
-	 * @param boolean $includeNonModelProps
-	 * @param \QModel $syncItm
-	 * @param \QModel|QModelArray $parent
-	 * @param array $_bag
-	 * @return \QModel
-	 * @throws \Exception
-	 */
-	public static function GetSystemSyncedData($data, $selector = true, $prop = null, $includeNonModelProps = false, $syncItm = null, $parent = null, &$_bag = null)
-	{
-		// if we don't have data or we have scalar data then return it
-		if (!$data || is_scalar($data) || is_resource($data))
-			return $data;
-
-		// if data is not a QIModel it can be only object or array (from above we know that is not a scalar or a resource)
-		if (!($data instanceof \QIModel))
-		{
-			$_isarr = is_array($data);
-			foreach ($data as $_k => $_v)
-			{
-				$_sd = ($_v && ($_v instanceof \QIModel)) ? 
-						$_v::GetSystemSyncedData($_v, $selector, $prop, $includeNonModelProps, $syncItm, $parent, $_bag) : 
-						\QModel::GetSystemSyncedData($_v, $selector, $prop, $includeNonModelProps, $syncItm, $parent, $_bag);
-				$_isarr ? ($data[$_k] = $_sd) : ($data->{$_k} = $_sd);
-			}
-			return $data;
-		}
-
-		// if the selector is provided then parse it
-		if (is_string($selector))
-			$selector = qParseEntity($selector);
-
-		//init the bag
-		// bag will be used to set references but only for QModels and not for QModelArrays
-		if (!$_bag)
-			$_bag = [];
-
-		$dcls = get_called_class();
-
-		//$use_selector = ($selector === true) ? $dcls::GetModelEntity() : $selector;
-		$use_selector = ($selector === true) ? [] : $selector;
-		$is_str_use_selector = is_string($use_selector);
-		$use_selector_str = $is_str_use_selector ? $use_selector : qImplodeEntity($use_selector);
-		$use_selector_arr = $is_str_use_selector ? qParseEntity($use_selector) : $use_selector;
-
-		// if the item was already processed then return it
-		$_dindx = $dcls."~".($data->getId() ? $data->getId() : $data->getTemporaryId());
-		if (isset($_bag[$_dindx]))
-			return $_bag[$_dindx];
-
-		// we must know if the property is subpart (fk expanded)
-		// if it is subpart there is no need to load by gid or setup gid property
-		$_isSubpart = ($prop && $prop->storage && $prop->storage["dependency"] && ($prop->storage["dependency"] === "subpart"));
-
-		// use gid for finding the element
-		// we need to use gid when is not a subpart element (be aware that we still need to use gid if subpart element but in collection)
-		$_useGid = ($data->Gid && (!$_isSubpart || ($prop && $prop->hasCollectionType())));
-
-		// if we don't have sync item then look for it only if is not subpart
-		$owner = \Omi\App::GetCurrentOwner();
-		if (!$syncItm && $_useGid)
-		{
-			if (!$owner)
-				throw new \Exception("Cannot get sync data without owner!");
-
- 			//$syncItm = $dcls::QueryFirst("Id, Gid WHERE Id=? AND Owner.Id=?", [$data->Gid, $owner->getId()]);
-			$_sitmLoaded = new $dcls();
-
-			$syncItm = $_sitmLoaded->_synchronizable ? 
-				$dcls::QueryFirst("Id, Gid" . ((strlen($use_selector_str) > 0) ? ", " . $use_selector_str : "") .  
-					" WHERE Id=? AND Owner.Id=?", [$data->Gid, $owner->getId()]) : null;;
-		}
-
-		// if the sync item was not found create a new one
-		if (!$syncItm)
-		{
-			$syncItm = new $dcls();
-			if (!$syncItm->_synchronizable)
-				$syncItm->setId($data->getId());
-		}
-
-		// always set the owner
-		if ($syncItm->_synchronizable)
-			$syncItm->setOwner($owner);
-
-		// set remote id
-		$syncItm->__rid = $data->getId();
-
-		$dataCls = \QApp::GetDataClass();
-		// do this only for removal for now
-		if ($dataCls::$_SYNC_ITEMS_ON_PROCESS && ($data->getTransformState() == \QIModel::TransformDelete))
-			$syncItm->setTransformState($data->getTransformState());
-
-		// index here only QIModels
-		$_bag[$_dindx] = $syncItm;
-
-		// go through properties and update data
-		foreach ($data as $pName => $value)
-		{
-			$_prop = $data->getModelType()->properties[$pName];
-
-			//echo $pName."<br/>";
-			//die();
-
-			// if we don't have prop (it means is a hidden property of the model) and we don't want to include non model prop or
-			if ((!$_prop && !$includeNonModelProps) || 
-				// prop exists but was not set or
-				($_prop && !$data->wasSet($pName)) || 
-					// is id or
-					in_array($pName, ["Id", "id", "_id", "Gid", "Owner", "MTime"]) || 
-					// not in selector
-					(!$selector || (is_array($selector) && !isset($selector["*"]) && !isset($selector[$pName]))))
-				continue;
-
-			// if we don't have property then it is a non model flag
-			if (!$_prop)
-			{
-				$syncItm->{$pName} = \QModel::GetSystemSyncedData($value, is_array($selector) ? $selector[$pName] : $selector, $_prop, 
-					$includeNonModelProps, null, $syncItm, $_bag);
-				continue;
-			}
-
-			$_iscollection = $_prop->hasCollectionType();
-			$_isreference = $_prop->hasReferenceType();
-
-			// if we don't have value or we have value and the value is a scalar then setup the value and continue
-			if (!$value || (!$_iscollection && !$_isreference))
-			{
-				$syncItm->{"set".$pName}($value);
-				continue;
-			}
-
-			// the property is collection
-			if ($_iscollection)
-			{
-				// check if property is scalar
-				$_isScalar = $_prop->isScalar();
-
-				// get class
-				$_vcls = get_class($value); // it should be QModelArray
-
-				// we need to be able to sync one by one items in collection
-				$_singleItmSync = ($data->{$pName} && $data->{$pName}->_singleSync);
-				$_singleItm = $_singleItmSync ? reset($data->{$pName}) : null;
-
-				// load collection data only if item has id
-				if ($syncItm->getId() && !$syncItm->{$pName})
-				{
-					$coll_sync_selector = $use_selector_arr ? $use_selector_arr[$pName] : null;
-					if ($coll_sync_selector && !is_string($coll_sync_selector))
-						$coll_sync_selector = qImplodeEntity($coll_sync_selector);
-					
-					
-					$syncItm->query($_isScalar ? 
-						$pName . ($_singleItmSync ? "" : "") : 
-						//$pName . ".{Id, Gid" . ($_singleItmSync ? " WHERE Id='".(($_singleItm && $_singleItm->Gid) ? $_singleItm->Gid: 0)."'" : "")." ORDER BY Id DESC}"
-						$pName . ".{Id, Gid" . (($coll_sync_selector && (strlen($coll_sync_selector) > 0)) ? ", " . $coll_sync_selector : "") . 
-							($_singleItmSync ? " WHERE Id='".(($_singleItm && $_singleItm->Gid) ? $_singleItm->Gid: 0)."'" : "")." ORDER BY Id DESC}"
-					);
-				}
-
-				// if we don't have collection data - init data here
-				if (!$syncItm->{$pName})
-					$syncItm->{"set".$pName}(new $_vcls());
-				//echo "<div style='color: red;'>Collection: {$pName}</div>";
-				//qvardump($syncItm->{$pName});
-
-				// just call get sync data and within the call we pass the parent - so the collection items will be pushed straight on parent 
-				// by calling set{CollName}_Item_ method
-				$value::GetSystemSyncedData($value, is_array($selector) ? $selector[$pName] : $selector, $_prop, $includeNonModelProps, $syncItm->{$pName}, $syncItm, $_bag);
-				//qvardump($value);
-			}
-			// if the property is reference and it is a subpart then query for data to update if already exists (avoid spamming the database)
-			else if ($_isreference)
-			{
-				// load reference data only if id
-				if ($syncItm->getId() && !$syncItm->{$pName} && ($_prop->storage && $_prop->storage["dependency"] && ($_prop->storage["dependency"] === "subpart")))
-				{
-					$ref_sync_selector = $use_selector_arr ? $use_selector_arr[$pName] : null;
-					if ($ref_sync_selector && !is_string($ref_sync_selector))
-						$ref_sync_selector = qImplodeEntity($ref_sync_selector);
-
-					//if (\QModel::$Dump)
-					//	qvardump("load reference {$pName}", $syncItm);
-
-					//$syncItm->query($pName . ".Id");
-					$syncItm->query($pName . ".{Id" . (($ref_sync_selector && (strlen($ref_sync_selector) > 0)) ? ", " . $ref_sync_selector : "") . "}");
-				}
-
-				$syncItm->{"set".$pName}($value::GetSystemSyncedData($value, is_array($selector) ? $selector[$pName] : $selector, $_prop, $includeNonModelProps,
-					$syncItm->{$pName}, $syncItm, $_bag));
-			}
-		}
-		return $syncItm;
-	}
-	
-	public static function GetRemoteSyncedData_Populate_All_Objects(array &$_all_objects, $syncItms)
-	{
-		if (($syncItms === null) || is_scalar($syncItms))
-			return;
-		
-		else if (is_array($syncItms) || ($syncItms instanceof \QIModelArray))
-		{
-			foreach ($syncItms as $si)
-				static::GetRemoteSyncedData_Populate_All_Objects($_all_objects, $si);
-		}
-		else if (($syncItms instanceof \QIModel) && $syncItms->_synchronizable)
-		{
-			if ($_all_objects[$syncItms->getId()."|". get_class($syncItms)])
-				return;
-			else
-			{
-				$_all_objects[$syncItms->getId()."|". get_class($syncItms)] = $syncItms;
-				foreach ($syncItms as $k => $v)
-				{
-					if (($v === null) || is_scalar($v) || ($k{0} === '_'))
-						continue;
-					static::GetRemoteSyncedData_Populate_All_Objects($_all_objects, $v);
-				}
-			}
-		}
-	}
-
 	public static function SkipSyncSelector()
 	{
 		return null;
@@ -5265,8 +5091,14 @@ trait QModel_Methods
 			if ($del) $props["Del__"] = $del;
 		}
 		$this->_iter = 0;
-	}	
+	}
+	
 	public function valid () { return isset(static::$_Type_Properties[static::class][$this->_iter]); }
+	
+	public function get_Type_Id()
+	{
+		return $this->_tid ?? ($this->_tid = (\QApp::GetStorage()->getTypeIdInStorage(get_class($this)) ?? false));
+	}
 	
 	/**
 	 * Saves the model in the Storage, no other action is performed

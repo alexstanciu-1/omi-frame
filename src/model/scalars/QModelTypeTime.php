@@ -7,7 +7,7 @@ class QModelTypeTime extends QModelTypeScalar
 	 *
 	 * @var QModelTypeTime
 	 */
-	private static $type;
+	protected static $type;
 	
 	/**
 	 * The protected constructor

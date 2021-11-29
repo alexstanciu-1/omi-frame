@@ -7,7 +7,7 @@ class QModelTypeMixed extends QModelTypeScalar
 	 *
 	 * @var QModelTypeMixed
 	 */
-	private static $type;
+	protected static $type;
 	
 	/**
 	 * The protected constructor

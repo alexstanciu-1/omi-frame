@@ -7,7 +7,7 @@ class QModelTypeScalar implements QIModelTypeUnstruct
 	 *
 	 * @var QIModelTypeUnstruct[]
 	 */
-	private static $type = array();
+	protected static $type = array();
 	
 	/**
 	 * The protected constructor

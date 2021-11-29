@@ -7,7 +7,7 @@ class QModelTypeDate extends QModelTypeScalar
 	 *
 	 * @var ModelTypeDate
 	 */
-	private static $type;
+	protected static $type;
 	
 	/**
 	 * The protected constructor

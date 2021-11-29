@@ -123,7 +123,7 @@ class QApi
 			$selector = qParseEntity($selector);
 		
 		$result = [];
-				
+		
 		$storage_model = QApp::GetDataClass();
 		foreach ($parsed_sources as $src_key => $src_info)
 		{
@@ -783,7 +783,7 @@ class QApi
 	 * @return QIModel
 	 * @throws Exception
 	 */
-	private static function __QSync($from, $selector = null, $parameters = null, $only_first = false, $id = null, array $ids_list = null, bool $apply_binds = true, array &$data_block = null, array &$used_app_selectors = null, string $query_by_data_type = null)
+	protected static function __QSync($from, $selector = null, $parameters = null, $only_first = false, $id = null, array $ids_list = null, bool $apply_binds = true, array &$data_block = null, array &$used_app_selectors = null, string $query_by_data_type = null)
 	{
 		$dataCls = \QApp::GetDataClass();
 
@@ -973,12 +973,10 @@ class QApi
 	 */
 	public static function Query($from, $selector = null, $parameters = null, $only_first = false, $id = null)
 	{
-		/*
-		if (empty($from))
-		{
-			return static::Query_App_Properties($selector = null, $parameters = null, $only_first = false, $id = null);
-		}
-		*/
+		$data_class = \QApp::GetDataClass();
+		list ($app_do_return, $app_return) = $data_class::Before_API_Query(...func_get_args());
+		if ($app_do_return)
+			return $app_return;
 		
 		$dataCls = \QApp::GetDataClass();
 
@@ -1043,7 +1041,7 @@ class QApi
 	 * @param array $parameters
 	 * @return null
 	*/
-	private static function SetupOwnerFilter($from, &$parameters, &$id)
+	protected static function SetupOwnerFilter($from, &$parameters, &$id)
 	{
 		// if the user is not logged in don't use the owner filter
 		$user = \Omi\User::GetCurrentUser();
@@ -1809,7 +1807,7 @@ class QApi
 		self::__Debug("debug/async_calls_debug.html", $args);
 	}
 
-	private static function __Debug($file, $args)
+	protected static function __Debug($file, $args)
 	{
 		/*
 		return;

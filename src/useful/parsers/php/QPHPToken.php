@@ -294,59 +294,8 @@ abstract class QPHPToken
 		
 		// echo "Parse:{$filename}<br/>";
 		
-		$temp_folder = \QAutoload::GetTempFolder();
-		if (!is_dir($temp_folder))
-			throw new \Exception('Missing temp dir: '.$temp_folder);
-		$temp_folder = realpath($temp_folder)."/compiler_tokens/";
-		if (!is_dir($temp_folder))
-			qmkdir($temp_folder);
-		if (!is_dir($temp_folder))
-			throw new \Exception('Unable to create temp dir: '.$temp_folder);
-		if (!is_file($filename))
-			throw new \Exception('Not a file: '.$filename);
-		$cwd = getcwd();
-		$cwd_parts = explode("/", trim(getcwd(), "/"));
-		$file_parts = explode("/", trim(realpath($filename), "/"));
-		$matching = true;
-		$rel_path = "";
-		$matched_parts = 0;
-		for ($i = 0; $i < count($cwd_parts); $i++)
-		{
-			if (!($matching && ($cwd_parts[$i] === $file_parts[$i])))
-			{
-				$matching = false;
-				$rel_path .= "../";
-			}
-			else
-				$matched_parts++;
-		}
-		for ($i = $matched_parts; $i < count($file_parts); $i++)
-			$rel_path .= $file_parts[$i]."/";
-		$rel_path = $temp_folder . rtrim($rel_path, "/");
-		
-		if (false && file_exists($rel_path))
-		{
-			include($rel_path);
-			$ret = $_DATA;
-		}
-		else
-		{
-			$ret = new QPHPTokenFile($filename);
-			$ret->beginParse($expand_in_methods, $cached_tokens, $expand_arrays, $cached_tokens_needs_expand);
-			
-			/*
-			ob_start();
-			$ret->obj_to_code();
-			$code_str = ob_get_clean();
-			// echo $code;
-			if (!is_dir(dirname($rel_path)))
-				qmkdir(dirname($rel_path));
-			if (!is_dir(dirname($rel_path)))
-				throw new \Exception('Unable to create temp dir: '.dirname($rel_path));
-			
-			file_put_contents($rel_path, "<?php\n\n\$_DATA = ".$code_str.";");
-			*/
-		}
+		$ret = new QPHPTokenFile($filename);
+		$ret->beginParse($expand_in_methods, $cached_tokens, $expand_arrays, $cached_tokens_needs_expand);
 
 		return $ret;
 	}

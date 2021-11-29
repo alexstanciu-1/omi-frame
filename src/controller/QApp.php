@@ -748,4 +748,18 @@ class QApp extends QAppModule
 		else
 			return [$queries];
 	}
+	
+	/**
+	 * 
+	 * @param string $from
+	 * @param string $selector
+	 * @param array $parameters
+	 * 
+	 * @return QIModel
+	 */
+	public static function Before_API_Query($from, $selector = null, $parameters = null, $only_first = false, $id = null)
+	{
+		return [false, null];
+	}
+	
 }

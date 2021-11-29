@@ -203,7 +203,7 @@ trait QCodeSync2_Gen_Model
 		}
 		else
 		{
-			qvar_dumpk($type_inf);
+			qvar_dumpk("MMMM", $type_inf);
 			throw new Exception("Bad type parsing. This should not be");
 		}
 

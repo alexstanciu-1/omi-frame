@@ -7,7 +7,7 @@ class QModelTypeResource extends QModelTypeScalar
 	 *
 	 * @var QModelTypeResource
 	 */
-	private static $type;
+	protected static $type;
 	
 	/**
 	 * The protected constructor

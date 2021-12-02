@@ -837,7 +837,7 @@ class QModelQuery
 				{
 					// will be replaced
 					$binds = $params[$tag];
-					$binds = is_array($binds) ? $binds : array($binds);
+					$binds = is_array($binds) ? $binds : [$binds];
 					$c_bind = reset($binds);
 					// var_dump($binds);
 					

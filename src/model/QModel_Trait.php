@@ -96,7 +96,7 @@ trait QModel_Trait
 		if ($selector === null)
 		{
 			// extract flat selector
-			$elements = [reset($data)];
+			$elements = [q_reset($data)];
 			$a_selector = [];
 			while ($elements)
 			{
@@ -269,7 +269,7 @@ trait QModel_Trait
 		{
 			throw new \Exception('Not implemented');
 			// extract flat selector
-			$elements = [reset($data)];
+			$elements = [q_reset($data)];
 			$a_selector = [];
 			while ($elements)
 			{
@@ -900,7 +900,7 @@ trait QModel_Trait
 
 				// we need to be able to sync one by one items in collection
 				$_singleItmSync = ($data->{$pName} && $data->{$pName}->_singleSync);
-				$_singleItm = $_singleItmSync ? reset($data->{$pName}) : null;
+				$_singleItm = $_singleItmSync ? $data->{$pName}[0] : null;
 
 				// load collection data only if item has id
 				if ((!$entityLoaded) && $syncItm->getId() && !$syncItm->{$pName})
@@ -1279,7 +1279,7 @@ trait QModel_Trait
 		$optionsPool = $modelCls::GetOptionsPool($_prop->name);
 
 		// if we have options pool defined return it
-		if ($optionsPool && ($appProp = reset($optionsPool)))
+		if ($optionsPool && ($appProp = q_reset($optionsPool)))
 			return $appDataType->properties[$appProp] ? $appDataType->properties[$appProp]->name : null;
 		
 		$p_types = $_prop->hasCollectionType() ? 
@@ -1312,7 +1312,7 @@ trait QModel_Trait
 		}
 		else if (count($props_list) === 1)
 		{
-			return reset($props_list);
+			return q_reset($props_list);
 		}
 		else
 		{
@@ -2098,7 +2098,7 @@ trait QModel_Trait
 
 				// we need to be able to sync one by one items in collection
 				$_singleItmSync = ($data->{$pName} && $data->{$pName}->_singleSync);
-				$_singleItm = $_singleItmSync ? reset($data->{$pName}) : null;
+				$_singleItm = $_singleItmSync ? $data->{$pName}[0] : null;
 
 				// load collection data only if item has id
 				if ($syncItm->getId() && !$syncItm->{$pName})

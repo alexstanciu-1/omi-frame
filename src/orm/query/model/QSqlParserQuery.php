@@ -382,7 +382,7 @@ class QSqlParserQuery
 			echo "</pre>";
 	}
 	
-	public function query(&$objs, $storage, $conn, $base_from = null, $populate_only = false)
+	public function query(&$objs, $storage, $conn, array $base_from = null, $populate_only = false)
 	{
 		if ($this->is_collection && (!$this->items))
 		{

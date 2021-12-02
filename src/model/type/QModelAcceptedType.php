@@ -89,6 +89,8 @@ final class QModelAcceptedType
 			return $this->_multity;
 		else
 		{
+			if (!is_array($this->options))
+				throw new \Exception('Unexpected type.');
 			$fst = reset($this->options);
 			$cnt = next($this->options);
 			if ($cnt)
@@ -178,6 +180,8 @@ final class QModelAcceptedType
 		
 		if ($this->_sfix === null)
 		{
+			if (!is_array($this->options))
+				throw new \Exception('Unexpected type.');
 			$frst = reset($this->options);
 			
 			if (($frst{0} === strtolower($frst{0})) && (next($this->options) === false))

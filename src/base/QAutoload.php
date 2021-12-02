@@ -696,11 +696,11 @@ final class QAutoload
 				if (is_dir($child))
 				{
 					$af = $avoid_folders ? $avoid_folders[$f] : null;
-					if (($af === true) || (($f{0} === "~") && ($path === "")))
+					if (($af === true) || (($f[0] === "~") && ($path === "")))
 						continue;
 					self::ScanForChanges($full_resync, $debug_mode, $rel."/", $af, $skip_on_ajax, $info, $files_state, $changed, $new, $root_folder);
 				}
-				else if (($f_0 = $f{0}) && ($f_0 !== strtolower($f_0)))
+				else if (($f_0 = $f[0]) && ($f_0 !== strtolower($f_0)))
 				{
 					// && ((($p = strrpos($f, ".")) !== false) ? ((($ext = substr($f, $p + 1)) === "php") || ($ext === "tpl")) : false)
 					$mt = filemtime($child);
@@ -1146,7 +1146,7 @@ final class QAutoload
 			$fp = null;
 			$parts = explode(".", $item);
 			
-			if (($item{0} !== strtolower($item{0})) && (end($parts) === "php"))
+			if (($item[0] !== strtolower($item[0])) && (end($parts) === "php"))
 			{
 				$fp = $folder.$item;
 				$count_parts = count($parts);
@@ -1793,7 +1793,7 @@ final class QAutoload
 									$replaced_path = static::DeployAppReplacePath($str_path, $web_transforms);
 									if ($replaced_path !== null)
 									{
-										return $matches[0]{0}.$replaced_path.$matches[0]{0};
+										return $matches[0][0].$replaced_path.$matches[0][0];
 									}
 									else
 										return $matches[0];

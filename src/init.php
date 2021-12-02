@@ -74,17 +74,7 @@ require_once(__DIR__."/base/QAutoload.php");
  */
 require_once(__DIR__."/functions/base.php");
 
-
-/**
- * Automate the load of classes
- * Lowercase starting Files WILL BE SKIPPED !
- * The Autoload pattern is : ClassName.php or Classname.php
- */
-function __autoload($class_name)
-{
-	// automate load of classes
-	QAutoload::AutoloadClass($class_name);
-}
+spl_autoload_register(["QAutoload", "AutoloadClass"]);
 
 /**
  * Initialize

@@ -121,7 +121,7 @@ class QSqlModelInfoProperty
 			{
 				if (!$this->property->hasCollectionType())
 				{
-					$ref_type = $this->property->hasAnyInstantiableReferenceTypes() ? reset($this->property->getAllInstantiableReferenceTypes()) : null;
+					$ref_type = $this->property->hasAnyInstantiableReferenceTypes() ? q_reset($this->property->getAllInstantiableReferenceTypes()) : null;
 					
 					$root->_multitype[$orig_name][$rowid_name] = $ref_type ? 
 																	array($storage->getTypeIdInStorage($ref_type), $ref_type) : 

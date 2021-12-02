@@ -294,7 +294,7 @@ class QSqlModelInfoType
 					if (!$root->_multitype[$full_tname][$rowid_name])
 					{
 						$coll_type = $parent_property->getCollectionType();
-						$ref_type = $coll_type->hasAnyInstantiableReferenceTypes() ? reset($coll_type->getAllInstantiableReferenceTypes()) : null;
+						$ref_type = $coll_type->hasAnyInstantiableReferenceTypes() ? q_reset($coll_type->getAllInstantiableReferenceTypes()) : null;
 						// $ref_type ? array($storage->getTypeIdInStorage($ref_type), $ref_type) : $coll_type->options;
 						$root->_multitype[$full_tname][$rowid_name] = $ref_type ? array($storage->getTypeIdInStorage($ref_type), $ref_type) : array_values($coll_type->options);
 					}

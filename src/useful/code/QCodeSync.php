@@ -2509,8 +2509,8 @@ class QCodeSync
 		}
 		else if (is_array($type_inf))
 		{
-			$accepted_obj_types = array();
-			$accepted_scalar_types = array();
+			$accepted_obj_types = [];
+			$accepted_scalar_types = [];
 			
 			// var_dump($type_inf);
 			
@@ -3216,7 +3216,7 @@ class QCodeSync
 		return self::$PreparedEncoders = self::GetPreparedData(QAutoload::GetDataEncoders());
 	}
 	
-	protected static function GetPreparedData($fixers)
+	protected static function GetPreparedData(array $fixers)
 	{
 		$ret = [];
 		foreach ($fixers as $k => $_v)

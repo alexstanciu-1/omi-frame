@@ -1339,7 +1339,7 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 		if (method_exists($called_class, "ApiQuery_out_"))
 			$called_class::ApiQuery_out_();
 		
-		return ($only_first && (qis_array($return_data))) ? ($return_data ? reset($return_data) : null) : $return_data;
+		return ($only_first && (qis_array($return_data))) ? ($return_data ? $return_data[0] : null) : $return_data;
 	}
 	
 	/**
@@ -1614,6 +1614,6 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 		if (method_exists($called_class, "ApiQuery_out_"))
 			$called_class::ApiQuery_out_();
 
-		return ($only_first && (qis_array($return_data))) ? ($return_data ? reset($return_data) : null) : $return_data;
+		return ($only_first && (qis_array($return_data))) ? ($return_data ? $return_data[0] : null) : $return_data;
 	}
 }

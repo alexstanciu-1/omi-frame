@@ -107,7 +107,7 @@ function QQueryProperty($property, $query, $binds = null, QIModel $from = null, 
 function QQueryItem($property, $query, $binds = null, QIModel $from = null, &$dataBlock = null, $skip_security = true, $filter_selector = null)
 {
 	$data = QModelQuery::BindQuery($property.".{{$query}}", $binds, $from, $dataBlock, $skip_security, $filter_selector);
-	return $data && $data->$property ? reset($data->$property) : null;
+	return isset($data->$property[0]) ? $data->$property[0] : null;
 }
 
 /**
@@ -1646,7 +1646,7 @@ function extractJsonRequest($data, $expected_type = null, QIModel $parent = null
 				if (!$property->hasReferenceType())
 					throw new Exception("Invalid input data");
 				
-				$ret->set($p_name, extractJsonRequest($v, reset($property->getReferenceTypes())));
+				$ret->set($p_name, extractJsonRequest($v, q_reset($property->getReferenceTypes())));
 			}
 			else if (is_array($v))
 			{
@@ -1666,7 +1666,7 @@ function extractJsonRequest($data, $expected_type = null, QIModel $parent = null
 						if (!$exp_acc_ty->hasReferenceType())
 							throw new Exception("Invalid input data");
 
-						$arr[] = extractJsonRequest($arr_v, reset($exp_acc_ty->getReferenceTypes()));
+						$arr[] = extractJsonRequest($arr_v, q_reset($exp_acc_ty->getReferenceTypes()));
 					}
 					else if (is_array($arr_v))
 						throw new Exception("Invalid input data");
@@ -3338,4 +3338,31 @@ function q_index_array(string $property, iterable $elements = null, bool $as_arr
 	}
 	else
 		throw new \Exception("Import is not supported.");
+}
+
+function q_reset(iterable $list = null)
+{
+	if ($list === null)
+		return null;
+	else if (is_array($list))
+	{
+		if (\QAutoload::GetDevelopmentMode())
+		{
+			$dbg = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)[0];
+			echo "<pre>\nreset called &array line:{$dbg['line']}/{$dbg['file']}</pre>";
+		}
+		return reset($list);
+	}
+	else if (($list instanceof QModelArray))
+	{
+		if (\QAutoload::GetDevelopmentMode())
+		{
+			$dbg = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)[0];
+			echo "<pre>\nreset called &QARRAY line:{$dbg['line']}/{$dbg['file']}</pre>";
+		}
+		
+		return $list->reset();
+	}
+	else
+		throw new \Exception('Invalid argument.');
 }

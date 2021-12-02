@@ -746,7 +746,7 @@ trait QModel_Security
 	// $user IN ($value->owners->partners->employees)
 	// how do we implement this ?
 	// ($values)->populate("")
-	// $class = get_class(reset($values))
+	// $class = get_class(q_reset($values))
 	// $class::Query("Id,(employees.partners.owners.Id AS COND_1),OTHER_CONDITIONS WHERE employees.partners.owners.Id = $user.Id OR OTHER_CONDITION GROUP BY ??? LIMIT \$NO_CONDITIONS")
 	
 	// Step1: Class::SecurityPrepareRelations( $list_of_all )

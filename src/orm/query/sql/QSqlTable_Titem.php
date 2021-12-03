@@ -553,14 +553,6 @@ final class QSqlTable_Titem
 					}
 										
 					$yield_obj_q = "INSERT INTO ".$sql_info["tab"]." (`".implode("`,`", $sql_info["cols"]["%"])."`) VALUES (".implode(",", $escaped_vals).");";
-					
-					/*
-					if ($model instanceof \Omi\Dev\Class_Method)
-					{
-						qvar_dumpk($yield_obj_q, $model->Class->Id, q_index_array("Name", $model->Class->Methods));
-						throw new \Exception('ex');
-					}
-					*/
 										
 					$rc = $this->query($yield_obj_q);
 					if (!$rc)
@@ -573,8 +565,6 @@ final class QSqlTable_Titem
 					$insert_id = (int)$this->connection->insert_id;
 					if (!$insert_id)
 						throw new \Exception('This should not happen.');
-					
-					# qvar_dumpk($sql_info_model["cols"]["%"], $sql_info["vals"]["%"]);
 					
 					$inserted_row = array_combine($sql_info["cols"]["%"], $sql_info["vals"]["%"]);
 					$inserted_row[$sql_info['id_col']] = $insert_id;
@@ -2004,8 +1994,6 @@ final class QSqlTable_Titem
 						"GROUP BY {$mby_info[6]}"  . (($count_arr > 1) ? ",`{$collection_backref_column}`" : "") . 
 								"}";
 		
-		# qvar_dumpk('$query_str :: '.(isset($array[0]) ? (is_object($array[0]) ? get_class($array[0]) : gettype($array[0])) : 'empty').' :: ' . $query_str);
-		
 		# what was the idea to select the column ?
 		
 		/*if (substr($query_str, 0, strlen('Merch_Categories.{')) === 'Merch_Categories.{')
@@ -2015,32 +2003,8 @@ final class QSqlTable_Titem
 			# throw new \Exception('ex');
 		}*/
 		
-		/*$do_debug = false;
-		if (($app_prop === 'Methods') && ($array[0] instanceof \Omi\Dev\Class_Obj))
-		{
-			foreach ($array as $a)
-			{
-				if ($a->Id == 7)
-				{
-					$do_debug = true;
-					break;
-				}
-			}
-		}
-		*/
-						
 		$t1 = microtime(true);
 		$array->query($query_str);
-		
-		/*
-		if ($do_debug)
-		{
-			$dbg_class = q_index_array("Id", $array)[7];
-			$dbg_methd = q_index_array("Name", $dbg_class->Methods)['Run'];
-			qvar_dumpk($collection_backref_column, $dbg_class, $dbg_methd, q_index_array("Name", $dbg_class->Methods), $query_str);
-			die("NOOOO");
-		}
-		*/
 		static::$array_q_count++;
 		static::$array_q_time += (microtime(true) - $t1);
 		
@@ -2103,8 +2067,8 @@ final class QSqlTable_Titem
 						}
 					}
 				}
-				else
-					throw new \Exception('Not valid key');
+				# else
+				#	throw new \Exception('Not valid key');
 			}
 		}
 	}

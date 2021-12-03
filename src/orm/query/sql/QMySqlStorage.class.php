@@ -1048,7 +1048,7 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 		$id = $this->_typeIds[$type_name];
 		if (!$id)
 		{
-			if ($type_name{0} === strtolower($type_name{0}))
+			if ($type_name[0] === strtolower($type_name[0]))
 				return QModelType::GetScalarTypeId($type_name);
 			// refresh cache
 			$this->ensureTypeIdsWasIncluded(true);

@@ -1826,7 +1826,7 @@ abstract class QSqlTable_frame_ extends QStorageTable
 					// cleanup column names to avoid escape chars
 					foreach ($common_cols as $k => $v)
 					{
-						if (($v{0} === '`') || ($v{0} === '\'') || ($v{0} === "\""))
+						if (($v[0] === '`') || ($v[0] === '\'') || ($v[0] === "\""))
 							$common_cols[$k] = substr($v, 1, -1);
 					}
 					

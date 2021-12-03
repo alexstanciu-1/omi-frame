@@ -66,7 +66,7 @@ class QModelArray extends ArrayObject implements QIModelArray
 		{
 			foreach ($this as $name => $value)
 			{
-				if (($name{0} !== '_') && ($value instanceof QIModel))
+				if (($name[0] !== '_') && ($value instanceof QIModel))
 					$value->init($recursive);
 			}
 		}
@@ -857,7 +857,7 @@ class QModelArray extends ArrayObject implements QIModelArray
 		$comma = false;
 		foreach ($this as $k => $v)
 		{
-			if ($k{0} == "_")
+			if ($k[0] == "_")
 				continue;
 			
 			$str .= ($comma ? "," : "")."\n\"".$k."\":";
@@ -1416,7 +1416,7 @@ class QModelArray extends ArrayObject implements QIModelArray
 
 		foreach ($data as $k => $v)
 		{
-			if (($k{0} === "_") || ($ignore_nulls && ($v === null)))
+			if (($k[0] === "_") || ($ignore_nulls && ($v === null)))
 				continue;
 
 			if ($comma)
@@ -1792,7 +1792,7 @@ class QModelArray extends ArrayObject implements QIModelArray
 		foreach ($syncItm as $_k => $_v)
 		{
 			// if is not scalar and we don't have Gid set then it should be removed from collection
-			$_existingData[$_isScalar ? $_v : $_v->getId() ? $_v->getId() : uniqid()] = [$_k, $_v];
+			$_existingData[$_isScalar ? $_v : ($_v->getId() ?: uniqid())] = [$_k, $_v];
 			if (!$_k || ($_k > $_maxk))
 				$_maxk = $_k;
 		}

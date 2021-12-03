@@ -119,7 +119,7 @@ trait QModel_Security
 				
 				foreach ($recurse_on as $k => $v)
 				{
-					if (($k{0} === '#') && ($k{1} === '%'))
+					if (($k[0] === '#') && ($k[1] === '%'))
 						continue;
 
 					foreach ($values as $value)
@@ -217,7 +217,7 @@ trait QModel_Security
 			
 			foreach ($v as $p_name => $p_val)
 			{
-				if (is_string($p_name) && ($p_name{0} === '_'))
+				if (is_string($p_name) && ($p_name[0] === '_'))
 					continue;
 				if (!$p_val)
 					continue;
@@ -609,7 +609,7 @@ trait QModel_Security
 						}
 						default:
 						{
-							if (($s_mode{0} === '@') && in_array(substr($s_mode, 1), $defined_groups))
+							if (($s_mode[0] === '@') && in_array(substr($s_mode, 1), $defined_groups))
 							{
 								$ret['filter'][0] .= ($ret['filter'][0] ? "," : "").substr($s_mode, 1);
 							}

@@ -1803,7 +1803,7 @@ final class QAutoload
 	
 	protected static function DeployAppChangePaths($full_path, $transforms)
 	{
-		$tokens = token_get_all(file_get_contents($full_path));
+		$tokens = q_token_get_all(file_get_contents($full_path));
 		$has_changes = false;
 		
 		$new = "";
@@ -1819,13 +1819,14 @@ final class QAutoload
 				$ty = null;
 				$str = $tok;
 			}
-			if (($ty === T_CONSTANT_ENCAPSED_STRING) && ($str{1} === "/"))
+			
+			if (($ty === T_CONSTANT_ENCAPSED_STRING) && ($str[1] === "/"))
 			{
 				$str_path = stripslashes(substr($str, 1, -1));
 				$replaced_path = static::DeployAppReplacePath($str_path, $transforms);
 				if ($replaced_path !== null)
 				{
-					$new_str = $str{0}.$replaced_path.$str{0};
+					$new_str = $str[0].$replaced_path.$str[0];
 					if ($new_str !== $str)
 					{
 						$has_changes = true;

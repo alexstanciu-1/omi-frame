@@ -27,7 +27,7 @@ trait QModel_Methods
 		{
 			foreach ($this as $name => $value)
 			{
-				if (($name{0} !== '_') && ($value instanceof QIModel))
+				if (($name[0] !== '_') && ($value instanceof QIModel))
 					$value->init($recursive);
 			}
 		}
@@ -248,7 +248,7 @@ trait QModel_Methods
 			if (($value instanceof QFile) && ($_fstorage = $prop->storage))
 				$value->_fstorage = $_fstorage;
 			
-			if ($property{0} === "_")
+			if ($property[0] === "_")
 			{
 				$this->$property = $value;
 				return;
@@ -279,7 +279,7 @@ trait QModel_Methods
 				if (($v instanceof QFile) && ($_fstorage = $prop->storage))
 					$v->_fstorage = $_fstorage;
 				
-				if ($k{0} == "_")
+				if ($k[0] == "_")
 				{
 					$this->$k = $v;
 					continue;
@@ -581,7 +581,7 @@ trait QModel_Methods
 	/*
 	public function __set($property, $value)
 	{
-		if ($property{0} == '_')
+		if ($property[0] == '_')
 		{
 			$this->{$property} = $value;
 			return;
@@ -671,7 +671,9 @@ trait QModel_Methods
 				$next_bkt = $backtrace ? $backtrace->next($value) : null;
 				if (($value instanceof QIModelArray) && (!$value->getModelProperty()))
 					$value->setModelProperty($property);
-				$value->transform($parameters, null, $rec_child, $next_bkt, $as_simulation, ($issues[$property->name] = array()), $root_issues, $trigger_provision, $trigger_events);
+				if (!isset($issues[$property->name]))
+					$issues[$property->name] = [];
+				$value->transform($parameters, null, $rec_child, $next_bkt, $as_simulation, $issues[$property->name], $root_issues, $trigger_provision, $trigger_events);
 			}
 		}
 
@@ -818,7 +820,7 @@ trait QModel_Methods
 		$refs[$f_id] = $this;
 		foreach ($this as $k => $v)
 		{
-			if (($k{0} == "_") || ($ignore_nulls && ($v === null)))
+			if (($k[0] == "_") || ($ignore_nulls && ($v === null)))
 				continue;
 
 			$str .= ",\n\"".$k."\":";
@@ -863,7 +865,7 @@ trait QModel_Methods
 			return null;
 		if (isset(self::$_Types_Cache[$type]))
 			return self::$_Types_Cache[$type];
-		else if ($type{0} === strtolower($type{0}))
+		else if ($type[0] === strtolower($type[0]))
 		{
 			// we have a scalar type
 			switch ($type)
@@ -2086,7 +2088,7 @@ trait QModel_Methods
 			// we will need to load the data
 			foreach ($array as $k => $v)
 			{
-				if (($k{0} === "_") ||
+				if (($k[0] === "_") ||
 						(($select_all !== true) && ($select_all[$k] === null)))
 					continue;
 				
@@ -2191,7 +2193,7 @@ trait QModel_Methods
 		{
 			foreach ($sp_list as $k => $sp)
 			{
-				if (($k{0} === "_") ||
+				if (($k[0] === "_") ||
 						(($select_all !== true) && ($select_all[$k] === null)))
 				{
 					if (static::$_SecurityPropertiesExclusive && $self)
@@ -2239,7 +2241,7 @@ trait QModel_Methods
 			// unset everything
 			foreach ($self as $k => $v)
 			{
-				if (($k{0} === "_") || (strtolower($k) === "id"))
+				if (($k[0] === "_") || (strtolower($k) === "id"))
 					continue;
 				
 				// recurse first then unset, is there any point to recurse ?
@@ -2679,7 +2681,7 @@ trait QModel_Methods
 			$comma = $metadata;
 			foreach ($data as $k => $v)
 			{
-				if (($k{0} === "_") || ($ignore_nulls && ($v === null) && !$data->wasSet($k)))
+				if (($k[0] === "_") || ($ignore_nulls && ($v === null) && !$data->wasSet($k)))
 					continue;
 				if ($comma)
 					echo ",";
@@ -2793,7 +2795,7 @@ trait QModel_Methods
 				$all_keys = array_keys(QModelQuery::GetTypesCache($class));
 				foreach ($all_keys as $k)
 				{
-					if ($k{0} !== "#")
+					if ($k[0] !== "#")
 						$replacement[] = $k;
 				}
 			}
@@ -2984,7 +2986,7 @@ trait QModel_Methods
 		
 		foreach ($mty_inf as $prop => $inf)
 		{
-			if ($prop{0} === "#")
+			if ($prop[0] === "#")
 				continue;
 			if ($inf["[]"] && $inf["[]"]["#"][$type_name])
 				$props_list[$prop] = $prop;
@@ -4248,12 +4250,12 @@ trait QModel_Methods
 					// do them all 
 					foreach ($this as $p => $v)
 					{
-						if (($v instanceof QIModel) && ($p{0} !== "_"))
+						if (($v instanceof QIModel) && ($p[0] !== "_"))
 							$v->{$method}($s, $transform_state, $_bag, $_is_app, $_is_app ? $p : $appProp);
 					}
 					break;
 				}
-				else if (($k{0} !== "_") && (($obj = $this->$k) instanceof QIModel))
+				else if (($k[0] !== "_") && (($obj = $this->$k) instanceof QIModel))
 					$obj->{$method}($s, $transform_state, $_bag, $_is_app, $_is_app ? $k : $appProp);
 			}
 		}
@@ -4261,7 +4263,7 @@ trait QModel_Methods
 		{
 			foreach ($this as $p => $v)
 			{
-				if (($v instanceof QIModel) && ($p{0} !== "_"))
+				if (($v instanceof QIModel) && ($p[0] !== "_"))
 					$v->{$method}(true, $transform_state, $_bag, $_is_app, $_is_app ? $p : $appProp);
 			}
 		}

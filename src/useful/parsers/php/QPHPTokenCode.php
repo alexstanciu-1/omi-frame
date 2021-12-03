@@ -174,15 +174,15 @@ class QPHPTokenCode extends QPHPToken
 				{
 					/*
 					var_dump($prev, is_array($prev) ? token_name($prev[0]) : "str");
-					// echo "<textarea>{$this->toString($tokens)}</textarea>";
+					// echo "<textarea>{$this::To_String($tokens)}</textarea>";
 					array_splice($tokens, 0, $pos - 40);
 					array_splice($tokens, 80, 10000);
 					// var_dump($tok, $pos);
-					echo "<textarea>".$this->toString($tokens)."</textarea>";
+					echo "<textarea>".$this::To_String($tokens)."</textarea>";
 					 * 
 					 */
 					//var_dump($tokens[$pos-1], $tok, $pos);
-					echo "<textarea>".$this->toString($tokens)."</textarea>";
+					echo "<textarea>".$this::To_String($tokens)."</textarea>";
 					var_dump($prev);
 					throw new Exception("The character was not expected before {");
 				}
@@ -203,7 +203,7 @@ class QPHPTokenCode extends QPHPToken
 			}
 			else if ($this->isPrecededBy($tokens, $pos, [";", T_OPEN_TAG, "}"]) && ($type === T_CLASS) || ($type === T_INTERFACE) || ($type === T_TRAIT) || 
 					((($type === T_ABSTRACT) || ($type === T_FINAL)) && 
-						$this->isFollowedBy($tokens, $pos, [T_CLASS, T_INTERFACE, T_TRAIT])))
+						static::isFollowedBy($tokens, $pos, [T_CLASS, T_INTERFACE, T_TRAIT])))
 			{
 				$child = new QPHPTokenClass($this);
 				$child->parse($tokens, $tok, $pos, $expand_output, $expand_in_methods, $expand_arrays);
@@ -410,7 +410,7 @@ class QPHPTokenCode extends QPHPToken
 		$doc_comm = $this->children(".QPHPTokenDocComment");
 		if ($doc_comm)
 		{
-			$parsed = QCodeStorage::parseDocComment($this->toString($doc_comm), true);
+			$parsed = QCodeStorage::parseDocComment($this::To_String($doc_comm), true);
 			if ($parsed)
 			{
 				$merge_mode = $parsed["merge.mode"];
@@ -528,9 +528,11 @@ class QPHPTokenCode extends QPHPToken
 		
 		while (($tok = $this->children[++$pos]))
 		{
-			if (is_array($tok) && (($tok[0] === T_STRING) || ($tok[0] === T_NS_SEPARATOR)))
+			if (is_array($tok) && (($tok[0] === T_STRING) || ($tok[0] === T_NS_SEPARATOR) || 
+					($tok[0] === T_NAME_QUALIFIED) || ($tok[0] === T_NAME_FULLY_QUALIFIED) || ($tok[0] === T_NAME_RELATIVE)))
 				return trim($tok[1]);
 		}
+		
 		return null;
 	}
 	
@@ -711,7 +713,7 @@ class QPHPTokenCode extends QPHPToken
 				$end = key($this->children);
 				if ($tok_type === T_USE)
 				{
-					$use_identifier = $this->toString($use);
+					$use_identifier = $this::To_String($use);
 					$last_use_position = $end;
 					if ($remove)
 						$removes[$use_identifier] = [$start, $end, $use];

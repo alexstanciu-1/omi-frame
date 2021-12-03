@@ -31,7 +31,7 @@ class QObfuscator
 					$full_ext = (($p = strpos($bn, '.')) !== false) ? substr($bn, $p) : null;
 					$last_ext = (($p = strrpos($bn, '.')) !== false) ? substr($bn, $p) : null;
 
-					if ((strtolower($bn{0}) !== $bn{0}) && (($full_ext === '.php') || ($full_ext === '.gen.php') || ($full_ext === '.patch.php')))
+					if ((strtolower($bn[0]) !== $bn[0]) && (($full_ext === '.php') || ($full_ext === '.gen.php') || ($full_ext === '.patch.php')))
 					{
 						//echo "<div style='color: green;'>Obfuscate {$name} :: {$obfusc_path}</div>";
 						static::Obfuscate($name, $obfusc_path);
@@ -117,7 +117,7 @@ class QObfuscator
 		// copy($src, $destination);
 		$content = file_get_contents($src);
 		
-		$tokens = token_get_all($content);
+		$tokens = q_token_get_all($content);
 		
 		// isolate functions
 		// within function obfuscate
@@ -258,7 +258,7 @@ class QObfuscator
 	protected static function HandleVar(&$vars, &$vars_index, $var_name, $prev)
 	{
 		if (($var_name === "\$this") || (substr($var_name, 0, 2) === "\$Q") || 
-				((substr($var_name, 0, 2) === "\$_") && ($var_name{3} && (strtoupper($var_name{3}) === $var_name{3}))) || 
+				((substr($var_name, 0, 2) === "\$_") && ($var_name[3] && (strtoupper($var_name[3]) === $var_name[3]))) || 
 				($prev && is_array($prev) && ($prev[0] === T_DOUBLE_COLON)))
 			return $var_name;
 		return ($v = $vars[$var_name]) ?: ($vars[$var_name] = "\$x".$vars_index++);

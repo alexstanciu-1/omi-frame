@@ -226,7 +226,7 @@ function qArrayToCodeFile($array, $var_name, $file_path)
  */
 function qArrayToCode($array, $var_name = null, $add_php_tags = true, $stream = null, $depth = 0, $force_index = false, $whitespace = true)
 {
-	if ($var_name && ($var_name{0} === "\$"))
+	if ($var_name && ($var_name[0] === "\$"))
 		$var_name = substr($var_name, 1);
 	
 	$str = $stream ? null : "";
@@ -341,7 +341,7 @@ function qParseEntity(string $str, $mark = false, $expand_stars = false, $start_
 
 	foreach ($tokens as $tok)
 	{
-		$frts = $tok{0};
+		$frts = $tok[0];
 		switch ($frts)
 		{
 			case " ":
@@ -447,7 +447,7 @@ function qExpandStars(&$entity, $class, $property = null)
 					$add[$k] = [];
 			}
 		}
-		else if ($k{0} === "@")
+		else if ($k[0] === "@")
 		{
 			$unset[$k] = 1;
 			
@@ -1094,7 +1094,7 @@ function extractQbRequest($data, &$parent = null, $key = null, $f_name = null, $
 	}
 	else if (is_string($data))
 	{
-		if ($data{0} === "_")
+		if ($data[0] === "_")
 			return (string)substr($data, 1);
 		else if ($data === "true")
 			return true;
@@ -1552,7 +1552,7 @@ function qEmptyDir($dir, $self = false)
  */
 function getTypeId($type)
 {
-	if ($type{0} === strtolower($type{0}))
+	if ($type[0] === strtolower($type[0]))
 		return QModelType::GetScalarTypeId($type);
 	else
 		return QApp::GetStorage()->getTypeIdInStorage($type);
@@ -1570,7 +1570,7 @@ function qb_inject_bind($html, $bind)
 {
 	if (($p = strpos($html, ">")) !== false)
 	{
-		if ($p && ($html{$p - 1} === "/"))
+		if ($p && ($html[$p - 1] === "/"))
 			$p--;
 		return substr($html, 0, $p).$bind.substr($html, $p);
 	}
@@ -1887,7 +1887,7 @@ function qDebugStackInner($args, $with_stack = false, $on_shutdown = false, stri
 
 					$base_name = basename($file);
 					$calling_class = $base_name;
-					if (($base_name{0} === strtoupper($base_name{0})) && (substr($base_name, -4) === ".php"))
+					if (($base_name[0] === strtoupper($base_name[0])) && (substr($base_name, -4) === ".php"))
 						$calling_class = substr($base_name, 0, -4);
 
 					$file_short = (substr($file_module, 0, strlen($doc_root)) === $doc_root) ? substr($file_module, strlen($doc_root)) : $file_module;
@@ -2238,156 +2238,54 @@ function qTranslate($string)
  * @param string $source
  * @return (string|array)[]
  */
-function qtoken_get_all($source, &$is_valid = null)
+function q_token_get_all($source, &$is_valid = null)
 {
 	$is_valid = true;
-	return token_get_all($source);
-	
-	$tok = reset($toks);
-	$pos = 0;
-	
-	// string | whitespace | separator
-	$consolidate_in = null;
-	$consolidate_type = null;
-	$last_type = null;
-	
-	if ($is_valid !== null)
+	if (PHP_VERSION_ID >= 80000)
 	{
-		$brackets = 0;
-		$php_tags = 0;
-
-		while ($tok)
+		$tokens = token_get_all($source);
+		if (!is_array($tokens))
+			return $tokens;
+		$ret = [];
+		foreach ($tokens as $tok)
 		{
-			$type = is_array($tok) ? $tok[0] : $tok;
-
-			switch ($type)
+			if (is_array($tok))
 			{
-				case T_WHITESPACE:
+				if (($tok[0] === T_NAME_QUALIFIED) || ($tok[0] === T_NAME_FULLY_QUALIFIED))
 				{
-					// break but don't break consolidate
-					break;
+					$tok_line = isset($tok[2]) ? $tok[2] : null;
+					$chunks = preg_split("/(\\\\)/uis", $tok[1], -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
+					foreach ($chunks as $chunk)
+						$ret[] = [($chunk === '\\') ? T_NS_SEPARATOR : T_STRING, $chunk, $tok_line];
+					/*
+					T_NAME_QUALIFIED ex: Foo\Bar;
+					// Before: T_STRING T_NS_SEPARATOR T_STRING
+					 */
+					/*
+					T_NAME_FULLY_QUALIFIED ex: \Foo;
+					// Before: T_NS_SEPARATOR T_STRING
+					 */
 				}
-				case T_STRING:
-				case T_NS_SEPARATOR:
+				else if ($tok[0] === T_NAME_RELATIVE)
 				{
-					// there is a point to do something - maybe
-					if ($consolidate_in !== null)
-					{
-						if (($type === T_NS_SEPARATOR) || ($last_type !== $tok[0]))
-						{
-							// ensure type is string
-							$toks[$consolidate_in][0] = T_STRING;
-							$toks[$consolidate_in][1] .= $tok[1];
-							$last_type = $type;
-							$toks[$pos][0] = T_WHITESPACE;
-							$toks[$pos][1] = "";
-						}
-						else
-						{
-							// string after string, we release
-							$consolidate_in = null;
-						}
-					}
-					else
-					{
-						// possible consolidate ahead
-						$consolidate_in = $pos;
-						$last_type = $consolidate_type = $type;
-					}
-					break;
+					throw new \Exception('q_token_get_all error. T_NAME_RELATIVE not implemented.');
+					# qvar_dumpk("T_NAME_RELATIVE", $tok);
+					# die;
+					/*
+					namespace\Foo;
+					// Before: T_NAMESPACE T_NS_SEPARATOR T_STRING
+					 */
 				}
-				case "{":
-				case T_CURLY_OPEN:
-				case T_DOLLAR_OPEN_CURLY_BRACES:
-				case T_STRING_VARNAME:
-				{
-					$brackets++;
-					break;
-				}
-				case "}":
-				{
-					$brackets--;
-					break;
-				}
-				case T_OPEN_TAG:
-				case T_OPEN_TAG_WITH_ECHO:
-				{
-					$php_tags++;
-					break;
-				}
-				case T_CLOSE_TAG:
-				{
-					$php_tags--;
-					break;
-				}
-				default:
-				{
-					$consolidate_in = null;
-					break;
-				}
+				else
+					$ret[] = $tok;
 			}
-
-			$tok = next($toks);
-			$pos++;
+			else
+				$ret[] = $tok;
 		}
-		
-		$is_valid = (($brackets === 0) && (($php_tags === 0) || ($php_tags === 1)));
+		return $ret;
 	}
 	else
-	{
-		while ($tok)
-		{
-			$type = is_array($tok) ? $tok[0] : $tok;
-
-			switch ($type)
-			{
-				case T_WHITESPACE:
-				{
-					// break but don't break consolidate
-					break;
-				}
-				case T_STRING:
-				case T_NS_SEPARATOR:
-				{
-					// there is a point to do something - maybe
-					if ($consolidate_in !== null)
-					{
-						if (($type === T_NS_SEPARATOR) || ($last_type !== $tok[0]))
-						{
-							// ensure type is string
-							$toks[$consolidate_in][0] = T_STRING;
-							$toks[$consolidate_in][1] .= $tok[1];
-							$last_type = $type;
-							$toks[$pos][0] = T_WHITESPACE;
-							$toks[$pos][1] = "";
-						}
-						else
-						{
-							// string after string, we release
-							$consolidate_in = null;
-						}
-					}
-					else
-					{
-						// possible consolidate ahead
-						$consolidate_in = $pos;
-						$last_type = $consolidate_type = $type;
-					}
-					break;
-				}
-				default:
-				{
-					$consolidate_in = null;
-					break;
-				}
-			}
-
-			$tok = next($toks);
-			$pos++;
-		}
-	}
-	
-	return $toks;
+		return token_get_all($source);
 }
 
 /**

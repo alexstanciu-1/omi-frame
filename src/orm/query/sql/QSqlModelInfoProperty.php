@@ -273,7 +273,7 @@ class QSqlModelInfoProperty
 				$tmp_default = true;
 			else if ($tmp_default === "false")
 				$tmp_default = true;
-			else if (($tmp_default{0} === "\"") || ($tmp_default{0} === "'"))
+			else if (($tmp_default[0] === "\"") || ($tmp_default[0] === "'"))
 				$tmp_default = substr($tmp_default, 1, -1);
 			$force_default = $default = $tmp_default;
 		}

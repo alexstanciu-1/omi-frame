@@ -67,7 +67,7 @@ class QFileLock
 	 * @return boolean
 	 * @throws Exception
 	 */
-	public function lock($file_path = null, $max_wait = 10)
+	public function lock_do($file_path = null, $max_wait = 10)
 	{
 		$is_WINDOWS = (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN');
 		
@@ -115,25 +115,31 @@ class QFileLock
 		}
 		else
 		{
-			if (!$file_path)
-				throw new Exception("Please call lock with file_path when using it static");
 			
-			$lock = new QFileLock($file_path);
-			$lock->lock($file_path, $max_wait);
-			
-			if ($lock->locked)
-			{
-				return $lock;
-			}
-			else
-			{
-				// release the lock and return null
-				$lock->unlock();
-				unset($lock);
-				return false;
-			}
 		}
+	}
+	
+	public static function Lock($file_path = null, $max_wait = 10)
+	{
+		$is_WINDOWS = (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN');
 		
+		if (!$file_path)
+			throw new Exception("Please call lock with file_path when using it static");
+
+		$lock = new QFileLock($file_path);
+		$lock->lock_do($file_path, $max_wait);
+
+		if ($lock->locked)
+		{
+			return $lock;
+		}
+		else
+		{
+			// release the lock and return null
+			$lock->unlock();
+			unset($lock);
+			return false;
+		}
 	}
 	
 	/**
@@ -151,7 +157,7 @@ class QFileLock
 		try
 		{
 			$lock = new \QFileLock($file_path);
-			$has_lock = $lock->lock(null, $max_wait);
+			$has_lock = $lock->lock_do(null, $max_wait);
 			
 			if ($has_lock)
 				return $lock;

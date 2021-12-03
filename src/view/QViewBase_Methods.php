@@ -54,7 +54,7 @@ trait QViewBase_Methods
 	 */
 	public function addJs($url)
 	{
-		if (($url{0} === '/') && ($dr = $_SERVER['DOCUMENT_ROOT']) && ($dr_len = strlen($_SERVER['DOCUMENT_ROOT'])) && (substr($url, 0, $dr_len) === $dr))
+		if (($url[0] === '/') && ($dr = $_SERVER['DOCUMENT_ROOT']) && ($dr_len = strlen($_SERVER['DOCUMENT_ROOT'])) && (substr($url, 0, $dr_len) === $dr))
 		{
 			// we need it relative
 			$url = substr($url, $dr_len - 1);
@@ -548,7 +548,7 @@ trait QViewBase_Methods
 		}
 	}
 	
-	protected function _get_Tpl_Compiled_Res()
+	protected static function _get_Tpl_Compiled_Res()
 	{
 		return [];
 	}

@@ -295,7 +295,7 @@ final class QModelProperty
 			if (is_string($this->types))
 			{
 				// should be a string at this point
-				if (strtolower($this->types{0}) === $this->types{0})
+				if (strtolower($this->types[0]) === $this->types[0])
 					return ($this->_multity = false);
 				else
 				{
@@ -347,7 +347,7 @@ final class QModelProperty
 		if (is_string($type))
 		{
 			// should be a string at this point
-			if (strtolower($type{0}) !== $type{0})
+			if (strtolower($type[0]) !== $type[0])
 			{
 				$n_types = QAutoload::GetClassExtendedBy($type);
 				if (!interface_exists($type))
@@ -363,7 +363,7 @@ final class QModelProperty
 		{
 			foreach ($type->options as $opt_ty)
 			{
-				if (strtolower($opt_ty{0}) !== $opt_ty{0})
+				if (strtolower($opt_ty[0]) !== $opt_ty[0])
 				{
 					$ext_types = QAutoload::GetClassExtendedBy($opt_ty);
 					if (!interface_exists($opt_ty))
@@ -390,14 +390,14 @@ final class QModelProperty
 		else
 		{
 			if (is_string($this->types))
-				return ($this->_hassc = (strtolower($this->types{0}) == $this->types{0}));
+				return ($this->_hassc = (strtolower($this->types[0]) == $this->types[0]));
 			else if ($this->types instanceof QModelAcceptedType)
 				return ($this->_hassc = false);
 			else 
 			{
 				foreach ($this->types as $o)
 				{
-					if ((is_string($o)) && (strtolower($o{0}) == $o{0}))
+					if ((is_string($o)) && (strtolower($o[0]) == $o[0]))
 						return ($this->_hassc = true);
 				}
 				return ($this->_hassc = false);
@@ -417,7 +417,7 @@ final class QModelProperty
 		else
 		{
 			if (is_string($this->types))
-				return ($this->_hassc = ((strtolower($this->types{0}) === $this->types{0}) ? array($this->types) : false));
+				return ($this->_hassc = ((strtolower($this->types[0]) === $this->types[0]) ? array($this->types) : false));
 			else if ($this->types instanceof QModelAcceptedType)
 				return ($this->_scty = false);
 			else 
@@ -425,7 +425,7 @@ final class QModelProperty
 				$this->_scty = array();
 				foreach ($this->types as $o)
 				{
-					if ((is_string($o)) && (strtolower($o{0}) === $o{0}))
+					if ((is_string($o)) && (strtolower($o[0]) === $o[0]))
 						$this->_scty[] = $o;
 				}
 				return $this->_scty ?: ($this->_scty = false);
@@ -445,14 +445,14 @@ final class QModelProperty
 		else
 		{
 			if (is_string($this->types))
-				return ($this->_hasrt = ((strtolower($this->types{0}) !== $this->types{0})));
+				return ($this->_hasrt = ((strtolower($this->types[0]) !== $this->types[0])));
 			else if ($this->types instanceof QModelAcceptedType)
 				return ($this->_hasrt = false);
 			else 
 			{
 				foreach ($this->types as $o)
 				{
-					if ((is_string($o)) && (strtolower($o{0}) !== $o{0}))
+					if ((is_string($o)) && (strtolower($o[0]) !== $o[0]))
 						return ($this->_hasrt = true);
 				}
 				return ($this->_hasrt = false);
@@ -467,14 +467,14 @@ final class QModelProperty
 		else
 		{
 			if (is_string($this->types))
-				return ($this->_hasirt = ((strtolower($this->types{0}) !== $this->types{0}) && QModelType::IsInstantiable($this->types)));
+				return ($this->_hasirt = ((strtolower($this->types[0]) !== $this->types[0]) && QModelType::IsInstantiable($this->types)));
 			else if ($this->types instanceof QModelAcceptedType)
 				return ($this->_hasirt = false);
 			else 
 			{
 				foreach ($this->types as $o)
 				{
-					if ((is_string($o)) && (strtolower($o{0}) !== $o{0}) && QModelType::IsInstantiable($o))
+					if ((is_string($o)) && (strtolower($o[0]) !== $o[0]) && QModelType::IsInstantiable($o))
 						return ($this->_hasirt = true);
 				}
 				return ($this->_hasirt = false);
@@ -645,13 +645,13 @@ final class QModelProperty
 	public function getReferenceTypes()
 	{
 		if (is_string($this->types))
-			return (strtolower($this->types{0}) !== $this->types{0}) ? array($this->types => $this->types) : null;
+			return (strtolower($this->types[0]) !== $this->types[0]) ? array($this->types => $this->types) : null;
 		else if (qis_array($this->types))
 		{
 			$ret = array();
 			foreach ($this->types as $ty)
 			{
-				if (is_string($ty) && strtolower($ty{0}) != $ty{0})
+				if (is_string($ty) && strtolower($ty[0]) != $ty[0])
 					$ret[$ty] = $ty;
 			}
 			if (!empty($ret))
@@ -661,7 +661,7 @@ final class QModelProperty
 		{
 			foreach ($this->types->options as $ty)
 			{
-				if (is_string($ty) && strtolower($ty{0}) != $ty{0})
+				if (is_string($ty) && strtolower($ty[0]) != $ty[0])
 					$ret[$ty] = $ty;
 			}
 			if (!empty($ret))
@@ -674,13 +674,13 @@ final class QModelProperty
 	public function getInstantiableReferenceTypes()
 	{
 		if (is_string($this->types))
-			return ((strtolower($this->types{0}) !== $this->types{0}) && QModelType::IsInstantiable($this->types)) ? array($this->types) : null;
+			return ((strtolower($this->types[0]) !== $this->types[0]) && QModelType::IsInstantiable($this->types)) ? array($this->types) : null;
 		else if (qis_array($this->types))
 		{
 			$ret = array();
 			foreach ($this->types as $ty)
 			{
-				if (is_string($ty) && (strtolower($ty{0}) !== $ty{0}) && QModelType::IsInstantiable($ty))
+				if (is_string($ty) && (strtolower($ty[0]) !== $ty[0]) && QModelType::IsInstantiable($ty))
 					$ret[] = $ty;
 			}
 			if (!empty($ret))
@@ -713,7 +713,7 @@ final class QModelProperty
 		
 		foreach ($options as $opt_ty)
 		{
-			if (strtolower($opt_ty{0}) !== $opt_ty{0})
+			if (strtolower($opt_ty[0]) !== $opt_ty[0])
 			{
 				$ext_types = $this->strict ? null : QAutoload::GetClassExtendedBy($opt_ty);
 				if ((!interface_exists($opt_ty)) && QModelType::IsInstantiable($opt_ty))
@@ -747,7 +747,7 @@ final class QModelProperty
 		
 		foreach ($options as $opt_ty)
 		{
-			if (strtolower($opt_ty{0}) !== $opt_ty{0})
+			if (strtolower($opt_ty[0]) !== $opt_ty[0])
 			{
 				$ext_types = $this->strict ? null : QAutoload::GetClassExtendedBy($opt_ty);
 				if ((!interface_exists($opt_ty)) && QModelType::IsInstantiable($opt_ty))
@@ -773,7 +773,7 @@ final class QModelProperty
 			$ret = [];
 		if (is_string($types))
 		{
-			if (ucfirst($types{0}) === $types{0})
+			if (ucfirst($types[0]) === $types[0])
 			{
 				$inst_types = static::GetAllInstantiableTypesFor($types, $this->strict);
 				foreach ($inst_types as $it)

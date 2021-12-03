@@ -161,8 +161,8 @@ class QCodeSync2
 				$this->full_sync = $full_resync;
 				$this->do_not_allow_empty_extended_by = false;
 
-				# if ($this->full_sync) # this should only be triggerd explicitly
-				#	$this->empty_gens = true; # for testing
+				if ($this->full_sync) # this should only be triggerd explicitly
+					$this->empty_gens = true; # for testing
 				
 				$this->run_backend_fix = false;
 				$this->model_only_run = true;
@@ -424,7 +424,8 @@ class QCodeSync2
 		# STAGE 1 - Collect information from files, determine namespaces and populate $this->info_by_class
 		$this->sync_code__collect_info($files, $changed_or_added, $removed_files, $new_files);
 		
-		if ((!$this->full_sync) && (!isset(reset($this->changes_by_class)['files'])))
+		if ((!$this->full_sync) && (($first_stack_of_data = reset($this->changes_by_class) === null) || 
+										(!isset($first_stack_of_data['files']))))
 		{
 			// no change
 			return null;
@@ -545,7 +546,7 @@ class QCodeSync2
 						list ($short_file_name, $full_ext) = explode(".", basename($file), 2);
 						$full_ext = ".".$full_ext;
 
-						if (!(strtolower($short_file_name{0}) !== $short_file_name{0}))
+						if (!(strtolower($short_file_name[0]) !== $short_file_name[0]))
 						{
 							// this is to fix a bug for files like: 01-mvvm.js
 							continue;
@@ -811,8 +812,13 @@ class QCodeSync2
 				continue;
 			
 			echo "PRE COMPILE :: {$full_class_name}<br/>\n";
-			// if ($full_class_name !== 'Omi\VF\View\Partners')
-			//	continue;
+			/*if ($full_class_name === 'Registration_Request')
+			{
+				$toks = \QPHPToken::ParsePHPFile("/home/alex/public_html/orm/~includes/omi-mods-travel/model/Registration_Request.class.php");
+				qvar_dumpk($toks->getNamespace());
+				qvar_dumpk('namespace fail', $info);
+				die;
+			}*/
 			
 			if (!$this->full_sync)
 			{
@@ -909,6 +915,7 @@ class QCodeSync2
 						unset($this->autoload[$full_class_name.'_GenModel_']);
 					}
 				}
+
 				if (file_exists($gen_file_wo_ext.'.view.gen.php'))
 				{
 					if ($info['has_tpl'])
@@ -928,6 +935,7 @@ class QCodeSync2
 						unset($this->autoload[$full_class_name.'_GenView_']);
 					}
 				}
+				
 				if (file_exists($gen_file_wo_ext.'.url.gen.php'))
 				{
 					if ($info['has_url'])
@@ -1012,6 +1020,7 @@ class QCodeSync2
 	{
 		foreach ($this->info_by_class as $full_class_name => $info)
 		{
+			# echo "sync_code__compile_02 :: {$full_class_name}\n";
 			// if ($full_class_name !== 'Omi\VF\View\Partners')
 			//	continue;
 			// $info = $this->full_sync ? $ch_info : $this->info_by_class[$full_class_name];
@@ -1156,14 +1165,15 @@ class QCodeSync2
 		}
 	}
 	
-	function ensure_class(string $full_class_name, string $short_class_name, string $gen_dir, string $extend_class, array $extends_info, array $include_traits)
+	function ensure_class(string $full_class_name, string $short_class_name, string $gen_dir, string $extend_class, 
+									array $extends_info, array $include_traits)
 	{
 		$gen_path = $gen_dir.$short_class_name.".gen.php";
-			
-		$expected_content = $this->compile_setup_class($full_class_name, $short_class_name, $extend_class, $extends_info['namespace'], $extends_info['doc_comment'], $extends_info);
 		
+		$expected_content = $this->compile_setup_class($full_class_name, $short_class_name, $extend_class, $extends_info['namespace'], $extends_info['doc_comment'], $extends_info);
+			
 		# in case the file does not exist, or the begining is not what we expect, reset it
-		if ((!file_exists($gen_path)) || (substr(file_get_contents($gen_path, 0, strlen($expected_content[0]))) !== $expected_content[0]))
+		if ((!file_exists($gen_path)) || (substr(file_get_contents($gen_path), 0, strlen($expected_content[0])) !== $expected_content[0]))
 		{
 			# @TODO - if the file already exists, make sure the triats inside it are there & ok for autoload !
 			$content_str = "";
@@ -1181,6 +1191,7 @@ class QCodeSync2
 		}
 		if (!file_exists($gen_path))
 			throw new \Exception('Unable to setup class file: '.$gen_path);
+		
 		return realpath($gen_path);
 	}
 	
@@ -1205,6 +1216,8 @@ class QCodeSync2
 	
 	function compile_model(string $full_class_name, array $header_inf, array $full_class_info, bool $added_or_changed)
 	{
+		# echo "compile_model :: {$full_class_name}\n";
+		
 		$short_class_name = $header_inf['final_class'];
 		$tait_name = $short_class_name."_GenModel_";
 		$gen_path = $full_class_info['gens_dir'];
@@ -1296,7 +1309,7 @@ class QCodeSync2
 				$all_resources[$k] = array_reverse($v);
 		}
 		
-		$tpl_trait_str .= "\t"."protected function _get_Tpl_Compiled_Res()\n\t{\n\t\t"."return ".var_export($all_resources, true).";\n\t}\n\n";
+		$tpl_trait_str .= "\t"."protected static function _get_Tpl_Compiled_Res()\n\t{\n\t\t"."return ".var_export($all_resources, true).";\n\t}\n\n";
 		
 		foreach ($render_methods as $r_meth)
 			$tpl_trait_str .= $r_meth['body'];
@@ -1368,7 +1381,7 @@ class QCodeSync2
 		if (!$q_args)
 			return null;
 		
-		$params_names_only = $q_args ? token_get_all("<?php function __noname_ignore({$q_args}) {}\n") : [];
+		$params_names_only = $q_args ? q_token_get_all("<?php function __noname_ignore({$q_args}) {}\n") : [];
 		$params_names_only_items = [];
 		foreach ($params_names_only as $token)
 		{
@@ -1459,7 +1472,7 @@ class QCodeSync2
 			$new_first_elem = "{$func_name}: function";
 			$func_code[0] = $new_first_elem;
 
-			$func_str = QPHPToken::toString($func_code);
+			$func_str = QPHPToken::To_String($func_code);
 			$func_str = rtrim($func_str, "\n\t\r ;");
 			
 			$start_tag = "// JS_FUNC: {$func_name}@{$insert_code}";

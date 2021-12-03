@@ -145,7 +145,7 @@ class QStorageCleanup
 			$class_inf = QModelQuery::GetTypesCache($class);
 			foreach ($class_inf as $prop_name => $inf)
 			{
-				if (($prop_name{0} === '#') && ($prop_name{1} === '%'))
+				if (($prop_name[0] === '#') && ($prop_name[1] === '%'))
 					continue;
 				
 				if (($ref_inf = $inf['#']))
@@ -360,7 +360,7 @@ class QStorageCleanup
 		$class_inf = QModelQuery::GetTypesCache($class);
 		foreach ($class_inf as $prop_name => $inf)
 		{
-			if (($prop_name{0} === '#') && ($prop_name{1} === '%'))
+			if (($prop_name[0] === '#') && ($prop_name[1] === '%'))
 				continue;
 
 			if (($ref_inf = $inf['#']))

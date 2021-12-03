@@ -675,7 +675,7 @@ class {$lv_view}_backend_ extends \\Omi\\View\\Grid
 			return null; # no action
 		
 		$f_content = file_get_contents($full_path);
-		$toks = token_get_all($f_content);
+		$toks = q_token_get_all($f_content);
 		$look_for_use = false;
 		$use_tok = null;
 		$use_tok_index = null;

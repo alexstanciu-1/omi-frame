@@ -444,7 +444,7 @@ trait QModel_Trait
 						foreach ($matchup as $m => $m_pos)
 						{
 							// $is_last_index = $matchup[$position ? $position . "." . $k : $k];
-							if ((substr($m, 0, $avoid_copy_len) === $avoid_copy) && (($m{$avoid_copy_len} === '.') || (strlen($m) === $avoid_copy_len)))
+							if ((substr($m, 0, $avoid_copy_len) === $avoid_copy) && (($m[$avoid_copy_len] === '.') || (strlen($m) === $avoid_copy_len)))
 								continue;
 							$copy_cols[] = $m_pos;
 						}
@@ -1011,7 +1011,7 @@ trait QModel_Trait
 			// index existing app data info for avoid duplicating data
 			foreach ($currentData as $_k => $_v)
 			{
-				if (($_k{0} === "_") || !$_v || is_scalar($_v))
+				if (($_k[0] === "_") || !$_v || is_scalar($_v))
 					continue;
 
 				if (!qis_array($_v))
@@ -1069,7 +1069,7 @@ trait QModel_Trait
 			if (!($value instanceof \QIModel))
 				continue;
 			// if the property is a hidden property or we don't have value or the value is scalar then continue
-			if (($key{0} === "_") || !$currentData->wasSet($key) || !$value || is_scalar($value) || 
+			if (($key[0] === "_") || !$currentData->wasSet($key) || !$value || is_scalar($value) || 
 				(($skipExpandSelector && is_array($skipExpandSelector) && isset($skipExpandSelector[$key]))))
 				continue;
 
@@ -1429,7 +1429,7 @@ trait QModel_Trait
 				// repeat logic
 				if (is_array($item))
 				{
-					$i_class = (($c = $item["_ty"]) && class_exists($c)) ? $c : (((($type{0} === "\\") || ($type{0} !== strtolower($type{0}))) && class_exists($type)) ? $type : null);
+					$i_class = (($c = $item["_ty"]) && class_exists($c)) ? $c : (((($type[0] === "\\") || ($type[0] !== strtolower($type[0]))) && class_exists($type)) ? $type : null);
 					$ret[$k] = static::FromArray($item, $i_class, $selector, $include_nonmodel_properties);
 				}
 				else
@@ -1439,7 +1439,7 @@ trait QModel_Trait
 		}
 		else
 		{
-			$class = (($c = $array["_ty"]) && class_exists($c)) ? $c : (((($type{0} === "\\") || ($type{0} !== strtolower($type{0}))) && class_exists($type)) ? $type : null);
+			$class = (($c = $array["_ty"]) && class_exists($c)) ? $c : (((($type[0] === "\\") || ($type[0] !== strtolower($type[0]))) && class_exists($type)) ? $type : null);
 			if (!$class)
 				throw new Exception("Unable to determine type for input data");
 			
@@ -1554,7 +1554,7 @@ trait QModel_Trait
 				{
 					// not in the selector
 					// or we have wst flag and the property was not set
-					if (($k{0} === "_") || (($selector !== null) && (!$all_keys) && ($selector[$k] === null)) || ($wst && !$wst[$k]))
+					if (($k[0] === "_") || (($selector !== null) && (!$all_keys) && ($selector[$k] === null)) || ($wst && !$wst[$k]))
 						break;
 
 					$ty = gettype($v);
@@ -2173,7 +2173,7 @@ trait QModel_Trait
 			
 			foreach ($syncItms as $k => $v)
 			{
-				if (($v === null) || is_scalar($v) || ($k{0} === '_'))
+				if (($v === null) || is_scalar($v) || ($k[0] === '_'))
 					continue;
 				static::GetRemoteSyncedData_Populate_All_Objects($_all_objects, $v);
 			}
@@ -2185,7 +2185,7 @@ trait QModel_Trait
 				$_all_objects[$syncItms->getId()."|". get_class($syncItms)] = $syncItms;
 				foreach ($syncItms as $k => $v)
 				{
-					if (($v === null) || is_scalar($v) || ($k{0} === '_'))
+					if (($v === null) || is_scalar($v) || ($k[0] === '_'))
 						continue;
 					static::GetRemoteSyncedData_Populate_All_Objects($_all_objects, $v);
 				}

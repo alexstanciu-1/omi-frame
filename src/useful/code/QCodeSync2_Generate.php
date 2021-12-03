@@ -124,7 +124,7 @@ trait QCodeSync2_Generate
 					$acc_type = $_tyinf;
 					$possible_collection = true;
 				}
-				else if ($_tyinf{0} !== strtolower($_tyinf{0}))
+				else if ($_tyinf[0] !== strtolower($_tyinf[0]))
 					$accepted_obj_types[$use_ty] = $type_extracted_inf;
 				else
 					$accepted_scalar_types[$use_ty] = $type_extracted_inf;
@@ -285,7 +285,7 @@ trait QCodeSync2_Generate
 			$is_ok = "((!__IN_PHP__) || (\$value instanceof \\QIModelArray))";
 			$valid_type = true;
 		}
-		else if ($type_inf{0} !== strtolower($type_inf{0}))
+		else if ($type_inf[0] !== strtolower($type_inf[0]))
 		{
 				// var_dump("A: ".$type_inf);
 			// reference

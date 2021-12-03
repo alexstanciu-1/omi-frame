@@ -70,7 +70,7 @@ class QSqlParserModel
 	 * 
 	 * @param string[] $arr
 	 */
-	public function RtrimComma(&$arr)
+	public static function RtrimComma(&$arr)
 	{
 		$cnt = count($arr);
 		$pos = $cnt - 1;
@@ -87,7 +87,7 @@ class QSqlParserModel
 	 * 
 	 * @param string[] $arr
 	 */
-	public function LtrimComma(&$arr)
+	public static function LtrimComma(&$arr)
 	{
 		// $cnt = count($arr);
 		$pos = 0;

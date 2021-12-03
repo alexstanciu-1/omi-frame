@@ -553,6 +553,14 @@ final class QSqlTable_Titem
 					}
 										
 					$yield_obj_q = "INSERT INTO ".$sql_info["tab"]." (`".implode("`,`", $sql_info["cols"]["%"])."`) VALUES (".implode(",", $escaped_vals).");";
+					
+					/*
+					if ($model instanceof \Omi\Dev\Class_Method)
+					{
+						qvar_dumpk($yield_obj_q, $model->Class->Id, q_index_array("Name", $model->Class->Methods));
+						throw new \Exception('ex');
+					}
+					*/
 										
 					$rc = $this->query($yield_obj_q);
 					if (!$rc)
@@ -566,7 +574,9 @@ final class QSqlTable_Titem
 					if (!$insert_id)
 						throw new \Exception('This should not happen.');
 					
-					$inserted_row = array_combine($sql_info_model["cols"]["%"], $sql_info["vals"]["%"]);
+					# qvar_dumpk($sql_info_model["cols"]["%"], $sql_info["vals"]["%"]);
+					
+					$inserted_row = array_combine($sql_info["cols"]["%"], $sql_info["vals"]["%"]);
 					$inserted_row[$sql_info['id_col']] = $insert_id;
 					$existing_records[$insert_id] = $inserted_row;
 					
@@ -1249,6 +1259,8 @@ final class QSqlTable_Titem
 		// some things can be cached
 		$cache_key = $m_type->class;
 		$rowid_col = $m_type->getRowIdColumnName();
+		
+		$cache[$cache_key] = [];
 
 		$meta = [];
 
@@ -1266,6 +1278,8 @@ final class QSqlTable_Titem
 				continue;
 
 			$p_name = $prop->name;
+			if ($p_name === 'Del__')
+				continue;
 			
 			if (	// if we have a selector and this property is not included
 					(($selector === false) || ($selector_isarr && ($selector[$prop->name] === null) && ($selector["*"] === null))) )
@@ -1420,10 +1434,18 @@ final class QSqlTable_Titem
 			$cols["%"][] = $cols["_type"]["val"] = $ci;
 			$vals["%"][] = $vals["_type"]["val"] = $model->get_Type_Id();
 		}
+		
+		$cache_for_class = $cache[$class_name];
+		if (!isset($cache_for_class))
+		{
+			if (\QAutoload::GetDevelopmentMode())
+				qvar_dumpk('$class_name',$class_name);
+			throw new \Exception('There should be a cache for. '.$class_name);
+		}
 
 		foreach ($props as $p_name => $prop)
 		{
-			if ($prop->storage["none"])
+			if ($prop->storage["none"] || ($p_name === 'Del__'))
 				continue;
 
 			if (	// if we have a selector and this property is not included
@@ -1443,8 +1465,11 @@ final class QSqlTable_Titem
 			$value = $model->$p_name;
 			# value check
 			$model->{"set{$p_name}"}($value, 1);
-			$cached_prop = $cache[$class_name][$p_name];
-
+			$cached_prop = $cache_for_class[$p_name];
+			
+			if (!isset($cached_prop))
+				continue; # should be a collection
+			
 			if ($value instanceof QIModel)
 			{
 				# $objects[] = array($value, $prop);
@@ -1461,6 +1486,8 @@ final class QSqlTable_Titem
 						$vals["%"][] = $vals[$p_name]["ref"] = (int)$value->getId();
 						$cols["%"][] = $cached_prop["ref"];
 					}
+					else
+						throw new \Exception('Missing.');
 
 					// TO DO : when we setup this one here, we don't yet know if it was changed and a lot of times it is not needed
 					// var_dump($p_name);
@@ -1490,6 +1517,7 @@ final class QSqlTable_Titem
 					$vals["%"][] = $vals[$p_name]["ref"] = null;
 					$cols["%"][] = $cached_prop["ref"];
 				}
+				
 			}
 		}
 		
@@ -1497,7 +1525,7 @@ final class QSqlTable_Titem
 		$copy['vals'] = $vals;
 		$copy['cols'] = $cols;
 		# $copy['objs'] = $objects;
-
+		
 		# return array("sql" => null, "cols" => $cols, "vals" => $vals, "tab" => qEscTable($this->name), "id_col" => $rowid_col, "objs" => $objects, 'meta' =>  $meta);
 		return $copy;
 	}
@@ -1972,7 +2000,11 @@ final class QSqlTable_Titem
 		
 		# qvar_dumpk('$mby_info', $mby_info);
 
-		$query_str = "{$app_prop}.{{$mby_info[6]} WHERE {$str} GROUP BY {$mby_info[6]}}"; # .($count_arr > 1 ? ",`{$collection_backref_column}`" : "");
+		$query_str = "{$app_prop}.{{$mby_info[6]} WHERE {$str} ".
+						"GROUP BY {$mby_info[6]}"  . (($count_arr > 1) ? ",`{$collection_backref_column}`" : "") . 
+								"}";
+		
+		# qvar_dumpk('$query_str :: '.(isset($array[0]) ? (is_object($array[0]) ? get_class($array[0]) : gettype($array[0])) : 'empty').' :: ' . $query_str);
 		
 		# what was the idea to select the column ?
 		
@@ -1983,8 +2015,32 @@ final class QSqlTable_Titem
 			# throw new \Exception('ex');
 		}*/
 		
+		/*$do_debug = false;
+		if (($app_prop === 'Methods') && ($array[0] instanceof \Omi\Dev\Class_Obj))
+		{
+			foreach ($array as $a)
+			{
+				if ($a->Id == 7)
+				{
+					$do_debug = true;
+					break;
+				}
+			}
+		}
+		*/
+						
 		$t1 = microtime(true);
 		$array->query($query_str);
+		
+		/*
+		if ($do_debug)
+		{
+			$dbg_class = q_index_array("Id", $array)[7];
+			$dbg_methd = q_index_array("Name", $dbg_class->Methods)['Run'];
+			qvar_dumpk($collection_backref_column, $dbg_class, $dbg_methd, q_index_array("Name", $dbg_class->Methods), $query_str);
+			die("NOOOO");
+		}
+		*/
 		static::$array_q_count++;
 		static::$array_q_time += (microtime(true) - $t1);
 		
@@ -2024,6 +2080,8 @@ final class QSqlTable_Titem
 				
 				if ($valid)
 				{
+					# qvar_dumpk(get_class($item) . " /key/".get_class($array[0]).".{$app_prop}/ " . json_encode(explode("\x00", $key)));
+				
 					$matching_objects = $merge_by_find_now[$key];
 
 					if ($matching_objects)
@@ -2045,6 +2103,8 @@ final class QSqlTable_Titem
 						}
 					}
 				}
+				else
+					throw new \Exception('Not valid key');
 			}
 		}
 	}

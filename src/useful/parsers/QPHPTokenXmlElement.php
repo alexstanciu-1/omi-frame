@@ -39,7 +39,7 @@ class QPHPTokenXmlElement extends QPHPToken
 		$this->_generated = true;
 		$do_soft_unwrap = false;
 
-		if (strtolower($this->tag{0}) === "q")
+		if (strtolower($this->tag[0]) === "q")
 		{
 			$q_matches = null;
 			$q_selector = null;
@@ -169,7 +169,7 @@ class QPHPTokenXmlElement extends QPHPToken
 					if (($lc_tag === "qparent") || ($lc_tag === "qroot"))
 					{
 						// @todo : merge attributes, change tag, prepend inner
-						$str_tp_tmp = trim($this->toString($q_matches));
+						$str_tp_tmp = trim($this::To_String($q_matches));
 						$parsed_code = QPHPToken::ParseTemplate($str_tp_tmp);
 
 						$this->append($parsed_code);
@@ -193,7 +193,7 @@ class QPHPTokenXmlElement extends QPHPToken
 						// $_tofind = is_array($parsed_code) ? reset($parsed_code) : $parsed_code;
 						if (!$_tofind)
 						{
-							// qvar_dump($___pc, $this->toString($q_matches));
+							// qvar_dump($___pc, $this::To_String($q_matches));
 							// qvar_dump($q_matches);
 							qvar_dumpk([
 										# '$this' => $this, 
@@ -227,7 +227,7 @@ class QPHPTokenXmlElement extends QPHPToken
 					else 
 					{
 						// insert after each of the matches
-						$str_code = ($this->toString($this->inner()));
+						$str_code = ($this::To_String($this->inner()));
 
 						foreach ($q_matches as $q_match)
 						{
@@ -300,7 +300,7 @@ class QPHPTokenXmlElement extends QPHPToken
 			else if (($this->parent instanceof QPHPTokenFile) && ($this->parent->extension === "tpl") && 
 						// only main renders atm
 						($this->parent->fileParts[1] === "tpl") && 
-						$this->tag && ($this->tag{0} !== "!"))
+						$this->tag && ($this->tag[0] !== "!"))
 			{
 				// $f_parts = $this->parent->fileParts;
 				// $this->setAttribute("qCtrl", "\"<?=\$this->name.\"({$gen_info->class_name})\";? > \"", false);
@@ -336,7 +336,7 @@ class QPHPTokenXmlElement extends QPHPToken
 							$include = true;
 						
 						if ($include)
-							$data_block .= $this->toString($p_child);
+							$data_block .= $this::To_String($p_child);
 						
 						if (($p_child instanceof QPHPTokenXmlElement) && $p_child->attrs["jsFunc"])
 						{
@@ -353,7 +353,7 @@ class QPHPTokenXmlElement extends QPHPToken
 				else if (!$ret_parse["meta"])
 				{
 					$do = true;
-					$data_block .= $inside_js_ctrl ? $this->toString($this->inner()) : $this->toString();
+					$data_block .= $inside_js_ctrl ? $this::To_String($this->inner()) : $this->toString();
 				}
 
 				if ($do)
@@ -371,8 +371,7 @@ class QPHPTokenXmlElement extends QPHPToken
 					$class_path = [$class_path, $this->getRoot()->filename];
 
 					list($func_info, $func) = QPHPTokenDocComment::CreateJsFunc($code_clone, $attr_jsFunc, $class_path);
-					// var_dump($func_info, $this->toString($func));
-
+					
 					// $inside_js_ctrl
 					$this->getRoot()->jsFunc[$func_info["tag"]] = $func;
 					
@@ -429,7 +428,7 @@ class QPHPTokenXmlElement extends QPHPToken
 		if (($av = $this->attrs[$name]) !== null)
 		{
 			// update it
-			$val = $av{0}.htmlspecialchars($value).$av{0};
+			$val = $av[0].htmlspecialchars($value).$av[0];
 			if ($val !== $av)
 			{
 				$setup_ok = false;
@@ -443,7 +442,7 @@ class QPHPTokenXmlElement extends QPHPToken
 					else if (($type === T_QXML_ATTR_VALUE) && ($prev_name === $name))
 					{
 						// bingo
-						$frst_ch = $child[1]{0};
+						$frst_ch = $child[1][0];
 						if ((($sl = strlen($child[1])) > 1) && ($frst_ch === substr($child[1], -1)))
 						{
 							// one value
@@ -551,7 +550,7 @@ class QPHPTokenXmlElement extends QPHPToken
 			else if (($type === T_QXML_ATTR_VALUE) && ($prev_name === $name))
 			{
 				// bingo
-				$frst_ch = $child[1]{0};
+				$frst_ch = $child[1][0];
 				if ((($sl = strlen($child[1])) > 1) && ($frst_ch === substr($child[1], -1)))
 				{
 					// one value
@@ -613,7 +612,7 @@ class QPHPTokenXmlElement extends QPHPToken
 		{
 			// update it
 			$classes = stripslashes(substr($this->attrs["class"], 1, -1));
-			$this->setAttribute("class", $this->attrs["class"]{0}.(empty($classes) ? $class_name : ($classes." ".$class_name)).$this->attrs["class"]{0}, false);
+			$this->setAttribute("class", $this->attrs["class"][0].(empty($classes) ? $class_name : ($classes." ".$class_name)).$this->attrs["class"][0], false);
 		}
 		else
 			$this->setAttribute("class", $class_name);
@@ -660,14 +659,14 @@ class QPHPTokenXmlElement extends QPHPToken
 		{
 			if ($child instanceof QPHPTokenCode)
 			{
-				$init_str .= $this->toString($child->inner()).";\n";
+				$init_str .= $this::To_String($child->inner()).";\n";
 			}
 			else if (($child instanceof QPHPTokenXmlElement) && $child->tag)
 			{
 				$lc_tag = strtolower($child->tag);
 				if (($lc_tag === 'init') || ($lc_tag === 'init_cb'))
 				{
-					$init_str .= $this->toString($child->findCode()->inner()).";\n";
+					$init_str .= $this::To_String($child->findCode()->inner()).";\n";
 				}
 				else 
 				{
@@ -685,7 +684,7 @@ class QPHPTokenXmlElement extends QPHPToken
 					else
 					{
 						$api_enable = ($v = $child->getAttribute('q-api')) && ($v !== false) ? "@api.enable" : "";
-						$m_body = $this->toString($child->findCode()->inner()).";\n";
+						$m_body = $this::To_String($child->findCode()->inner()).";\n";
 					}
 					
 					$meths_str .= 
@@ -829,7 +828,7 @@ class QPHPTokenXmlElement extends QPHPToken
 			else if ($type === T_QXML_ATTR_VALUE)
 			{
 				// we need to do some very smart look ahead here
-				$frst_ch = $tok[1]{0};
+				$frst_ch = $tok[1][0];
 				$last_ch = null;
 				$fst = true;
 				$val = "";
@@ -1079,25 +1078,25 @@ class QPHPTokenXmlElement extends QPHPToken
 		
 		$code = new QPHPTokenCode($root);
 		$pos = 0;
-		$new_tokens = qtoken_get_all($str);
+		$new_tokens = q_token_get_all($str);
 		$code->parse($new_tokens, $new_tokens[0], $pos, $gen_info->expandOutput(), true);
 		$code->setParent($root);
 		
 		/*
 		$code_1 = "<?php\n\nclass {$gen_info->getClassName()}\n{\n\n\tpublic function getURL(\$tag)\n\t{\n";
-		$new_tokens = qtoken_get_all($code_1);
+		$new_tokens = q_token_get_all($code_1);
 
 		$new_tokens[] = $this;
 
 		$code_2 = "\n\t}\n\n\tpublic function loadFromURL(QUrl \$url)\n\t{\n";
 
-		$new_tokens = array_merge($new_tokens, qtoken_get_all($code_2));
+		$new_tokens = array_merge($new_tokens, q_token_get_all($code_2));
 
 		// TO DO: clone
 		$new_tokens[] = $this;
 
 		$code_3 = "\n\t}\n\n}\n\n?>";
-		$new_tokens = array_merge($new_tokens, qtoken_get_all($code_3));
+		$new_tokens = array_merge($new_tokens, q_token_get_all($code_3));
 
 		$root->emptyNode();
 
@@ -1199,7 +1198,7 @@ class QPHPTokenXmlElement extends QPHPToken
 					$code_obj = $this->findCode();
 					// replace all T_VARIABLE, where value = '$this' with '$_this' - will be easy
 					$code_obj->replaceTokenRecursive([T_VARIABLE, '$this'], [T_VARIABLE, '$_this']);
-					$get_code = $this->toString($code_obj->inner());
+					$get_code = $this::To_String($code_obj->inner());
 				}
 				
 				$used_params = $args_offset;
@@ -1395,7 +1394,7 @@ class QPHPTokenXmlElement extends QPHPToken
 						}
 					}
 					else
-						$test_str .= $this->toString( $this->rightTrimCodeSemicolon($test_node->findCode()->inner()) );
+						$test_str .= $this::To_String( $this->rightTrimCodeSemicolon($test_node->findCode()->inner()) );
 				}
 				
 				$test_str .= ")))\n";
@@ -1421,7 +1420,7 @@ class QPHPTokenXmlElement extends QPHPToken
 				if ($load_code)
 				{
 					// TO DO: append this in the right order
-					$load_str .= $this->toString($load_code->inner());
+					$load_str .= $this::To_String($load_code->inner());
 				}
 				
 				// no longer autoadvance, let the code determine
@@ -1449,7 +1448,7 @@ class QPHPTokenXmlElement extends QPHPToken
 				$include_str = $this->generateUrlControllerIncludesForLoad($this->parent->children("include"));
 				
 				$unload_element = $this->parent->findChildWithTag("unload");
-				$unload_str = $unload_element && ($unload_code = $unload_element->findCode()) ? $this->toString($unload_code->inner()) : null;
+				$unload_str = $unload_element && ($unload_code = $unload_element->findCode()) ? $this::To_String($unload_code->inner()) : null;
 				
 				// should check if there is a return the right way
 				
@@ -1509,7 +1508,7 @@ class QPHPTokenXmlElement extends QPHPToken
 					if ($global_load_code_obj)
 						$global_load_code_obj = $global_load_code_obj->findFirstCodeElement();
 				}
-				$global_load_code = $global_load_code_obj ? $this->toString($global_load_code_obj->inner()) : null;
+				$global_load_code = $global_load_code_obj ? $this::To_String($global_load_code_obj->inner()) : null;
 				
 				$global_unload_obj = $this->findLastCodeElement();
 				if ($global_unload_obj === $global_load_code_obj)
@@ -1520,16 +1519,17 @@ class QPHPTokenXmlElement extends QPHPToken
 					if ($global_unload_obj)
 						$global_unload_obj = $global_unload_obj->findFirstCodeElement();
 				}
-				$global_unload_code = $global_unload_obj ? $this->toString($global_unload_obj->inner()) : null;
+
+				$global_unload_code = $global_unload_obj ? $this::To_String($global_unload_obj->inner()) : null;
 				
 				$prefix = $this->findChildWithTag("prefix");
 				$prefix = $prefix ? $prefix->findCode() : null;
-				$prefix = $prefix ? $this->toString($prefix->inner()) : null;
+				$prefix = $prefix ? $this::To_String($prefix->inner()) : null;
 				$sufix = $this->findChildWithTag("sufix");
 				$sufix = $sufix ? $sufix->findCode() : null;
-				$sufix = $sufix ? $this->toString($sufix->inner()) : null;
+				$sufix = $sufix ? $this::To_String($sufix->inner()) : null;
 				
-				// var_dump($prefix ? $this->toString($prefix) : $prefix, $sufix ? $this->toString($sufix) : $sufix);
+				// var_dump($prefix ? $this::To_String($prefix) : $prefix, $sufix ? $this::To_String($sufix) : $sufix);
 				$code = $this->setupClassFileContext($class, $gen_info->namespace, $extends, $implements, $global_load_code, $prefix, $sufix);
 				
 				$this->generateUrlControllerIncludes($code->findPHPClass()->findMethod("GetUrl_")->findSwitchCode()->findCaseWithValue(null, true), true, $prefix, null, false);
@@ -1699,15 +1699,15 @@ class QPHPTokenXmlElement extends QPHPToken
 			
 		// ".($extends ? trim(" extends {$extends}") : "").($implements ? " implements {$implements}" : "")."
 		
-		$tokens = qtoken_get_all($s = "<?php
+		$tokens = q_token_get_all($s = "<?php
 
 ".($namespace ? "namespace {$namespace};\n\n" : "").
 "trait {$class}_GenTrait
 {
 	public static function GetUrl_(\$_this, \$tag = \"\", &\$url = null, \$_arg0 = null, \$_arg1 = null, \$_arg2 = null, \$_arg3 = null, \$_arg4 = null, \$_arg5 = null, \$_arg6 = null, \$_arg7 = null, \$_arg8 = null, \$_arg9 = null, \$_arg10 = null, \$_arg11 = null, \$_arg12 = null, \$_arg13 = null, \$_arg14 = null, \$_arg15 = null)
 	{
-		\$_tag_parts = null;
-		\$tag = is_string(\$tag) ? reset(\$_tag_parts = explode(\"/\", \$tag)) : reset(\$_tag_parts = \$tag);
+		\$_tag_parts = is_string(\$tag) ? explode(\"/\", \$tag) : \$tag;
+		\$tag = reset(\$_tag_parts);
 		\$_shift = false;\n".
 		($prefix ? "\t\t\$_prefix = {$prefix};\n" : "").
 		($sufix ? "\t\t\$_sufix = {$sufix};\n" : "").
@@ -1811,7 +1811,7 @@ class QPHPTokenXmlElement extends QPHPToken
 					{
 						$class = substr($class, 1, -1);
 						// $typ = QModel::GetTypeByName($class);
-						if (strtolower($class{0}) === $class{0})
+						if (strtolower($class[0]) === $class[0])
 						{
 							// handle scalar
 							$is_scalar = true;
@@ -1834,13 +1834,13 @@ class QPHPTokenXmlElement extends QPHPToken
 							if ($frst[0] === T_OPEN_TAG_WITH_ECHO)
 							{
 								// assignment inside property
-								$ret .= "\${$this_var}->{$name} = ".$this->toString($this->rightTrimCodeSemicolon($code->inner())).";\n";
+								$ret .= "\${$this_var}->{$name} = ".$this::To_String($this->rightTrimCodeSemicolon($code->inner())).";\n";
 							}
 							else if ($frst[0] === T_OPEN_TAG)
 							{
 								// code inside property
 								$f_name = "func_".uniqid();
-								$ret .= "\${$f_name} = function (\$self) use(\$testResult) {".$this->toString($code->inner())."};\n".
+								$ret .= "\${$f_name} = function (\$self) use(\$testResult) {".$this::To_String($code->inner())."};\n".
 										"\${$f_name}(\${$this_var}->{$name});\n";
 							}
 						}
@@ -1969,10 +1969,10 @@ class QPHPTokenXmlElement extends QPHPToken
 					else if ($prop_name)
 						$switch[$ev] .= ($add_bra ? "(" : "") . "\$this->wasChanged(".json_encode($prop_name).")" . ($add_bra ? ")" : "");
 
-					$switch[$ev] .= ")\n\t\t\t\t{\n".$this->toString($child_ev->findCode()->getWithoutPhpTags())."\n\t\t\t\t}\n";
+					$switch[$ev] .= ")\n\t\t\t\t{\n".$this::To_String($child_ev->findCode()->getWithoutPhpTags())."\n\t\t\t\t}\n";
 				}
 				else
-					$switch[$ev] .= "\n".$this->toString($child_ev->findCode()->getWithoutPhpTags())."\n";
+					$switch[$ev] .= "\n".$this::To_String($child_ev->findCode()->getWithoutPhpTags())."\n";
 			}
 			
 			foreach ($switch as $key => $sw_code)
@@ -1990,7 +1990,7 @@ class QPHPTokenXmlElement extends QPHPToken
 		// public function getUrlForTag($tag, QUrl $url = null)
 		// public function loadFromUrl(QUrl $url, $parent = null)
 		
-		$tokens = qtoken_get_all("<?php
+		$tokens = q_token_get_all("<?php
 	
 class {$class}
 {
@@ -2185,86 +2185,12 @@ class {$class}
 			parent::cleanupTemplate();
 	}
 	
-	public function toString($formated = false, $final = false, $data = null)
+	public function toString(bool $formated = false, $final = false, $data = null)
 	{
-		if ($final && is_bool($formated))
-		{
-			$lc_tag = strtolower($this->tag);
-			
-			/*
-			$after = $before = null;
-			if ($this->attrs["q-var"])
-			{
-				$q_rel_var = $data ? $data["q-rel-var"] : null;
-				$q_var = $this->getAttribute("q-var");
-				$php_var = $data["q-rel-var"] = $this->extractQVarForCode($q_var, $q_rel_var);
-				
-				// we should now inprint data based on the bind
-				switch ($lc_tag)
-				{
-					case "input":
-					{
-						if (!$this->attrs["value"])
-							$this->setAttribute("value", "\"<?= {$php_var} ?>\"", false);
-						break;
-					}
-					// case "select": // <option value="value2" selected>Value 2</option>
-					case "textarea":
-					{
-						if ($this->innerIsEmpty())
-							$this->inner("<?= {$php_var} ?>");
-						break;
-					}
-					default:
-					{
-						# if (!$this->attrs["q-val"])
-						#	$this->setAttribute("q-val", "\"<?= {$php_var} ?>\"", false);
-						if ($this->innerIsEmpty())
-							$this->inner("<?= {$php_var} ?>");
-						break;
-					}
-				}
-			}
-			if ($this->attrs["q-each"])
-			{
-				$q_rel_var = $data ? $data["q-rel-var"] : null;
-				
-				$var_q_each = $this->getAttribute("q-each");
-				$var_patt = '/[\w\$\\\\\.\(\)\[\]]+|\bin\b|\bas\b/us';
-				// var_dump($var_patt);
-				$matches = null;
-				$ok = preg_match_all($var_patt, $var_q_each, $matches);
-				if (!$ok)
-					// throw new Exception("Parse error in q-each: ".$var_q_each);
-					return null;
-				list($p_1, $p_2, $p_3) = $matches[0];
-				if (!($p_1 && $p_2 && $p_3))
-					// throw new Exception("Parse error in q-each: ".$var_q_each);
-					return null;
-				$each_collection = $this->extractQVarForCode( ($p_2 === "as") ? $p_1 : $p_3, $q_rel_var);
-				$each_item = $this->extractQVarForCode( ($p_2 === "as") ? $p_3 : $p_1, $q_rel_var);
-				
-				$data["q-rel-var"] = $each_item;
-				
-				// var q_each_parts = q_each.match(/[\w\$\\\.\(\)\[\]]+|\bin\b|\bas\b/g);
-				//var_dump($each_collection, $each_item);
-				$before = "<!-- OMI-MARK: <div q-each={$this->attrs["q-each"]}></div> -->\n".
-							"<?php if ({$each_collection}) { foreach ({$each_collection} as {$each_item}) { ?>\n";
-				$after = $this->attrs["q-start"] ? "" : "\n<?php } } ?>\n";
-			}
-			if ($this->attrs["q-end"])
-			{
-				$before = "";
-				$after = "\n<?php } } ?>\n";
-			}
-			
-			if ($after || $before)
-				return $before.parent::toString(($lc_tag === "virtual") ? $this->inner() : $formated, $final, $data).$after;
-			else
-				*/
-			return parent::toString(($lc_tag === "virtual") ? $this->inner() : $formated, $final, $data);
-		}
-		return parent::toString($formated, $final, $data);
+		if ($final && (($lc_tag = strtolower($this->tag)) === "virtual"))
+			return static::To_String($this->inner(), $final, $data);
+		else
+			return parent::toString($formated, $final, $data);
 	}
 	
 	public function generateUrlControllerIncludesForLoad($includes_to_load)
@@ -2325,7 +2251,7 @@ class {$class}
 				$php_var .= "->";
 				$last = ".";
 			}
-			else if (!(($p{0} === "(") || ($p{0} === "[")))
+			else if (!(($p[0] === "(") || ($p[0] === "[")))
 			{
 				$php_var .= $p;
 				$last = $p;
@@ -2382,7 +2308,7 @@ class {$class}
 				else 
 				{
 					// we handle conditions
-					$first_ch = $part{0};
+					$first_ch = $part[0];
 					$is_matching = false;
 					switch ($first_ch)
 					{
@@ -2429,7 +2355,7 @@ class {$class}
 							if ($at_ok && $attr_matches)
 							{
 								list(, $attr_name, $attr_equals, $attr_match_mode, $attr_match_value) = $attr_matches;
-								if (($attr_match_value{0} === "\"") || ($attr_match_value{0} === "'"))
+								if (($attr_match_value[0] === "\"") || ($attr_match_value[0] === "'"))
 									$attr_match_value = substr($attr_match_value, 1, -1);
 								$attr_match_value = strtolower($attr_match_value);
 								if ($this->attrs[$attr_name] !== null)

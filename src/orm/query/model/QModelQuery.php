@@ -255,7 +255,7 @@ class QModelQuery
 		return array($main_q, $frm_arr, $from_inst);
 	}
 	
-	public function Parse($query)
+	public static function Parse($query)
 	{
 		// split query into tokens
 		$tokens = null;
@@ -309,7 +309,7 @@ class QModelQuery
 	 * 
 	 * @throws Exception
 	 */
-	public function BuildQuery(&$toks, $from = null, QSqlParserQuery $main_q = null, $storage = null, $zone = 0, $skip_security = false, $filter_selector = null, 
+	public static function BuildQuery(&$toks, $from = null, QSqlParserQuery $main_q = null, $storage = null, $zone = 0, $skip_security = false, $filter_selector = null, 
 								bool $debug = false, bool $inner_query = false)
 	{
 		// position at the current point 
@@ -334,7 +334,7 @@ class QModelQuery
 			
 			$is_selector = false;
 			
-			if (($curr_i && ($curr_i{0} !== "`") && ($curr_i{0} !== "\"")) || ($curr === "*"))
+			if (($curr_i && ($curr_i[0] !== "`") && ($curr_i[0] !== "\"")) || ($curr === "*"))
 			{
 				// test if it's a pure select
 				if ($pure_sel && ($zone === 0) && ($depth === 0))
@@ -819,7 +819,7 @@ class QModelQuery
 					$parts[] = _myScBind($c_bind, false, $has_OP_IS_NOT_DISTINCT_FROM);
 				}
 			}
-			else if (($chunk{0} === "?") && ($chunk{1} === "?"))
+			else if (($chunk[0] === "?") && ($chunk[1] === "?"))
 			{
 				$type = 1;
 				
@@ -848,7 +848,7 @@ class QModelQuery
 					// ?<! - lookbehind assertion
 					// I need to match ? or ?@ that are not in a string
 					
-					$pend_dir = ($p !== false) ? $_tag{$p+1} : null;
+					$pend_dir = ($p !== false) ? $_tag[$p+1] : null;
 					$pender = $pend_dir ? substr($_tag, $p + 2, $br_pos - $p - 2) : null;
 					
 					if ($pend_dir === "<")
@@ -932,7 +932,7 @@ class QModelQuery
 	 * @param boolean $followed_by_IS_A TRUE if after this identifier we have the IS_A operator, in this case we will add " AND $TYPE_COLUMN  ", then the rest of the code will add " IN (...) "
 	 * @param boolean $starts_new_query If TRUE, then after this identifier a new SUB QUERY starts. Ex: Orders.{
 	 */
-	public function handleIdentifier(QSqlParserQuery $main_q, $pure_sel, $froms, &$types_mngd, $idf_name, $idf_filter, 
+	public static function handleIdentifier(QSqlParserQuery $main_q, $pure_sel, $froms, &$types_mngd, $idf_name, $idf_filter, 
 				$idf_next, &$next_q = null, $preceded_by_AS = false, $followed_by_IS_A = false, $starts_new_query = false, &$toks = null, $toks_index = 0, int &$jump_tokens = 0,
 				$storage = null, $filter_selector = null, $zone = null, bool $inner_query = false)
 	{

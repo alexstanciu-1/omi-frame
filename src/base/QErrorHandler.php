@@ -203,7 +203,7 @@ class QErrorHandler
 				$up_to = strlen($common_path) < strlen($t['file']) ? strlen($common_path) : strlen($t['file']);
 				for ($i = 0; $i < $up_to; $i++)
 				{
-					if ($common_path{$i} !== $t['file']{$i})
+					if ($common_path[$i] !== $t['file'][$i])
 						break;
 				}
 				$common_path = substr($common_path, 0, $i);

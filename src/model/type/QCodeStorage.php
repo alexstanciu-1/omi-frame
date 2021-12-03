@@ -35,7 +35,7 @@ class QCodeStorage
 	 */
 	public function storageGetModelById($model_id, QIModel $instance = null, $model_type = null, $generate_security = true)
 	{
-		if ($model_id{0} == strtolower($model_id{0}))
+		if ($model_id[0] == strtolower($model_id[0]))
 			return false;
 		// we expect model id to be a class name (full namespace)
 		if ($model_type && ((!($model_type instanceof QModelType) || ($model_type->class != "QModelType"))))
@@ -164,7 +164,7 @@ class QCodeStorage
 			
 			$m_name = $method->name;
 			// skip methods starting with "_"
-			if (($m_name{0} === "_") || ($m_name === "SecurityFilter"))
+			if (($m_name[0] === "_") || ($m_name === "SecurityFilter"))
 				continue;
 			
 			$parse_data = $this::parseDocComment($method->getDocComment());
@@ -444,7 +444,7 @@ class QCodeStorage
 			
 			foreach ($ma_rules as $parse)
 			{
-				// $toks = qtoken_get_all($parse);
+				// $toks = q_token_get_all($parse);
 				$blocks = null;
 				if (preg_match_all("/".
 						
@@ -503,7 +503,7 @@ class QCodeStorage
 						$filter_2 .= $block;
 						$filter_3 .= $block;
 					}
-					else if ($block{0} === "{")
+					else if ($block[0] === "{")
 					{
 						$sql_rules_count++;
 						// $check .= " && ";
@@ -851,7 +851,7 @@ class QCodeStorage
 	 * 
 	 * @return string|string[]|array[]
 	 */
-	protected function parseAcceptedTypes($acc_types_string, $namespace = null)
+	protected static function parseAcceptedTypes($acc_types_string, $namespace = null)
 	{
 		$matches = null;
 		$parsed = preg_match_all('/[\\\\a-zA-Z0-9_]+|\\[|\\]|\\(|\\)|\\|/', $acc_types_string, $matches);
@@ -871,14 +871,14 @@ class QCodeStorage
 			// apply the full namespace to @var when it's the case
 			if (is_string($result))
 			{
-				if (($result{0} === "\\") || (strtolower($result{0}) !== $result{0}))
+				if (($result[0] === "\\") || (strtolower($result[0]) !== $result[0]))
 					$result = self::ApplyNamespaceToName($result, $namespace);
 			}
 			else if (is_array($result))
 			{
 				foreach ($result as $k => $res)
 				{
-					if (is_string($res) && (($res{0} === "\\") || (strtolower($res{0}) !== $res{0})))
+					if (is_string($res) && (($res[0] === "\\") || (strtolower($res[0]) !== $res[0])))
 						$result[$k] = self::ApplyNamespaceToName($res, $namespace);
 					else if ($res instanceof QModelAcceptedType)
 						$res->applyNamespaceToTypes($namespace);
@@ -895,7 +895,7 @@ class QCodeStorage
 	
 	public static function ApplyNamespaceToName($class, $namespace)
 	{
-		if ($class{0} === "\\")
+		if ($class[0] === "\\")
 			return substr($class, 1);
 		else
 			return $namespace ? $namespace."\\".$class : $class;
@@ -908,7 +908,7 @@ class QCodeStorage
 	 * @param type $result
 	 * 
 	 */
-	protected function parseDataType($dat, &$result, &$acc_type)
+	protected static function parseDataType($dat, &$result, &$acc_type)
 	{
 		$ty = current($dat);
 		

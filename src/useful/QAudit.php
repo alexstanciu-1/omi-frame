@@ -4,7 +4,7 @@
 /**
  * @class.name QAudit
  */
-abstract class QAudit_frame_ extends \QModel
+class QAudit
 {
 	// protected static $db_conn = null;
 	protected static $store_file = null;
@@ -244,7 +244,7 @@ abstract class QAudit_frame_ extends \QModel
 				$types_inf[$m_class] = $info = QModelQuery::GetTypesCache($m_class);
 				foreach ($info as $p_name => $v)
 				{
-					if (($p_name{0} !== '#') && ($p_name{1} !== '%') && ($selector[$p_name] === null))
+					if (($p_name[0] !== '#') && ($p_name[1] !== '%') && ($selector[$p_name] === null))
 						$selector[$p_name] = [];
 				}
 			}

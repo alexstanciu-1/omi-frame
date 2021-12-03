@@ -14,7 +14,7 @@ final class QFunc
 	 */
 	public static function GetFullClassName(string $class, string $namespace = null)
 	{
-		return ($class{0} === "\\") ? substr($class, 1) : (($namespace === null) ? $class : $namespace."\\".$class);
+		return ($class[0] === "\\") ? substr($class, 1) : (($namespace === null) ? $class : $namespace."\\".$class);
 	}
 	
 	/**
@@ -30,7 +30,7 @@ final class QFunc
 		$ret = [];
 		foreach ($classes as $k => $class)
 		{
-			$cnf = ($class{0} === "\\") ? substr($class, 1) : (($namespace === null) ? $class : $namespace."\\".$class);
+			$cnf = ($class[0] === "\\") ? substr($class, 1) : (($namespace === null) ? $class : $namespace."\\".$class);
 			if ($index_by_name || is_string($k))
 				$ret[$cnf] = $cnf;
 			else
@@ -130,7 +130,7 @@ final class QFunc
 	 */
 	public static function ArrayToCode($array, $var_name = null, $add_php_tags = true)
 	{
-		if ($var_name && ($var_name{0} === "\$"))
+		if ($var_name && ($var_name[0] === "\$"))
 			$var_name = substr($var_name, 1);
 
 		$str = "";
@@ -198,7 +198,7 @@ final class QFunc
 
 		foreach ($tokens as $tok)
 		{
-			$frts = $tok{0};
+			$frts = $tok[0];
 			switch ($frts)
 			{
 				case " ":
@@ -722,10 +722,10 @@ final class QFunc
 				echo "<div>";
 				foreach ($var_arr as $k => $v)
 				{
-					if ($k{0} === "\x00")
+					if ($k[0] === "\x00")
 					{
 						$name = substr($k, strrpos($k, "\x00") + 1);
-						if ($k{1} === "*")
+						if ($k[1] === "*")
 							echo $pad."\t<b>{$name} [protected]</b>";
 						else
 							echo $pad."\t<b>{$name} [private]</b>";

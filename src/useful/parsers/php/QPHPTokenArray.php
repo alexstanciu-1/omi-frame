@@ -98,9 +98,9 @@ class QPHPTokenArray extends QPHPToken
 		{
 			list($key, $val) = $itm;
 			if ($key)
-				var_dump($this->toString($key));
+				var_dump($this::To_String($key));
 			if ($val)
-				var_dump($this->toString($val));
+				var_dump($this::To_String($val));
 			echo "<hr/>";
 		}
 	}

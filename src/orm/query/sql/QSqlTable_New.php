@@ -289,6 +289,8 @@ trait QSqlTable_New
 				{
 					if ($exec_items)
 					{
+						if (!isset($connection->_stats))
+							$connection->_stats = new \stdClass();
 						# qvar_dumpk("# {$path} :: {$parent_class_name_or_zero} :: {$class_name} ========================================================== ");
 						$connection->_stats->queries[] = "# {$path} :: {$parent_class_name_or_zero} :: {$class_name} ========================================================== ";
 						$transaction_item = new QSqlTable_Titem($path, $exec_items, $connection, $storage, $selector, $ts, $class_name, false);

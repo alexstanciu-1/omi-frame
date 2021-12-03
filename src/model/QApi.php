@@ -33,7 +33,7 @@ class QApi
 		
 		list($class_name, $method) = explode("::", $call_info, 2);
 		
-		if ($class_name{0} === "\\")
+		if ($class_name[0] === "\\")
 			$class_name = substr($class_name, 1);
 		if (!class_exists($class_name))
 			throw new Exception("Class `{$class_name}` was not found");
@@ -396,7 +396,7 @@ class QApi
 			if (!($parsed_from || $parsed_src))
 				continue;
 			
-			if ($parsed_from{0} === "#")
+			if ($parsed_from[0] === "#")
 			{
 				$type_name = substr($parsed_from, 1);
 				$parsed_from = \QApp::GetDefaultAppPropertyForTypeValues($type_name);
@@ -605,7 +605,7 @@ class QApi
 		$ret = [];
 		foreach ($args as $k => $v)
 		{
-			if ($k{0} === '_')
+			if ($k[0] === '_')
 				continue;
 			// $ret[$k] = ($v instanceof \QIModel) ? $v->toArray(null, true, false) : $v;
 			$ret[$k] = $v;
@@ -1877,7 +1877,7 @@ class QApi
 					$type_inf = \QModelQuery::GetTypesCache($cc);
 					foreach ($type_inf as $k => $v)
 					{
-						if ($k{0} === '#')
+						if ($k[0] === '#')
 							continue;
 						$val = $data->$k;
 						if ($val === null)

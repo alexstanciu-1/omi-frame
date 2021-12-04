@@ -1038,6 +1038,7 @@ function extractQbRequest($data, &$parent = null, $key = null, $f_name = null, $
 					if ($collection_prop)
 						$params->setModelProperty($collection_prop);
 				}
+				
 				if ($collection_prop)
 				{
 					$set_meth = "set{$collection_prop->name}_Item_";
@@ -1057,15 +1058,48 @@ function extractQbRequest($data, &$parent = null, $key = null, $f_name = null, $
 			else
 			{
 				$params_props = $params->getModelType()->properties;
+				
 				foreach ($data as $k => $v)
 				{
-					if ($params_props[$k])
+					if (($refl_prop = $params_props[$k]))
 					{
+						if (is_array($v))
+						{
+							$is_collection = $refl_prop->hasCollectionType();
+							$all_irt = $is_collection ? $refl_prop->types->getAllInstantiableReferenceTypes() : 
+												$refl_prop->getAllInstantiableReferenceTypes();
+							$all_irt = ($all_irt && (count($all_irt) === 1)) ? reset($all_irt) : null;
+							
+							if ($all_irt)
+							{
+								if ($is_collection)
+								{
+									foreach ($v as $v_k__ => &$v_v__)
+									{
+										if (($v_k__[0] !== '_') && is_array($v_v__) && empty($v_v__['_ty']))
+											$v_v__['_ty'] = $all_irt;
+									}
+									# must be qmodel array
+									$v['_ty'] = 'QModelArray';
+								}
+								else
+									# must be the specified type
+									$v['_ty'] = $all_irt;
+							}
+						}
+						
 						$ex_v = extractQbRequest($v, $params, $k, $f_name ? $f_name[$k] : null, $f_type ? $f_type[$k] : null, $f_tmp_name ? $f_tmp_name[$k] : null, $f_error ? $f_error[$k] : null, $f_size ? $f_size[$k] : null, $refs);
 						$params->{"set{$k}"}($ex_v);
 					}
 					else
+					{
 						$params->$k = extractQbRequest($v, $params, $k, $f_name ? $f_name[$k] : null, $f_type ? $f_type[$k] : null, $f_tmp_name ? $f_tmp_name[$k] : null, $f_error ? $f_error[$k] : null, $f_size ? $f_size[$k] : null, $refs);
+						if (is_array($v) && ($k[0] !== '_') && \QAutoload::GetDevelopmentMode())
+						{
+							qvar_dumpk($params, $k, $v);
+							throw new \Exception('Suspecting the type was not detected.');
+						}
+					}
 				}
 			}
 		}

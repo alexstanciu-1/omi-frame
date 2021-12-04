@@ -1,4 +1,4 @@
-<?php
+$<?php
 
 /**
  * Generates and patches platform standards
@@ -418,13 +418,17 @@ class QCodeSync2
 			$this->upgrade_backend_fix($files, $changed_or_added);
 		
 		# echo ('BEFORE COLLECT: '. ((microtime(true) - $this->sync_started_at) * 1000) . ' ms'), "<br/>\n";
+		if ($removed_files === null)
+			$removed_files = [];
 		
-		$this->boot_info_by_class();
+		$all_files_grouped = $this->group_files_by_folder($files);
+		
+		$this->boot_info_by_class($all_files_grouped, $removed_files);
 		
 		# STAGE 1 - Collect information from files, determine namespaces and populate $this->info_by_class
-		$this->sync_code__collect_info($files, $changed_or_added, $removed_files, $new_files);
+		$this->sync_code__collect_info($all_files_grouped, $files, $changed_or_added, $removed_files, $new_files);
 		
-		if ((!$this->full_sync) && (($first_stack_of_data = reset($this->changes_by_class) === null) || 
+		if ((!$this->full_sync) && ((($first_stack_of_data = reset($this->changes_by_class)) === null) || 
 										(!isset($first_stack_of_data['files']))))
 		{
 			// no change
@@ -483,7 +487,7 @@ class QCodeSync2
 	 * @param array $new_files
 	 * @throws \Exception
 	 */
-	function sync_code__collect_info(array $files, array $changed_or_added, array $removed_files, array $new_files)
+	function sync_code__collect_info(array $all_files_grouped, array $files, array $changed_or_added, array $removed_files, array $new_files)
 	{
 		$lint_info = null;
 		
@@ -496,7 +500,6 @@ class QCodeSync2
 		
 		$loop_list_orig = $this->full_sync ? $files : $changed_or_added;
 		# @TODO - this takes ~30 ms or more - modify QAutoload::ScanForChanges to give the info in this format !
-		$all_files_grouped = $this->group_files_by_folder($files);
 		$loop_list = $this->full_sync ? $all_files_grouped : $this->group_files_by_folder($changed_or_added);
 		
 		if (!$this->full_sync)
@@ -509,7 +512,7 @@ class QCodeSync2
 			$layer_tag = $this->watch_folders_tags[$layer];
 			if (!$layer_tag)
 				throw new \Exception('Missing tag for code folder: '.$layer);
-
+			
 			if (static::$PHP_LINT_CHECK)
 				# check PHP files for syntax errors with `php -l`
 				$this->check_syntax($layer, $loop_list_orig[$layer], $lint_info, $this->full_sync);
@@ -541,6 +544,10 @@ class QCodeSync2
 						$set_gd_value = null;
 						
 						$file = $file_dir.substr($file_with_key, 3); // skip 03-
+						
+						if (!(file_exists($layer.$file)))
+							throw new \Exception('Missing file: '.$layer.$file);
+						
 						$is_php_ext = (substr($file, -4, 4) === '.php');
 						$is_tpl_ext = (substr($file, -4, 4) === '.tpl');
 						list ($short_file_name, $full_ext) = explode(".", basename($file), 2);
@@ -756,6 +763,8 @@ class QCodeSync2
 				{
 					# (($removed_count === 1) && ($in_layer_count === 1)) => in case we only have one removed file we will return now, there is no point to fill the cache
 					$layer_tag = $this->watch_folders_tags[$layer_path];
+					if (!$layer_tag)
+						throw new \Exception('Missing layer tag. '.$layer_path);
 					list ($full_class_name, $header_inf) = $this->get_info_by_layer_file($layer_tag, $file);
 					if (!($full_class_name && $header_inf))
 						throw new \Exception('Information about the removed file could not be found. Please do a full resync.');
@@ -1543,6 +1552,10 @@ class QCodeSync2
 			$gen_info->namespace = $header_inf['namespace'];
 		
 		$obj_parsed = \QPHPToken::ParsePHPFile($full_file_path, true);
+		# if ($obj_parsed === null)
+		{
+			# qvar_dumpk($full_file_path, file_exists($full_file_path), $header_inf);
+		}
 		
 		# recurse here if needed
 		{
@@ -2354,7 +2367,7 @@ class QCodeSync2
 		return $ret;
 	}
 	
-	function boot_info_by_class()
+	function boot_info_by_class(array $all_files_grouped, array &$removed_files)
 	{
 		if ((!$this->full_sync) && file_exists($this->temp_code_dir."sync_info_by_class.php"))
 		{
@@ -2370,11 +2383,34 @@ class QCodeSync2
 			}
 			else
 			{
+				$wfs_by_tags_full = $this->tags_to_watch_folders;
+				
 				# cleanup any status on it
 				foreach ($this->info_by_class as &$ibc)
+				{
 					foreach ($ibc['files'] as &$layers)
+					{
 						foreach ($layers as &$files)
-							$files['status'] = null;
+						{
+							$fl = $files['layer'];
+							if ($fl === null)
+								throw new \Exception('Missing layer on file (do a full resync to fix): '.json_encode($files));
+							$layer_path = $wfs_by_tags_full[$files['layer']];
+							if ($layer_path === null)
+							{
+								# we only run for the layers that are active on this run
+								continue;
+							}
+							if ((!file_exists($layer_path.$files['file'])))
+							{
+								$files['status'] = static::Status_Removed;
+								$removed_files[$layer_path][$files['file']] = $files['file_time'];
+							}
+							else
+								$files['status'] = null;
+						}
+					}
+				}
 			}
 		}
 		else

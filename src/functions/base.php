@@ -3238,7 +3238,7 @@ function q_index_array(string $property, iterable $elements = null, bool $as_arr
 		throw new \Exception("Import is not supported.");
 }
 
-function q_reset(iterable $list = null)
+function q_reset($list = null)
 {
 	if ($list === null)
 		return null;

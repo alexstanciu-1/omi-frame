@@ -78,13 +78,13 @@ class QSqlParserQuery
 	{
 		if ($this->c_as === null)
 			return ($this->c_as = "a");
-		$fst = $this->c_as{0};
+		$fst = $this->c_as[0];
 		// if at z , rewind to a and increment the second
 		if ($fst === 'z')
 			return $this->c_as = ("a".((strlen($this->c_as) > 1) ? (substr($this->c_as, 1) + 1) : "1"));
 		else 
 		{
-			$this->c_as{0} = chr(ord($fst) + 1);
+			$this->c_as[0] = chr(ord($fst) + 1);
 			return $this->c_as;
 		}
 	}
@@ -96,13 +96,13 @@ class QSqlParserQuery
 		
 		if ($this->t_as === null)
 			return ($this->t_as = "A");
-		$fst = $this->t_as{0};
+		$fst = $this->t_as[0];
 		// if at Z , rewind to A and increment the second
 		if ($fst === 'Z')
 			return $this->t_as = ("A".((strlen($this->t_as) > 1) ? (substr($this->t_as, 1) + 1) : "1"));
 		else 
 		{
-			$this->t_as{0} = chr(ord($fst) + 1);
+			$this->t_as[0] = chr(ord($fst) + 1);
 			return $this->t_as;
 		}
 	}
@@ -382,7 +382,7 @@ class QSqlParserQuery
 			echo "</pre>";
 	}
 	
-	public function query(&$objs, $storage, $conn, $base_from = null, $populate_only = false)
+	public function query(&$objs, $storage, $conn, array $base_from = null, $populate_only = false)
 	{
 		if ($this->is_collection && (!$this->items))
 		{

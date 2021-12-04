@@ -64,7 +64,7 @@ final class QQueryAnalyzer
 		foreach ($types_data as $_ty_data)
 		{
 			$is_str_ty = is_string($_ty_data);
-			$is_scalar = $is_str_ty && (strtolower($_ty_data{0}) === $_ty_data{0});
+			$is_scalar = $is_str_ty && (strtolower($_ty_data[0]) === $_ty_data[0]);
 			if ($is_scalar)
 				continue;
 			$ty_data = $is_str_ty ? \QModelQuery::GetTypesCache($_ty_data) : $_ty_data;
@@ -288,7 +288,7 @@ final class QQueryAnalyzer
 				}
 			}
 			// handle binds
-			else if ($curr{0} === "?")
+			else if ($curr[0] === "?")
 			{
 				$bind_key = null;
 				

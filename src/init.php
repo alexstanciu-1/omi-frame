@@ -1,5 +1,12 @@
 <?php
 
+if (PHP_VERSION_ID < 80000)
+{
+	define("T_NAME_QUALIFIED", 314);
+	define("T_NAME_FULLY_QUALIFIED", 312);
+	define("T_NAME_RELATIVE", 313);
+}
+
 if (!defined("JSON_UNESCAPED_SLASHES"))
 	define("JSON_UNESCAPED_SLASHES", 64);
 
@@ -74,24 +81,14 @@ require_once(__DIR__."/base/QAutoload.php");
  */
 require_once(__DIR__."/functions/base.php");
 
-
-/**
- * Automate the load of classes
- * Lowercase starting Files WILL BE SKIPPED !
- * The Autoload pattern is : ClassName.php or Classname.php
- */
-function __autoload($class_name)
-{
-	// automate load of classes
-	QAutoload::AutoloadClass($class_name);
-}
+spl_autoload_register(["QAutoload", "AutoloadClass"]);
 
 /**
  * Initialize
  */
 QAutoload::AddWatchFolder(Q_FRAME_PATH, false, "frame", false, "frame");
 
-set_error_handler(array("QErrorHandler", "HandleError"), E_ALL & ~(E_NOTICE | E_USER_NOTICE | E_STRICT | E_DEPRECATED));
+set_error_handler(array("QErrorHandler", "HandleError"), E_ALL & ~(E_NOTICE | E_USER_NOTICE | E_STRICT | E_DEPRECATED | E_WARNING | E_COMPILE_WARNING));
 set_exception_handler(array("QErrorHandler", "UncaughtExceptionHandler"));
 register_shutdown_function(array("QErrorHandler", "OnShutdown"));
 register_shutdown_function(function () {

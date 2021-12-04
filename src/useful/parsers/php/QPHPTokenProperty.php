@@ -122,7 +122,7 @@ class QPHPTokenProperty extends QPHPToken
 		{
 			if (is_array($tok) && ($tok[0] === T_VARIABLE))
 			{
-				$this->children[$k][1] = ($new_name{0} === "\$") ? $new_name : "\\$".$new_name;
+				$this->children[$k][1] = ($new_name[0] === "\$") ? $new_name : "\\$".$new_name;
 				$this->name = $new_name;
 				return true;
 			}

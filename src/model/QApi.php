@@ -33,7 +33,7 @@ class QApi
 		
 		list($class_name, $method) = explode("::", $call_info, 2);
 		
-		if ($class_name{0} === "\\")
+		if ($class_name[0] === "\\")
 			$class_name = substr($class_name, 1);
 		if (!class_exists($class_name))
 			throw new Exception("Class `{$class_name}` was not found");
@@ -171,7 +171,7 @@ class QApi
 				{
 					if ((!$src_from_types) || (count($src_from_types) !== 1))
 						throw new \Exception('Only one storage engine is supported by the `model` storage');
-					$model_type = reset($src_from_types);
+					$model_type = q_reset($src_from_types);
 					$result[$src_key] = $model_type::ApiQuery($storage_model, $view_tag ? [$src_from, $view_tag] : $src_from, $src_from_types, $selector, $parameters, $only_first, $id, $skip_security, $sql_filter && is_string($sql_filter) ? [$src_from, $sql_filter] : null);
 				}
 				else if (($extrenalEngine = $property_reflection->storage['extrenalEngine']))
@@ -396,7 +396,7 @@ class QApi
 			if (!($parsed_from || $parsed_src))
 				continue;
 			
-			if ($parsed_from{0} === "#")
+			if ($parsed_from[0] === "#")
 			{
 				$type_name = substr($parsed_from, 1);
 				$parsed_from = \QApp::GetDefaultAppPropertyForTypeValues($type_name);
@@ -605,7 +605,7 @@ class QApi
 		$ret = [];
 		foreach ($args as $k => $v)
 		{
-			if ($k{0} === '_')
+			if ($k[0] === '_')
 				continue;
 			// $ret[$k] = ($v instanceof \QIModel) ? $v->toArray(null, true, false) : $v;
 			$ret[$k] = $v;
@@ -841,14 +841,14 @@ class QApi
 		foreach ($parsed_sources as $src_key => $src_info)
 		{
 			// @todo : handle multiple requests on the same source
-			$src_from = reset($src_info);
+			$src_from = q_reset($src_info);
 			$storage = QApp::GetStorage($src_key);
 			$storage_model = QApp::GetDataClass();
 			$src_from_types = static::DetermineFromTypes($storage_model, $src_from);
 			$result[$src_key] = $storage::ApiQuerySync($storage_model, $src_from, $src_from_types, $selector, $parameters, $only_first, $id, $ids_list, $data_block, $used_app_selectors, $query_by_data_type);
 		}
 		
-		$ret = !$result ? null : ((count($result) === 1) ? reset($result) : $result);
+		$ret = !$result ? null : ((count($result) === 1) ? q_reset($result) : $result);
 		return $ret;
 	}
 
@@ -876,7 +876,7 @@ class QApi
 		foreach ($parsed_sources as $src_key => $src_info)
 		{
 			// @todo : handle multiple requests on the same source
-			$src_from = reset($src_info);
+			$src_from = q_reset($src_info);
 			$storage = QApp::GetStorage($src_key);
 			$storage_model = QApp::GetDataClass();
 			$is_collection = false;
@@ -889,7 +889,7 @@ class QApi
 				{
 					if (is_array($data))
 					{
-						$decode_type = reset($src_from_types) ? reset($src_from_types).($is_collection ? "[]" : "") : "auto";
+						$decode_type = q_reset($src_from_types) ? q_reset($src_from_types).($is_collection ? "[]" : "") : "auto";
 						if ($is_collection)
 							$data = [$data];
 						$data = QModel::FromArray($data, $decode_type);
@@ -914,7 +914,7 @@ class QApi
 		}
 
 		static::$_InImportProcess = false;
-		return !$result ? null : ((count($result) === 1) ? reset($result) : $result);
+		return !$result ? null : ((count($result) === 1) ? q_reset($result) : $result);
 	}
 	/**
 	 * Returns true if in import process, false otherwise
@@ -1185,7 +1185,7 @@ class QApi
 				}
 				else if ($id && (!($data instanceof QIModel)))
 				{
-					$data_ty = reset($src_from_types);
+					$data_ty = q_reset($src_from_types);
 					$data = new $data_ty();
 					$data->setId($id);
 					if ($is_collection)
@@ -1247,14 +1247,14 @@ class QApi
 			{
 				# qvar_dumpk($storage_model, $src_from, $src_from_types, $data, $state, $selector);
 				# throw new \Exception('remake!');
-				if ($data && ($first_data = reset($data)))
+				if ($data && ($first_data = q_reset($data)))
 					$first_data::Api_Save($src_from, $data, $state, $selector, $src_from_types);
 			}
 			else if ($property_reflection && ($property_reflection->storage['engine'] === 'model'))
 			{
 				if ((!$src_from_types) || (count($src_from_types) !== 1))
 					throw new \Exception('Only one storage engine is supported by the `model` storage');
-				$model_type = reset($src_from_types);
+				$model_type = q_reset($src_from_types);
 				$result[$src_key] = $model_type::ApiSave($storage_model, $src_from, $src_from_types, $data, $state, $selector, $initialDestination);
 			}
 			else
@@ -1262,6 +1262,7 @@ class QApi
 				$result[$src_key] = $storage::ApiSave($storage_model, $src_from, $src_from_types, $data, $state, $selector, $initialDestination);
 			}
 		}
+		
 		$ret = !$result ? null : ((count($result) === 1) ? reset($result) : $result);
 
 		
@@ -1273,7 +1274,6 @@ class QApi
 		
 		return $ret;
 	}
-	
 	
 	/**
 	 * 
@@ -1317,7 +1317,7 @@ class QApi
 			if ($inpreq)
 				$req_data["InRequestTypes"] = (\QWebRequest::IsAsyncRequest() ? "async" : "").(\QWebRequest::IsRemoteRequest() ? (\QWebRequest::IsAsyncRequest() ? "&" : "")."remote" : "");
 			$_app = \QApi::Merge("RequestsMonitor", $req_data);
-			$request = $_app->RequestsMonitor ? reset($_app->RequestsMonitor) : null;
+			$request = $_app->RequestsMonitor ? q_reset($_app->RequestsMonitor) : null;
 		}
 
 		static::$_LastCalledPartner = $Partner;
@@ -1338,7 +1338,7 @@ class QApi
 		$user = \Omi\User::GetCurrentUser();
 		//$current_identity = \Omi\User::CheckLogin();
 		$enter_impersonate = QQuery('Users.{Impersonate.Id WHERE Id=?}', $user->getId())->Users;
-		$enter_impersonate = $enter_impersonate ? reset($enter_impersonate) : null;
+		$enter_impersonate = $enter_impersonate ? $enter_impersonate[0] : null;
 		
 		if (!$user)
 			throw new \Exception("User not logged in!");
@@ -1502,7 +1502,7 @@ class QApi
 			if ($enter_impersonate && isset($enter_impersonate->Id))
 			{
 				$exit_impersonate = QQuery('Users.{Impersonate.Id WHERE Id=?}', $enter_impersonate->getId())->Users;
-				$exit_impersonate = $exit_impersonate ? reset($exit_impersonate) : null;
+				$exit_impersonate = $exit_impersonate ? $exit_impersonate[0] : null;
 
 				$enter_impersonate_id = $enter_impersonate->Impersonate ? $enter_impersonate->Impersonate->getId() : null;
 				$exit_impersonate_id = $exit_impersonate->Impersonate ? $exit_impersonate->Impersonate->getId() : null;
@@ -1604,7 +1604,7 @@ class QApi
 			$req_data["Date"] = date("Y-m-d H:i:s");
 			$req_data["RequestData"] = $postData;
 			$_app = \QApi::Merge("RequestsMonitor", $req_data);
-			$request = $_app->RequestsMonitor ? reset($_app->RequestsMonitor) : null;
+			$request = $_app->RequestsMonitor ? $_app->RequestsMonitor[0] : null;
 		}
 		
 		if (\QAutoload::GetDevelopmentMode())
@@ -1877,7 +1877,7 @@ class QApi
 					$type_inf = \QModelQuery::GetTypesCache($cc);
 					foreach ($type_inf as $k => $v)
 					{
-						if ($k{0} === '#')
+						if ($k[0] === '#')
 							continue;
 						$val = $data->$k;
 						if ($val === null)
@@ -1983,7 +1983,7 @@ class QApi
 				throw new \Exception('Too many instantiable data types for property: '.$row_property);
 			
 			$data->{$row_property} = new \QModelArray();
-			$row_data_type = reset($row_data_type);
+			$row_data_type = $row_data_type[0];
 			$reflection_cache = [];
 			
 			$f = fopen($file, "rt");
@@ -2497,7 +2497,7 @@ class QApi
 								throw new \Exception('No instantiable data type for property: '.get_class($data).' -> '.$current_property);
 							if (count($prop_data_type) > 1)
 								throw new \Exception('Too many instantiable data types for property: '.get_class($data).' -> '.$current_property);
-							$prop_data_type = reset($prop_data_type);
+							$prop_data_type = q_reset($prop_data_type);
 							$reflection_cache[get_class($data).'->'.$current_property] = $prop_data_type;
 						}
 						

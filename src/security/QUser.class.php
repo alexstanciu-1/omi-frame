@@ -294,7 +294,7 @@ abstract class QUser_frame_ extends QModel
 		// at this point we have a list of groups
 		// foreach ($group_parts as $gp)
 		// now for perms : * / r / c / :owner
-		// $perms = ($right{0} === ":") ? $right : qBinRights($right);
+		// $perms = ($right[0] === ":") ? $right : qBinRights($right);
 		
 		// groups rule may be based on :owner, may be cascaded
 		

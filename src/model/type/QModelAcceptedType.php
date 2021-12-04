@@ -89,6 +89,8 @@ final class QModelAcceptedType
 			return $this->_multity;
 		else
 		{
+			if (!is_array($this->options))
+				throw new \Exception('Unexpected type.');
 			$fst = reset($this->options);
 			$cnt = next($this->options);
 			if ($cnt)
@@ -109,7 +111,7 @@ final class QModelAcceptedType
 			return $this->_hassc;
 		foreach ($this->options as $o)
 		{
-			if (strtolower($o{0}) == $o{0})
+			if (strtolower($o[0]) == $o[0])
 				return ($this->_hassc = true);
 		}
 		return ($this->_hassc = false);
@@ -128,7 +130,7 @@ final class QModelAcceptedType
 		
 		foreach ($this->options as $o)
 		{
-			if (strtolower($o{0}) !== $o{0})
+			if (strtolower($o[0]) !== $o[0])
 				return ($this->_hasrt = $o);
 		}
 		return ($this->_hasrt = false);
@@ -141,7 +143,7 @@ final class QModelAcceptedType
 		
 		foreach ($this->options as $o)
 		{
-			if ((strtolower($o{0}) !== $o{0}) && QModelType::IsInstantiable($o))
+			if ((strtolower($o[0]) !== $o[0]) && QModelType::IsInstantiable($o))
 				return ($this->_hasirt = $o);
 		}
 		return ($this->_hasirt = false);
@@ -178,9 +180,11 @@ final class QModelAcceptedType
 		
 		if ($this->_sfix === null)
 		{
+			if (!is_array($this->options))
+				throw new \Exception('Unexpected type.');
 			$frst = reset($this->options);
 			
-			if (($frst{0} === strtolower($frst{0})) && (next($this->options) === false))
+			if (($frst[0] === strtolower($frst[0])) && (next($this->options) === false))
 			{
 				switch ($frst)
 				{
@@ -244,7 +248,7 @@ final class QModelAcceptedType
 		
 		foreach ($this->options as $k => $opt)
 		{
-			if (($opt{0} === "\\") || (strtolower($opt{0}) !== $opt{0}))
+			if (($opt[0] === "\\") || (strtolower($opt[0]) !== $opt[0]))
 				$this->options[$k] = QCodeStorage::ApplyNamespaceToName($opt, $namespace);
 		}
 	}
@@ -261,7 +265,7 @@ final class QModelAcceptedType
 		$ret = array();
 		foreach ($this->options as $ty)
 		{
-			if (is_string($ty) && strtolower($ty{0}) != $ty{0})
+			if (is_string($ty) && strtolower($ty[0]) != $ty[0])
 				$ret[$ty] = $ty;
 		}
 		return ($this->_retty = $ret);
@@ -274,7 +278,7 @@ final class QModelAcceptedType
 		$ret = array();
 		foreach ($this->options as $ty)
 		{
-			if (is_string($ty) && (strtolower($ty{0}) != $ty{0}) && QModelType::IsInstantiable($ty))
+			if (is_string($ty) && (strtolower($ty[0]) != $ty[0]) && QModelType::IsInstantiable($ty))
 				$ret[] = $ty;
 		}
 		return ($this->_retity = $ret);
@@ -288,7 +292,7 @@ final class QModelAcceptedType
 		$types = array();
 		foreach ($this->options as $opt_ty)
 		{
-			if (strtolower($opt_ty{0}) !== $opt_ty{0})
+			if (strtolower($opt_ty[0]) !== $opt_ty[0])
 			{
 				$ext_types = $this->strict ? null : QAutoload::GetClassExtendedBy($opt_ty);
 				if ((!interface_exists($opt_ty)) && QModelType::IsInstantiable($opt_ty))
@@ -314,7 +318,7 @@ final class QModelAcceptedType
 		
 		foreach ($this->options as $opt_ty)
 		{
-			if (strtolower($opt_ty{0}) !== $opt_ty{0})
+			if (strtolower($opt_ty[0]) !== $opt_ty[0])
 			{
 				$ext_types = $this->strict ? null : QAutoload::GetClassExtendedBy($opt_ty);
 				if ((!interface_exists($opt_ty)) && QModelType::IsInstantiable($opt_ty))
@@ -346,7 +350,7 @@ final class QModelAcceptedType
 		$types = array();
 		foreach ($this->options as $opt_ty)
 		{
-			if (strtolower($opt_ty{0}) !== $opt_ty{0})
+			if (strtolower($opt_ty[0]) !== $opt_ty[0])
 			{
 				$ext_types = $this->strict ? null : QAutoload::GetClassExtendedBy($opt_ty);
 				if (!interface_exists($opt_ty))

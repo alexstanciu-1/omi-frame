@@ -278,7 +278,7 @@ class QSecurityGenerator
 		$new_on = [];
 		foreach ($on_parts as $op)
 		{
-			if ($op{0} === "@")
+			if ($op[0] === "@")
 			{
 				$me_on = null;
 				
@@ -427,7 +427,7 @@ class QSecurityGenerator
 		$prop_inf = $property ? \QModelQuery::GetTypesCache($this->className)[$property] : null;
 		$is_collection = $prop_inf && $prop_inf['[]'];
 		
-		$toks = token_get_all("<?php ".$condition);
+		$toks = q_token_get_all("<?php ".$condition);
 		
 		// remove <?php
 		array_shift($toks);

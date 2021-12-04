@@ -227,12 +227,7 @@ final class QTrace
 		# handle data 
 		{
 			$data_data = [$debug_backtrace, static::Extract_Array($data)];
-			
-			# if (($data['$return'] instanceof \QModelArray) && (reset($data['$return']) instanceof \Omi\Genband\SBC\Endpoint))
-			{
-				// qvar_dumpk($data, static::Extract_Array($data));
-			}
-			
+						
 			$data_write = json_encode($data_data)."\n";
 			$data_start = ftell($this->file_data);
 			$data_witten = fwrite($this->file_data, $data_write);

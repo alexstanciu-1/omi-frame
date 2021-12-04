@@ -117,13 +117,13 @@ class QPHPTokenDocComment extends QPHPToken
 					{
 						if ((strtolower($ps_script->tag) === "script") && ($ps_script->getAttribute("jsFuncMode") === "append"))
 						{
-							$extra_append = $tok->toString($ps_script->inner());
-							// $tok->append($tok->toString($ps_script->inner()));
+							$extra_append = $tok::To_String($ps_script->inner());
+							// $tok->append($tok::To_String($ps_script->inner()));
 						}
 						else if ((strtolower($ps_script->tag) === "script") && ($ps_script->getAttribute("jsFuncMode") === "prepend"))
 						{
-							// $tok->prepend($tok->toString($ps_script->inner()));
-							$extra_prepend = $tok->toString($ps_script->inner());
+							// $tok->prepend($tok::To_String($ps_script->inner()));
+							$extra_prepend = $tok::To_String($ps_script->inner());
 						}
 					}
 				}
@@ -139,7 +139,7 @@ class QPHPTokenDocComment extends QPHPToken
 			$s_args = "";
 			foreach ($info["params"] as $inf_p)
 			{
-				$inf_k = ($inf_p{0} === "\$") ? substr($inf_p, 1) : $inf_p;
+				$inf_k = ($inf_p[0] === "\$") ? substr($inf_p, 1) : $inf_p;
 				$s_args .= "\"{$inf_k}\": $inf_p, ";
 			}
 			$s_args = rtrim($s_args, ", ");
@@ -369,7 +369,7 @@ class QPHPTokenDocComment extends QPHPToken
 					$prev_ty = ($prev_tok_non_code && is_array($prev_tok_non_code)) ? $prev_tok_non_code[0] : null;
 					$prev_ts = ($prev_tok_non_code && is_array($prev_tok_non_code)) ? $prev_tok_non_code[1] : $prev_tok_non_code;
 					
-					$is_name_of_class = (($prev_ty === T_INSTANCEOF) || ($prev_ty === T_NEW)) || ($prev_ts && ($prev_ts{0} === "\\"));
+					$is_name_of_class = (($prev_ty === T_INSTANCEOF) || ($prev_ty === T_NEW)) || ($prev_ts && ($prev_ts[0] === "\\"));
 					if (!$is_name_of_class)
 					{
 						// we must also lookahead for (T_DOUBLE_COLON)
@@ -476,11 +476,11 @@ class QPHPTokenDocComment extends QPHPToken
 						
 					}
 					
-					$fe_value = trim(QPHPToken::toString($fe_value));
+					$fe_value = trim(QPHPToken::To_String($fe_value));
 					if ($fe_key === null)
 						$fe_key = "\$_key_".substr(preg_replace("/\\.\\-\\>\\[\\]\\{\\}\\$/us", "", $fe_value), 1);
 					else
-						$fe_key = trim(QPHPToken::toString($fe_key));
+						$fe_key = trim(QPHPToken::To_String($fe_key));
 					
 					$fe_js_expr = "\$_expr_".substr(preg_replace("/\\.\\-\\>\\[\\]\\{\\}\\$/us", "", $fe_value), 1);
 					$fe_js_is_arr = "\$_isArr_".substr(preg_replace("/\\.\\-\\>\\[\\]\\{\\}\\$/us", "", $fe_value), 1);
@@ -566,7 +566,7 @@ class QPHPTokenDocComment extends QPHPToken
 					$ret[] = "\";";
 					$str_escape = false;
 					
-					$ret[] = QPHPToken::toString($xml_children->inner());
+					$ret[] = QPHPToken::To_String($xml_children->inner());
 					
 					$ret[] = "\$_QOUT += \"";
 					$str_escape = true;

@@ -130,14 +130,14 @@ final class QWebRequest
 
 				$with_ifr = rtrim(Q_APP_REL ,'/').'/~dev';
 				$with_ifr_len = strlen($with_ifr);
-				$last_ch = $_SERVER['REQUEST_URI']{$with_ifr_len};
+				$last_ch = $_SERVER['REQUEST_URI'][$with_ifr_len];
 				$has_iframe_tag = (substr($_SERVER['REQUEST_URI'], 0, $with_ifr_len) === $with_ifr) && (($last_ch === '') || ($last_ch === '?') || ($last_ch === '/') || ($last_ch === '&'));
 
 				if (!$has_iframe_tag)
 				{
 					$with_ifr_dev = rtrim(Q_APP_REL ,'/').'/__q_dev__';
 					$with_ifr_dev_len = strlen($with_ifr_dev);
-					$last_ch_dev = $_SERVER['REQUEST_URI']{$with_ifr_dev_len};
+					$last_ch_dev = $_SERVER['REQUEST_URI'][$with_ifr_dev_len];
 					$has_iframe_dev_tag = (substr($_SERVER['REQUEST_URI'], 0, $with_ifr_dev_len) === $with_ifr_dev) && (($last_ch_dev === '') || ($last_ch_dev === '?') || ($last_ch_dev === '/') || ($last_ch_dev === '&'));
 				}
 

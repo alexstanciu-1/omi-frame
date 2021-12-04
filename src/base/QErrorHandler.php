@@ -193,6 +193,7 @@ class QErrorHandler
 ";
 		$common_path = "";
 		$trace = $ex->getTrace();
+		
 		foreach ($trace as $t)
 		{
 			if (!$common_path)
@@ -202,7 +203,7 @@ class QErrorHandler
 				$up_to = strlen($common_path) < strlen($t['file']) ? strlen($common_path) : strlen($t['file']);
 				for ($i = 0; $i < $up_to; $i++)
 				{
-					if ($common_path{$i} !== $t['file']{$i})
+					if ($common_path[$i] !== $t['file'][$i])
 						break;
 				}
 				$common_path = substr($common_path, 0, $i);
@@ -216,6 +217,7 @@ class QErrorHandler
 			$bag = [];
 			qDebugStackInner($t['args'], false, false, '', true, false);
 			$args = ob_get_clean();
+			
 			$stack_html .= "<tr>
 				<td>".htmlspecialchars($t['class'])."</td><td>".htmlspecialchars($t['type']).htmlspecialchars($t['function'])."</td><td>".
 						htmlspecialchars($t['line'])."</td><td>{$args}</td><td>".

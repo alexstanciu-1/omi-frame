@@ -294,7 +294,7 @@ class QSqlModelInfoType
 					if (!$root->_multitype[$full_tname][$rowid_name])
 					{
 						$coll_type = $parent_property->getCollectionType();
-						$ref_type = $coll_type->hasAnyInstantiableReferenceTypes() ? reset($coll_type->getAllInstantiableReferenceTypes()) : null;
+						$ref_type = $coll_type->hasAnyInstantiableReferenceTypes() ? q_reset($coll_type->getAllInstantiableReferenceTypes()) : null;
 						// $ref_type ? array($storage->getTypeIdInStorage($ref_type), $ref_type) : $coll_type->options;
 						$root->_multitype[$full_tname][$rowid_name] = $ref_type ? array($storage->getTypeIdInStorage($ref_type), $ref_type) : array_values($coll_type->options);
 					}
@@ -357,7 +357,7 @@ class QSqlModelInfoType
 			
 			if (is_string($types))
 			{
-				if ($types{0} !== strtolower($types{0}))
+				if ($types[0] !== strtolower($types[0]))
 					$this->setEntityType_under($types, $prop);
 			}
 			else if (qis_array($types))
@@ -366,7 +366,7 @@ class QSqlModelInfoType
 				{
 					if ($type instanceof QModelAcceptedType)
 						$this->setAcceptedType($type, $prop);
-					else if ($type{0} !== strtolower($type{0}))
+					else if ($type[0] !== strtolower($type[0]))
 						$this->setEntityType_under($type, $prop);
 				}
 			}
@@ -389,7 +389,7 @@ class QSqlModelInfoType
 		
 		foreach ($acc_type->options as $opt)
 		{
-			if ($opt{0} !== strtolower($opt{0}))
+			if ($opt[0] !== strtolower($opt[0]))
 				$this->setEntityType_under($opt, $acc_ty);
 		}
 	}
@@ -438,7 +438,7 @@ class QSqlModelInfoType
 	
 	public function init($recursive = false)
 	{
-		parent::init($recursive);
+		# parent::init($recursive);
 		
 		if (!($this->type instanceof QModelAcceptedType))
 		{
@@ -1010,7 +1010,7 @@ class QSqlModelInfoType
 						$first_join_table = null;
 						foreach ($ty->options as $opt)
 						{
-							if (strtolower($opt{0}) !== $opt{0})
+							if (strtolower($opt[0]) !== $opt[0])
 							{
 								$ext_by = $ty->strict ? null : QAutoload::GetClassExtendedBy($opt);
 								$ext_by ? array_unshift($ext_by, $opt) : ($ext_by = array($opt));
@@ -1071,7 +1071,7 @@ class QSqlModelInfoType
 					}
 					else
 					{
-						if (strtolower($ty{0}) !== $ty{0})
+						if (strtolower($ty[0]) !== $ty[0])
 						{
 							$ext_by = $prop->strict ? null : QAutoload::GetClassExtendedBy($ty);
 							$ext_by ? array_unshift($ext_by, $ty) : ($ext_by = array($ty));
@@ -1220,14 +1220,14 @@ class QSqlModelInfoType
 						{
 							foreach ($ty->options as $acc_ty)
 							{
-								if (strtolower($acc_ty{0}) == $acc_ty{0})
+								if (strtolower($acc_ty[0]) == $acc_ty[0])
 									continue;
 								$ref_types_coll[] = $acc_ty;
 							}
 						}
 						else if (is_string($ty))
 						{
-							if (strtolower($ty{0}) == $ty{0})
+							if (strtolower($ty[0]) == $ty[0])
 								continue;
 							$ref_types[] = $ty;
 						}

@@ -1052,7 +1052,7 @@ class QCodeSync
 			
 			$meth_obj = $php_class->findMethod($default_method);
 			if ($meth_obj && $meth_obj->docComment)
-				$str .= "\t".QPHPToken::toString($meth_obj->docComment)."\n";
+				$str .= "\t".QPHPToken::To_String($meth_obj->docComment)."\n";
 			$str .= "\t".$method_str;
 		}
 		
@@ -1088,7 +1088,7 @@ class QCodeSync
 	 */
 	public function setCodeSyncItem($key, $watchFolder, $path, $modif_date, $class, $mode, $changed, $determined_namespace = null)
 	{
-		if ($path && ($path{0} === "/"))
+		if ($path && ($path[0] === "/"))
 		{
 			var_dump("setCodeSyncItem: ".$watchFolder." :: ".$path." :: ".$class);
 			throw new Exception("should not be");
@@ -1700,7 +1700,7 @@ class QCodeSync
 					$new_first_elem .= "{$func_name}: function";
 					$func_code[0] = $new_first_elem;
 
-					$func_str = QPHPToken::toString($func_code);
+					$func_str = QPHPToken::To_String($func_code);
 					$func_str = rtrim($func_str, "\n\t ;")."});\n";
 
 					if ($pos_end !== false)
@@ -2374,7 +2374,7 @@ class QCodeSync
 			$is_ok = "((!__IN_PHP__) || (\$value instanceof \\QIModelArray))";
 			$valid_type = true;
 		}
-		else if ($type_inf{0} !== strtolower($type_inf{0}))
+		else if ($type_inf[0] !== strtolower($type_inf[0]))
 		{
 				// var_dump("A: ".$type_inf);
 			// reference
@@ -2509,8 +2509,8 @@ class QCodeSync
 		}
 		else if (is_array($type_inf))
 		{
-			$accepted_obj_types = array();
-			$accepted_scalar_types = array();
+			$accepted_obj_types = [];
+			$accepted_scalar_types = [];
 			
 			// var_dump($type_inf);
 			
@@ -2538,7 +2538,7 @@ class QCodeSync
 					$acc_type = $_tyinf;
 					$possible_collection = true;
 				}
-				else if ($_tyinf{0} !== strtolower($_tyinf{0}))
+				else if ($_tyinf[0] !== strtolower($_tyinf[0]))
 					$accepted_obj_types[$use_ty] = $type_extracted_inf;
 				else
 					$accepted_scalar_types[$use_ty] = $type_extracted_inf;
@@ -3196,7 +3196,7 @@ class QCodeSync
 
 	public static function ParseValidationRules($rule)
 	{
-		$toks = token_get_all("<?php ".trim($rule));
+		$toks = q_token_get_all("<?php ".trim($rule));
 		array_shift($toks);
 		return $toks;
 	}
@@ -3216,7 +3216,7 @@ class QCodeSync
 		return self::$PreparedEncoders = self::GetPreparedData(QAutoload::GetDataEncoders());
 	}
 	
-	protected static function GetPreparedData($fixers)
+	protected static function GetPreparedData(array $fixers)
 	{
 		$ret = [];
 		foreach ($fixers as $k => $_v)

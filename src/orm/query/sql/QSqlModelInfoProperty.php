@@ -121,7 +121,7 @@ class QSqlModelInfoProperty
 			{
 				if (!$this->property->hasCollectionType())
 				{
-					$ref_type = $this->property->hasAnyInstantiableReferenceTypes() ? reset($this->property->getAllInstantiableReferenceTypes()) : null;
+					$ref_type = $this->property->hasAnyInstantiableReferenceTypes() ? q_reset($this->property->getAllInstantiableReferenceTypes()) : null;
 					
 					$root->_multitype[$orig_name][$rowid_name] = $ref_type ? 
 																	array($storage->getTypeIdInStorage($ref_type), $ref_type) : 
@@ -273,7 +273,7 @@ class QSqlModelInfoProperty
 				$tmp_default = true;
 			else if ($tmp_default === "false")
 				$tmp_default = true;
-			else if (($tmp_default{0} === "\"") || ($tmp_default{0} === "'"))
+			else if (($tmp_default[0] === "\"") || ($tmp_default[0] === "'"))
 				$tmp_default = substr($tmp_default, 1, -1);
 			$force_default = $default = $tmp_default;
 		}

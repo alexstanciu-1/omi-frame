@@ -531,7 +531,7 @@ class QApp extends QAppModule
 				
 				// ensure it's ready
 				$lock = new \QFileLock($rf_file_name);
-				$lock->lock();
+				$lock->lock_do();
 				$lock->unlock();
 				
 				include($rf_file_name);
@@ -591,7 +591,7 @@ class QApp extends QAppModule
 				$str_to_write = "<?php\n\n\$__TMP_MULTI_REQ = ".qVarExport($result, false, new \SplObjectStorage()).";";
 				
 				$lock = new \QFileLock($wf_file_name, "w");
-				$lock->lock();
+				$lock->lock_do();
 				$lock->write($str_to_write);
 				$lock->unlock();
 				// \QApp::Log("we cache: ".$multi_folder.$current_id.".php");

@@ -209,52 +209,51 @@ abstract class QPHPToken
 		return $this->toString();
 	}
 	
-	public function toString($formated = false, $final = false, $data = null)
+	public static function To_String($arg = null, $final = false, $data = null)
 	{
-		if (!is_bool($formated))
+		if (qis_array($arg))
 		{
-			$arg = $formated;
-			if (qis_array($arg))
-			{
-				if (is_array($arg) && is_int($arg[0]) && is_string($arg[1]))
-					return $arg[1];
-				$str = "";
-				foreach ($arg as $child)
-				{
-					if (is_string($child))
-						$str .= $child;
-					else if (is_array($child))
-						$str .= $child[1];
-					else if ($child instanceof QPHPToken)
-						$str .= $child->toString(false, $final, $data);
-				}
-				return $str;
-			}
-			else if (is_string($arg))
-				return $arg;
-			else if ($arg instanceof QPHPToken)
-				return $arg->toString(false, $final, $data);
-		}
-		else
-		{
+			if (is_array($arg) && is_int($arg[0]) && is_string($arg[1]))
+				return $arg[1];
 			$str = "";
-			if ($this->children)
+			foreach ($arg as $child)
 			{
-				foreach ($this->children as $child)
-				{
-					if (is_string($child))
-						$str .= $child;
-					else if (is_array($child))
-						$str .= $child[1];
-					else // if ($child instanceof QPHPToken)
-						$str .= $child->toString($formated, $final, $data);
-					/*
-					else
-						throw new Exception("Unexpected token type");*/
-				}
+				if (is_string($child))
+					$str .= $child;
+				else if (is_array($child))
+					$str .= $child[1];
+				else if ($child instanceof QPHPToken)
+					$str .= $child->toString(false, $final, $data);
 			}
 			return $str;
 		}
+		else if (is_string($arg))
+			return $arg;
+		else if ($arg instanceof QPHPToken)
+			return $arg->toString(false, $final, $data);
+		else if (is_bool($arg))
+			throw new \Exception('Boolean is not allowed. Possible accidental call of static instead of instance.');
+	}
+	
+	public function toString(bool $formated = false, $final = false, $data = null)
+	{
+		$str = "";
+		if ($this->children)
+		{
+			foreach ($this->children as $child)
+			{
+				if (is_string($child))
+					$str .= $child;
+				else if (is_array($child))
+					$str .= $child[1];
+				else // if ($child instanceof QPHPToken)
+					$str .= $child->toString($formated, $final, $data);
+				/*
+				else
+					throw new Exception("Unexpected token type");*/
+			}
+		}
+		return $str;
 	}
 
 	public abstract function parse($tokens, $tok, &$pos, $expand_output = false, $expand_in_methods = true, $expand_arrays = false);
@@ -337,7 +336,7 @@ abstract class QPHPToken
 		}
 		else if (is_string($string))
 		{
-			$tokens = $wrap_in_php ? qtoken_get_all("<?php ".$string." ?>") : qtoken_get_all($string);
+			$tokens = $wrap_in_php ? q_token_get_all("<?php ".$string." ?>") : q_token_get_all($string);
 			$code = new QPHPTokenCode($this->parent);
 			$pos = 0;
 			$code->parse($tokens, $tokens[0], $pos, $expand_output, $expand_in_methods, $expand_arrays);
@@ -443,7 +442,7 @@ abstract class QPHPToken
 	
 	public function wrap($start, $end, $wrap_in_php = false, $expand_output = false)
 	{
-		$tokens = $wrap_in_php ? qtoken_get_all("<?php ".$start." ?>") : qtoken_get_all($start);
+		$tokens = $wrap_in_php ? q_token_get_all("<?php ".$start." ?>") : q_token_get_all($start);
 		//array_shift($tokens);
 		
 		//array_pop($tokens);
@@ -451,7 +450,7 @@ abstract class QPHPToken
 		// $tokens[] = $this;
 		// $tokens = array_merge($tokens, qtoken_get_all((string)$this));
 		
-		$end_tok = $wrap_in_php ? qtoken_get_all("<?php ".$end." ?>") : qtoken_get_all($end);
+		$end_tok = $wrap_in_php ? q_token_get_all("<?php ".$end." ?>") : q_token_get_all($end);
 		
 		//array_shift($end_tok);
 		//array_pop($end_tok);
@@ -545,7 +544,7 @@ abstract class QPHPToken
 		}
 	}
 
-	public function isFollowedBy($tokens, $pos, $type, &$found_pos = null)
+	public static function isFollowedBy($tokens, $pos, $type, &$found_pos = null)
 	{
 		$p = $pos + 1;
 		$next = $tokens[$p];
@@ -672,7 +671,7 @@ abstract class QPHPToken
 			$list = array();
 		
 		// only class now
-		if ($expression{0} === ".")
+		if ($expression[0] === ".")
 		{
 			$class = substr($expression, 1);
 			if ($class && $this->hasClass($class))
@@ -807,8 +806,9 @@ abstract class QPHPToken
 	
 	public function mergeDocComment($docComment)
 	{
-		$str_1 = is_string($this->docComment) ? $this->docComment : ($this->docComment instanceof QPHPTokenDocComment) ? $this->docComment->toString() : $this->docComment[1];
-		$str_2 = is_string($docComment) ? $docComment : ($docComment instanceof QPHPTokenDocComment) ? $docComment->toString() : $docComment[1];
+		$str_1 = is_string($this->docComment) ? $this->docComment : 
+								(($this->docComment instanceof QPHPTokenDocComment) ? $this->docComment->toString() : $this->docComment[1]);
+		$str_2 = is_string($docComment) ? $docComment : (($docComment instanceof QPHPTokenDocComment) ? $docComment->toString() : $docComment[1]);
 		
 		$index_1 = $this->parseDocComment($str_1);
 		$index_2 = $this->parseDocComment($str_2);
@@ -948,7 +948,7 @@ abstract class QPHPToken
 	 */
 	public function innerAsString()
 	{
-		return $this->toString($this->inner());
+		return $this::To_String($this->inner());
 	}
 	
 	/**
@@ -1341,7 +1341,7 @@ abstract class QPHPToken
 			$is_Valid = true;
 		}
 		else
-			$tokens = qtoken_get_all($string, $is_Valid);
+			$tokens = q_token_get_all($string, $is_Valid);
 		
 		if (!$tokens)
 		{
@@ -1542,14 +1542,14 @@ abstract class QPHPToken
 									// inverse $in_attr
 									$in_attr = !$in_attr;
 								}
-								else if (($match{0} === "\"") || ($match{0} === "'"))
+								else if (($match[0] === "\"") || ($match[0] === "'"))
 								{
 									if ($in_attr)
 										throw new Exception("Parse error");
 									$len = strlen($match);
-									if ($match{0} !== $match{$len-1})
+									if ($match[0] !== $match[$len-1])
 									{
-										$in_attr_quote = $match{0};
+										$in_attr_quote = $match[0];
 										$in_attr = true;
 									}
 									else
@@ -2106,7 +2106,7 @@ abstract class QPHPToken
 					if ($element instanceof QPHPToken)
 						$element->parent = $inner_element;
 					/*else
-						var_dump($splice_pos, $this->toString($element));*/
+						var_dump($splice_pos, $this::To_String($element));*/
 
 					$last_match_pos = $splice_pos + 1;
 				}
@@ -2261,7 +2261,7 @@ abstract class QPHPToken
 		$ext_2 = pathinfo(substr($base, 0, -(strlen($ext) + 1)), PATHINFO_EXTENSION);
 		
 		$class = substr($base, 0, strpos($base, "."));
-		if ($class{0} !== strtoupper($class{0}))
+		if ($class[0] !== strtoupper($class[0]))
 			// not a class
 			return null;
 		
@@ -2271,7 +2271,7 @@ abstract class QPHPToken
 		
 		if (($ext === "php") && ($ext_2 !== 'url'))
 		{
-			// $tokens = qtoken_get_all(file_get_contents($path));
+			// $tokens = q_token_get_all(file_get_contents($path));
 			$tokens = QPHPToken::GetPHPTokensFromFile($path);
 			
 			$last_type = false;
@@ -2337,19 +2337,25 @@ abstract class QPHPToken
 					break;
 				}
 				
-				if (($last_type !== false) && (($t_type === T_STRING) || ($t_type === T_NS_SEPARATOR)))
+				if (($last_type !== false) && (($t_type === T_STRING) || ($t_type === T_NS_SEPARATOR) 
+													|| ($t_type === T_NAME_QUALIFIED)
+													|| ($t_type === T_NAME_FULLY_QUALIFIED)
+													|| ($t_type === T_NAME_RELATIVE)))
 				{
 					// find identifer
 					$identifier = [$token[1]];
 					while (($idf_tok = next($tokens)) && (is_array($idf_tok) && ($idf_ty = $idf_tok[0]) && 
-									(($idf_ty === T_STRING) || ($idf_ty === T_NS_SEPARATOR) || ($idf_ty === T_WHITESPACE))))
+									(($idf_ty === T_STRING) || ($idf_ty === T_NS_SEPARATOR) || ($idf_ty === T_WHITESPACE)
+																 || ($idf_ty === T_NAME_QUALIFIED)
+																 || ($idf_ty === T_NAME_FULLY_QUALIFIED)
+																 || ($idf_ty === T_NAME_RELATIVE))))
 					{
 						if ($idf_ty !== T_WHITESPACE)
 							$identifier[] = $idf_tok[1];
 					}
 					// we step one back to fix position
 					prev($tokens);
-					$identifier = implode("", $identifier);
+					$identifier = trim(implode("", $identifier));
 					
 					switch ($last_type)
 					{
@@ -2432,7 +2438,7 @@ abstract class QPHPToken
 		}
 		else if (($ext === "tpl") || (($ext === "php") && ($ext_2 === "url")))
 		{
-			// $tokens = qtoken_get_all(file_get_contents($path));
+			// $tokens = q_token_get_all(file_get_contents($path));
 			$readonly_tokens = $tokens = QPHPToken::GetPHPTokensFromFile($path);
 			
 			$file_without_php = "";
@@ -2501,7 +2507,7 @@ abstract class QPHPToken
 						}
 						else if ($m === "=")
 							$last_attr_name = $last_m;
-						else if (($m{0} === "\"") || ($m{0} === "'"))
+						else if (($m[0] === "\"") || ($m[0] === "'"))
 						{
 							$last_attr_value = substr($m, 1, -1);
 							if (($last_attr_name === "extends") || ($last_attr_name === "q-extends"))
@@ -2579,7 +2585,7 @@ abstract class QPHPToken
 	
 	public static function ApplyNamespaceToName($class, $namespace)
 	{
-		if ($class{0} === "\\")
+		if ($class[0] === "\\")
 			return substr($class, 1);
 		else
 			return $namespace ? $namespace."\\".$class : $class;
@@ -2616,9 +2622,9 @@ abstract class QPHPToken
 		else
 		{
 			// if no namespace or scalar
-			if ((!$namespace) || (strtolower($full_class{0}) === $full_class{0}))
+			if ((!$namespace) || (strtolower($full_class[0]) === $full_class[0]))
 				return $full_class;
-			if ($full_class{0} === "\\")
+			if ($full_class[0] === "\\")
 				$full_class = substr($full_class, 1);
 			// reduce namespace as much as possible
 			$parts = explode("\\", $full_class);
@@ -2714,7 +2720,7 @@ abstract class QPHPToken
 	
 	public static function GetPHPTokensFromFile($file)
 	{
-		return token_get_all(file_get_contents($file));
+		return q_token_get_all(file_get_contents($file));
 	}
 	
 	public function getNamespace()
@@ -2930,7 +2936,7 @@ abstract class QPHPToken
 		// $str = "(\Omi\Cms\View\Menu::item, \$Data,2,'this is me',4, \$var) // and a comment";
 		// ($this->bla->bla or .   / T_OBJECT_OPERATOR, 
 		
-		$toks = token_get_all("<?php ".$str);
+		$toks = q_token_get_all("<?php ".$str);
 		$toks_len = count($toks);
 
 		$incl_class = "";
@@ -3004,12 +3010,12 @@ abstract class QPHPToken
 			}
 		}
 		
-		if ($incl_class{0} === "\$")
+		if ($incl_class[0] === "\$")
 		{
 			if (substr(strtolower($incl_meth), 0, 6) !== "render")
 				$incl_meth = "render".ucfirst($incl_meth);
 		}
-		else if ((!$incl_meth) && $incl_class && (($ch_0 = $incl_class{0}) !== "\\") && (strtolower($ch_0) === $ch_0))
+		else if ((!$incl_meth) && $incl_class && (($ch_0 = $incl_class[0]) !== "\\") && (strtolower($ch_0) === $ch_0))
 		{
 			// accept include of sub-template: @include(footer) or @include(::footer)
 			// we have a method not a class
@@ -3023,7 +3029,7 @@ abstract class QPHPToken
 
 		// => \Omi\Cms\View\Menu::renderItem(\$Data, 2, 'this is me', 4, \$var);
 		// $str = "(\Omi\Cms\View\Menu::item, \$Data,2,'this is me',4, \$var) // and ?a comment";
-		if ($incl_class{0} === "\$")
+		if ($incl_class[0] === "\$")
 		{
 			$incl_rest = trim($incl_rest);
 			// variable
@@ -3141,7 +3147,7 @@ abstract class QPHPToken
 		
 		// qvar_dump($binds_str);
 		
-		$tokens = token_get_all("<?php ".$binds_str);
+		$tokens = q_token_get_all("<?php ".$binds_str);
 		$len = count($tokens);
 		$init_cb_str = "<init_cb><?php\n";
 		$binds_str = "";
@@ -3312,7 +3318,7 @@ abstract class QPHPToken
 		// qvar_dump(token_name(290), token_name(289), token_name(268));
 		
 		// break it in tokens
-		$tokens = token_get_all("<?php ".$binds_str);
+		$tokens = q_token_get_all("<?php ".$binds_str);
 		
 		
 		

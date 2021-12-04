@@ -119,7 +119,7 @@ trait QModel_Security
 				
 				foreach ($recurse_on as $k => $v)
 				{
-					if (($k{0} === '#') && ($k{1} === '%'))
+					if (($k[0] === '#') && ($k[1] === '%'))
 						continue;
 
 					foreach ($values as $value)
@@ -217,7 +217,7 @@ trait QModel_Security
 			
 			foreach ($v as $p_name => $p_val)
 			{
-				if (is_string($p_name) && ($p_name{0} === '_'))
+				if (is_string($p_name) && ($p_name[0] === '_'))
 					continue;
 				if (!$p_val)
 					continue;
@@ -609,7 +609,7 @@ trait QModel_Security
 						}
 						default:
 						{
-							if (($s_mode{0} === '@') && in_array(substr($s_mode, 1), $defined_groups))
+							if (($s_mode[0] === '@') && in_array(substr($s_mode, 1), $defined_groups))
 							{
 								$ret['filter'][0] .= ($ret['filter'][0] ? "," : "").substr($s_mode, 1);
 							}
@@ -746,7 +746,7 @@ trait QModel_Security
 	// $user IN ($value->owners->partners->employees)
 	// how do we implement this ?
 	// ($values)->populate("")
-	// $class = get_class(reset($values))
+	// $class = get_class(q_reset($values))
 	// $class::Query("Id,(employees.partners.owners.Id AS COND_1),OTHER_CONDITIONS WHERE employees.partners.owners.Id = $user.Id OR OTHER_CONDITION GROUP BY ??? LIMIT \$NO_CONDITIONS")
 	
 	// Step1: Class::SecurityPrepareRelations( $list_of_all )

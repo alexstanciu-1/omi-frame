@@ -66,7 +66,7 @@ class QModelArray extends ArrayObject implements QIModelArray
 		{
 			foreach ($this as $name => $value)
 			{
-				if (($name{0} !== '_') && ($value instanceof QIModel))
+				if (($name[0] !== '_') && ($value instanceof QIModel))
 					$value->init($recursive);
 			}
 		}
@@ -857,7 +857,7 @@ class QModelArray extends ArrayObject implements QIModelArray
 		$comma = false;
 		foreach ($this as $k => $v)
 		{
-			if ($k{0} == "_")
+			if ($k[0] == "_")
 				continue;
 			
 			$str .= ($comma ? "," : "")."\n\"".$k."\":";
@@ -1047,47 +1047,52 @@ class QModelArray extends ArrayObject implements QIModelArray
 	
 	public function first()
 	{
-		return reset($this);
+		($it = $this->getIterator())->rewind();
+		return $it->current();
 	}
 	
 	public function reset()
 	{
-		return reset($this);
+		($it = $this->getIterator())->rewind();
+		return $it->current();
 	}
-	
+		
 	public function next()
 	{
-		return next($this);
+		($it = $this->getIterator())->next();
+		return $it->current();
 	}
 	
 	public function prev()
 	{
-		return prev($this);
+		($it = $this->getIterator())->prev();
+		return $it->current();
 	}
 	
 	public function current()
 	{
-		return current($this);
+		return $this->getIterator()->current();
 	}
 	
 	public function key()
 	{
-		return key($this);
+		return $this->getIterator()->key();
 	}
-	
+	/*
+	 * This function has been DEPRECATED as of PHP 7.2.0, and REMOVED as of PHP 8.0.0. Relying on this function is highly discouraged.
 	public function each()
 	{
 		return each($this);
 	}
-	
+	*/
 	public function last()
 	{
-		return end($this);
+		return end($this->getArrayCopy());
 	}
 	
 	public function end()
 	{
-		return end($this);
+		return end($this->getArrayCopy());
 	}
 		
 	/**
@@ -1411,7 +1416,7 @@ class QModelArray extends ArrayObject implements QIModelArray
 
 		foreach ($data as $k => $v)
 		{
-			if (($k{0} === "_") || ($ignore_nulls && ($v === null)))
+			if (($k[0] === "_") || ($ignore_nulls && ($v === null)))
 				continue;
 
 			if ($comma)
@@ -1514,273 +1519,6 @@ class QModelArray extends ArrayObject implements QIModelArray
 	{
 		return ($this->find($value, $property, $index, $strict) !== false);
 	}
-	
-	/* NOT GOOD !
-	public function findElementBy_RowId_Or_Id(\QIModel $element, $rowid = null)
-	{
-		if ($rowid && ($k = $this->_iro[$rowid]))
-		{
-			$compare_with = $this[$k];
-			if ($compare_with && ($element === $compare_with))
-				return $compare_with;
-
-			if (($compare_with instanceof $element) && ((string)$element->getId() === (string)$compare_with->getId()))
-				return $compare_with;
-		}
-		else if (($k = $this->_byid[$element->getId()]))
-		{
-			foreach ($k as $at_index)
-			{
-				$compare_with = $this[$at_index];
-				if (!$compare_with)
-					throw new \Exception('Corrupted index QModelArray::_byid');
-
-				if ($compare_with && ($element === $compare_with))
-					return $compare_with;
-
-				if (($compare_with instanceof $element) && ((string)$element->getId() === (string)$compare_with->getId()))
-					return $compare_with;
-			}
-		}
-		
-		return false;
-	}
-	*/
-	
-	public function getIdsFromMergeBy($detected_type = null, $detected_merge_by = null, $max_query_len = 32768)
-	{
-		throw new \Exception('deprecated');
-		
-		$ids_setup = 0;
-		
-		$map_mergeby = [];
-		$queries = [];
-		$binds = [];
-		$data_map = [];
-		$bind_sizes = [];
-		$merge_by_selector = [];
-		
-		if ($detected_type && $detected_merge_by)
-		{
-			$_mergeBy_parts = explode(",", $detected_merge_by);
-			$mergeBy_parts = [];
-			foreach ($_mergeBy_parts as $mbk => $_mby)
-			{
-				if (!empty($mby = trim($_mby)))
-					$mergeBy_parts[] = $mby;
-			}
-
-			$property = \QApp::GetDefaultAppPropertyForTypeValues($detected_type);
-			if (!$property)
-			{
-				qvardump($detected_type, $detected_merge_by, $_mergeBy_parts);
-				throw new \Exception("Property not detected!");
-			}
-			$merge_by_selector[$property] = $detected_merge_by;
-			$map_mergeby[$detected_type] = [$mergeBy_parts, $property];
-			$bind_sizes[$property] = count($mergeBy_parts);
-		}
-		
-		$binds_len = [];
-		
-		foreach ($this as $item)
-		{
-			if (($item instanceof \QIModel) && ($item->getId() === null))
-			{
-				$i_class = get_class($item);
-				$mergeby_inf = $map_mergeby[$i_class];
-				
-				if (($mergeby_inf === null) && ($type_inf = \QModel::GetTypesCache($i_class)) && ($type_mergeBy = $type_inf["#%misc"]["mergeBy"]))
-				{
-					$_mergeBy_parts = explode(",", $type_mergeBy);
-					$mergeBy_parts = [];
-					foreach ($_mergeBy_parts as $mbk => $_mby)
-					{
-						if (!empty($mby = trim($_mby)))
-							$mergeBy_parts[] = $mby;
-					}
-
-					$property = \QApp::GetDefaultAppPropertyForTypeValues($i_class);
-					if (!$property)
-					{
-						qvardump($i_class, $mergeby_inf);
-						throw new \Exception("Property not detected!");
-					}
-
-					$mergeby_inf = $map_mergeby[$i_class] = [$mergeBy_parts, $property];
-					$bind_sizes[$property] = count($mergeBy_parts);
-					$merge_by_selector[$property] = $type_mergeBy;
-				}
-				else if (!$mergeby_inf)
-				{
-					// make sure we don't repeat the info for the same type
-					$map_mergeby[$i_class] = false;
-					continue;
-				}
-
-				list($mergeBy_parts, $property) = $mergeby_inf;
-
-				if ($binds[$property] === null)
-				{
-					$binds[$property] = [];
-					$queries[$property] = [];
-					$binds_len[$property] = 0;
-				}
-				
-				$i_key = "";
-				
-				$sql_q = "(";
-				$prepend_and = false;
-				foreach ($mergeBy_parts as $mby)
-				{
-					$sql_q .= ($prepend_and ? " AND " : "").trim($mby)."=?";
-					$b_parts = explode(".", $mby);
-					$obj = $item;
-					foreach ($b_parts as $bp)
-						$obj = $obj->{$bp};
-						
-					if ($obj === null)
-						$i_key .= ",null";
-					else if ($obj instanceof \QIModel)
-						$i_key .= ",".var_export([$obj->getId(), get_class($obj)], true);
-					else if (is_scalar($obj))
-						$i_key .= ",".var_export($obj, true);
-					else 
-						throw new \Exception("Unexpected data type");
-
-					$binds[$property][] = $obj;
-					$prepend_and = true;
-				}
-				$sql_q .= ")";
-				
-				// define item key
-				$binds_len[$property] += strlen($i_key);
-				
-				$queries[$property][] = $sql_q;
-				$data_map[sha1($i_key)] = $item;
-			}
-		}
-		
-		// now query
-		foreach ($queries as $property => $q_sqls)
-		{
-			$q_binds = $binds[$property];
-			$bind_size = $bind_sizes[$property];
-			$extra_selector = $merge_by_selector[$property];
-			
-			// how do we determine $query_len ?
-			$count_q_sqls = count($q_sqls);
-			$estimated_len = (int)ceil((64 + $count_q_sqls * (strlen(reset($q_sqls)) + 5) + $binds_len[$property]) * 1.5);
-			$blocks = (int)ceil($estimated_len / $max_query_len);
-			$parts_per_query = (int)floor($count_q_sqls / $blocks);
-			
-			$index = 0;
-			
-			for ($i = 0; $i < $blocks; $i++)
-			{
-				$parts = array_slice($q_sqls, $index, $parts_per_query);
-				$qpart_binds = array_slice($q_binds, $index * $bind_size, $parts_per_query * $bind_size);
-				
-				$sql = $property.".{Id,{$extra_selector} WHERE ".implode(" OR ", $parts)." LIMIT ".count($parts)."}";
-				try
-				{
-					$res = QQuery($sql, $qpart_binds);
-				}
-				catch (\Exception $ex)
-				{
-					qvardump($queries, $property, $sql, $qpart_binds);
-					throw $ex;
-				}
-				
-				if ($res && $res->{$property})
-				{
-					foreach ($res->{$property} as $item)
-					{
-						list($mergeBy_parts,) = $map_mergeby[get_class($item)];
-						$i_key = "";
-						foreach ($mergeBy_parts as $mby)
-						{
-							$b_parts = explode(".", $mby);
-							$obj = $item;
-							foreach ($b_parts as $bp)
-								$obj = $obj->{$bp};
-
-							if ($obj === null)
-								$i_key .= ",null";
-							else if ($obj instanceof \QIModel)
-								$i_key .= ",".var_export([$obj->getId(), get_class($obj)], true);
-							else if (is_scalar($obj))
-								$i_key .= ",".var_export($obj, true);
-							else 
-								throw new \Exception("Unexpected data type");
-						}
-						
-						if (($i_item = $data_map[sha1($i_key)]))
-						{
-							$i_item->setId($item->getId());
-							$ids_setup++;
-						}
-					}
-				}
-
-				$index += $parts_per_query;	
-			}
-		}
-		
-		return $ids_setup;
-	}
-	
-	//  public void ArrayObject::append ( mixed $value )
-	/* NOT GOOD !!!
-	public function offsetSet($index, $newval)
-	{
-		$rv = parent::offsetSet($index, $newval);
-		if (($newval instanceof \QIModel) && ($id = $newval->getId()))
-		{
-			if ($index === null)
-			{
-				// $cp = key($this);
-				end($this);
-				$index = key($this);
-			}
-			$this->_byid[$id][] = $index;
-			$this->_byid_r[$index][] = $id;
-		}
-		return $rv;
-	}
-	
-	public function offsetUnset($index)
-	{
-		if (($ids = $this->_byid_r[$index]) !== null)
-		{
-			unset($this->_byid_r[$index]);
-			foreach ($ids as $id)
-			{
-				if (($ref = &$this->_byid[$id]))
-				{
-					foreach ($ref as $k => $v)
-					{
-						if ($v === $index)
-						{
-							unset($ref[$k]);
-							if (empty($ref))
-								unset($this->_byid[$id]);
-							break;
-						}
-					}
-				}
-			}
-		}
-		
-		if (($row_id = $this->_rowi[$index]) !== null)
-		{
-			unset($this->_rowi[$index]);
-			unset($this->_iro[$row_id]);
-		}
-		
-		return parent::offsetUnset($index);
-	}
-	 */
 	
 	######## QMODEL PATCH #############
 	
@@ -2054,7 +1792,7 @@ class QModelArray extends ArrayObject implements QIModelArray
 		foreach ($syncItm as $_k => $_v)
 		{
 			// if is not scalar and we don't have Gid set then it should be removed from collection
-			$_existingData[$_isScalar ? $_v : $_v->getId() ? $_v->getId() : uniqid()] = [$_k, $_v];
+			$_existingData[$_isScalar ? $_v : ($_v->getId() ?: uniqid())] = [$_k, $_v];
 			if (!$_k || ($_k > $_maxk))
 				$_maxk = $_k;
 		}

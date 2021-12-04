@@ -27,7 +27,7 @@ trait QModel_Methods
 		{
 			foreach ($this as $name => $value)
 			{
-				if (($name{0} !== '_') && ($value instanceof QIModel))
+				if (($name[0] !== '_') && ($value instanceof QIModel))
 					$value->init($recursive);
 			}
 		}
@@ -248,7 +248,7 @@ trait QModel_Methods
 			if (($value instanceof QFile) && ($_fstorage = $prop->storage))
 				$value->_fstorage = $_fstorage;
 			
-			if ($property{0} === "_")
+			if ($property[0] === "_")
 			{
 				$this->$property = $value;
 				return;
@@ -279,7 +279,7 @@ trait QModel_Methods
 				if (($v instanceof QFile) && ($_fstorage = $prop->storage))
 					$v->_fstorage = $_fstorage;
 				
-				if ($k{0} == "_")
+				if ($k[0] == "_")
 				{
 					$this->$k = $v;
 					continue;
@@ -581,7 +581,7 @@ trait QModel_Methods
 	/*
 	public function __set($property, $value)
 	{
-		if ($property{0} == '_')
+		if ($property[0] == '_')
 		{
 			$this->{$property} = $value;
 			return;
@@ -671,7 +671,9 @@ trait QModel_Methods
 				$next_bkt = $backtrace ? $backtrace->next($value) : null;
 				if (($value instanceof QIModelArray) && (!$value->getModelProperty()))
 					$value->setModelProperty($property);
-				$value->transform($parameters, null, $rec_child, $next_bkt, $as_simulation, ($issues[$property->name] = array()), $root_issues, $trigger_provision, $trigger_events);
+				if (!isset($issues[$property->name]))
+					$issues[$property->name] = [];
+				$value->transform($parameters, null, $rec_child, $next_bkt, $as_simulation, $issues[$property->name], $root_issues, $trigger_provision, $trigger_events);
 			}
 		}
 
@@ -818,7 +820,7 @@ trait QModel_Methods
 		$refs[$f_id] = $this;
 		foreach ($this as $k => $v)
 		{
-			if (($k{0} == "_") || ($ignore_nulls && ($v === null)))
+			if (($k[0] == "_") || ($ignore_nulls && ($v === null)))
 				continue;
 
 			$str .= ",\n\"".$k."\":";
@@ -863,7 +865,7 @@ trait QModel_Methods
 			return null;
 		if (isset(self::$_Types_Cache[$type]))
 			return self::$_Types_Cache[$type];
-		else if ($type{0} === strtolower($type{0}))
+		else if ($type[0] === strtolower($type[0]))
 		{
 			// we have a scalar type
 			switch ($type)
@@ -1250,7 +1252,7 @@ trait QModel_Methods
 	{
 		self::$DimsDef = $dims_def;
 		foreach ($dims_def as $def_key => $def_values)
-			self::$Dims[$def_key] = reset($def_values);
+			self::$Dims[$def_key] = q_reset($def_values);
 	}
 	
 	/**
@@ -2086,7 +2088,7 @@ trait QModel_Methods
 			// we will need to load the data
 			foreach ($array as $k => $v)
 			{
-				if (($k{0} === "_") ||
+				if (($k[0] === "_") ||
 						(($select_all !== true) && ($select_all[$k] === null)))
 					continue;
 				
@@ -2119,7 +2121,7 @@ trait QModel_Methods
 							// is collection
 							$expected_type = "\\QModelArray";
 						else
-							$expected_type = "\\".reset($prop_inf["#"]);
+							$expected_type = "\\".q_reset($prop_inf["#"]);
 					}
 
 					if ($expected_type && class_exists($expected_type))
@@ -2145,7 +2147,7 @@ trait QModel_Methods
 									{
 										if (!$type_inf)
 											$type_inf = QModelQuery::GetTypesCache(get_class($self));
-										$v_expected_type = "\\".reset($type_inf[$k]["[]"]["#"]);
+										$v_expected_type = "\\".q_reset($type_inf[$k]["[]"]["#"]);
 									}
 
 									if ($v_expected_type && class_exists($v_expected_type))
@@ -2191,7 +2193,7 @@ trait QModel_Methods
 		{
 			foreach ($sp_list as $k => $sp)
 			{
-				if (($k{0} === "_") ||
+				if (($k[0] === "_") ||
 						(($select_all !== true) && ($select_all[$k] === null)))
 				{
 					if (static::$_SecurityPropertiesExclusive && $self)
@@ -2239,7 +2241,7 @@ trait QModel_Methods
 			// unset everything
 			foreach ($self as $k => $v)
 			{
-				if (($k{0} === "_") || (strtolower($k) === "id"))
+				if (($k[0] === "_") || (strtolower($k) === "id"))
 					continue;
 				
 				// recurse first then unset, is there any point to recurse ?
@@ -2404,7 +2406,7 @@ trait QModel_Methods
 	
 	public static function SetDefaultLanguage_Dim($lang)
 	{
-		if (static::$DimsDef && static::$DimsDef["lang"] && (reset(static::$DimsDef["lang"]) !== $lang))
+		if (static::$DimsDef && static::$DimsDef["lang"] && (q_reset(static::$DimsDef["lang"]) !== $lang))
 		{
 			$new_lang = [$lang => $lang];
 			foreach (static::$DimsDef["lang"] as $k => $v)
@@ -2419,7 +2421,7 @@ trait QModel_Methods
 	
 	public static function GetDefaultLanguage_Dim()
 	{
-		return (static::$DimsDef && static::$DimsDef["lang"]) ? reset(static::$DimsDef["lang"]) : (static::$DefaultLanguage_Dim ?: static::$Language_Dim);
+		return (static::$DimsDef && static::$DimsDef["lang"]) ? q_reset(static::$DimsDef["lang"]) : (static::$DefaultLanguage_Dim ?: static::$Language_Dim);
 	}
 	
 	/**
@@ -2679,7 +2681,7 @@ trait QModel_Methods
 			$comma = $metadata;
 			foreach ($data as $k => $v)
 			{
-				if (($k{0} === "_") || ($ignore_nulls && ($v === null) && !$data->wasSet($k)))
+				if (($k[0] === "_") || ($ignore_nulls && ($v === null) && !$data->wasSet($k)))
 					continue;
 				if ($comma)
 					echo ",";
@@ -2793,7 +2795,7 @@ trait QModel_Methods
 				$all_keys = array_keys(QModelQuery::GetTypesCache($class));
 				foreach ($all_keys as $k)
 				{
-					if ($k{0} !== "#")
+					if ($k[0] !== "#")
 						$replacement[] = $k;
 				}
 			}
@@ -2968,7 +2970,7 @@ trait QModel_Methods
 	{
 		$type_name = $type ?: static::class;
 		if (($app_property = static::$_Cache_DefaultAppPropertiesForTypeValues[$type]) !== null)
-			return $only_first ? reset($app_property) : $app_property;
+			return $only_first ? q_reset($app_property) : $app_property;
 		
 		$m_type = static::GetTypeByName($type);
 		if (($type_property = $m_type->storage["appProperty"]) && ($type_property !== 'none') && ($type_property !== 'false'))
@@ -2984,14 +2986,14 @@ trait QModel_Methods
 		
 		foreach ($mty_inf as $prop => $inf)
 		{
-			if ($prop{0} === "#")
+			if ($prop[0] === "#")
 				continue;
 			if ($inf["[]"] && $inf["[]"]["#"][$type_name])
 				$props_list[$prop] = $prop;
 		}
 		
 		static::$_Cache_DefaultAppPropertiesForTypeValues[$type] = $props_list;
-		return $only_first ? reset($props_list) : $props_list;
+		return $only_first ? q_reset($props_list) : $props_list;
 	}
 	
 	public function getValsFor($property, $offset = 0, $limit = 20, $filter = null)
@@ -3187,7 +3189,7 @@ trait QModel_Methods
 
 			if (isset($res->{$main_app_property}))
 			{
-				$db_id = reset($res->{$main_app_property})->getId();
+				$db_id = $res->{$main_app_property}[0]->getId();
 				if ($set_it && ($db_id !== null))
 				{
 					$this->setId($db_id);
@@ -3344,7 +3346,7 @@ trait QModel_Methods
 		
 		$class = get_called_class();
 		
-		$first_obj = qis_array($data) ? reset($data) : $data;
+		$first_obj = qis_array($data) ? q_reset($data) : $data;
 		$selector = $p_refl->name.".{".$first_obj::GetModelEntity()."}";
 		
 		$app->{"set{$p_refl->name}"}($data);
@@ -4248,12 +4250,12 @@ trait QModel_Methods
 					// do them all 
 					foreach ($this as $p => $v)
 					{
-						if (($v instanceof QIModel) && ($p{0} !== "_"))
+						if (($v instanceof QIModel) && ($p[0] !== "_"))
 							$v->{$method}($s, $transform_state, $_bag, $_is_app, $_is_app ? $p : $appProp);
 					}
 					break;
 				}
-				else if (($k{0} !== "_") && (($obj = $this->$k) instanceof QIModel))
+				else if (($k[0] !== "_") && (($obj = $this->$k) instanceof QIModel))
 					$obj->{$method}($s, $transform_state, $_bag, $_is_app, $_is_app ? $k : $appProp);
 			}
 		}
@@ -4261,7 +4263,7 @@ trait QModel_Methods
 		{
 			foreach ($this as $p => $v)
 			{
-				if (($v instanceof QIModel) && ($p{0} !== "_"))
+				if (($v instanceof QIModel) && ($p[0] !== "_"))
 					$v->{$method}(true, $transform_state, $_bag, $_is_app, $_is_app ? $p : $appProp);
 			}
 		}
@@ -4878,7 +4880,7 @@ trait QModel_Methods
 			//qvardump($params);
 
 			$trackInfos = \QApi::Query("TrackInfo", null, $params);
-			$trackData = $trackInfos ? reset($trackInfos) : null;
+			$trackData = $trackInfos ? $trackInfos[0] : null;
 
 			if ($trackData || ($executed > 9))
 			{
@@ -5003,7 +5005,7 @@ trait QModel_Methods
 		foreach ($parsed_sources as $src_key => $src_info)
 		{
 			// @todo : handle multiple requests on the same source
-			$src_from = reset($src_info);
+			$src_from = q_reset($src_info);
 			$is_collection = false;
 			$src_from_types = \QApi::DetermineFromTypes($storage_model, $src_from, $is_collection);
 			
@@ -5017,7 +5019,7 @@ trait QModel_Methods
 					{
 						// determine $data_is_collection - don't use the parameter
 						/*==========================determine if data is provided as collection or as single item=========================*/
-						$_ft = reset($src_from_types);
+						$_ft = q_reset($src_from_types);
 						$decode_type = $_ft ? $_ft.($is_collection ? "[]" : "") : "auto";
 						
 						$data_is_collection = true;
@@ -5051,13 +5053,13 @@ trait QModel_Methods
 			
 			$app = \QApp::NewData();
 			$app->{"set{$from}"}($data);
-			$first_obj = qis_array($data) ? reset($data) : $data;
+			$first_obj = qis_array($data) ? q_reset($data) : $data;
 			$selector = [$from => $first_obj::GetForSaveSelector($selector, $from)];
 			// trigger all events without provision
 			$result[$src_key] = $app->save($selector, null, null, false, true, true);
 		}
 		
-		return !$result ? null : ((count($result) === 1) ? reset($result) : $result);
+		return !$result ? null : ((count($result) === 1) ? q_reset($result) : $result);
 		
 	}
 

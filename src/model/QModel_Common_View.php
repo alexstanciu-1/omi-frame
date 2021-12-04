@@ -156,7 +156,7 @@ trait QModel_Common_View
 				$tokens = \QCodeSync::ParseValidationRules($prop_validation);
 
 				$validation_str = \QCodeSync::GetValidationStr($prop_validation, null, "\$value");
-				$validation_toks = token_get_all("<?php ".$validation_str);
+				$validation_toks = q_token_get_all("<?php ".$validation_str);
 				array_shift($validation_toks);
 
 				list($alert, $info) = \QCodeSync::GetValidationData($prop_validation, $prop_caption);
@@ -183,7 +183,7 @@ trait QModel_Common_View
 			if ($prop_fix)
 			{
 				$fix_str = \QCodeSync::GetFixValStr($prop_fix, null, "\$value");
-				$fix_toks = token_get_all("<?php " . $fix_str);
+				$fix_toks = q_token_get_all("<?php " . $fix_str);
 				array_shift($fix_toks);
 				
 				// get javascript validation function
@@ -195,7 +195,7 @@ trait QModel_Common_View
 			{ 
 				if (is_string($prop_types))
 				{
-					if ($prop_types{0} === strtolower($prop_types{0}))
+					if ($prop_types[0] === strtolower($prop_types[0]))
 						$r_types["\$"][$prop_types] = $prop_types;
 					else
 						$r_types["#"][$prop_types] = $prop_types;

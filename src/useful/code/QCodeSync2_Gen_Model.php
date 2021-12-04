@@ -18,7 +18,7 @@ trait QCodeSync2_Gen_Model
 		foreach ($src_class->getProperties() as $prop)
 		{
 			// ignore statics
-			if ($prop->isStatic() || ($prop->name === 'Del__') || ($prop->name{0} === '_'))
+			if ($prop->isStatic() || ($prop->name === 'Del__') || ($prop->name[0] === '_'))
 				continue;
 			
 			$meth_name = "set".ucfirst($prop->name)."";
@@ -129,7 +129,7 @@ trait QCodeSync2_Gen_Model
 					$acc_type = $_tyinf;
 					$possible_collection = true;
 				}
-				else if ($_tyinf{0} !== strtolower($_tyinf{0}))
+				else if ($_tyinf[0] !== strtolower($_tyinf[0]))
 					$accepted_obj_types[$use_ty] = $type_extracted_inf;
 				else
 					$accepted_scalar_types[$use_ty] = $type_extracted_inf;
@@ -290,7 +290,7 @@ trait QCodeSync2_Gen_Model
 			$is_ok = "((!__IN_PHP__) || (\$value instanceof \\QIModelArray))";
 			$valid_type = true;
 		}
-		else if ($type_inf{0} !== strtolower($type_inf{0}))
+		else if ($type_inf[0] !== strtolower($type_inf[0]))
 		{
 				// var_dump("A: ".$type_inf);
 			// reference
@@ -392,7 +392,7 @@ trait QCodeSync2_Gen_Model
 	
 	public static function ParseValidationRules($rule)
 	{
-		$toks = token_get_all("<?php ".trim($rule));
+		$toks = q_token_get_all("<?php ".trim($rule));
 		array_shift($toks);
 		return $toks;
 	}

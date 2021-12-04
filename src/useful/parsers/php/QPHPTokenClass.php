@@ -1272,7 +1272,7 @@ class QPHPTokenClass extends QPHPToken
 	
 	public function renamePropertyOrMethod($old_name, $new_name)
 	{
-		if ($old_name{0} === "\$")
+		if ($old_name[0] === "\$")
 		{
 			$prop = $this->properties[substr($old_name, 1)];
 			if ($prop)
@@ -1305,7 +1305,7 @@ class QPHPTokenClass extends QPHPToken
 	
 	public function removePropertyOrMethod($item_name)
 	{
-		if ($item_name{0} === "\$")
+		if ($item_name[0] === "\$")
 		{
 			$prop = $this->properties[substr($item_name, 1)];
 			if ($prop)

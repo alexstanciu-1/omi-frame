@@ -83,6 +83,8 @@ require_once(__DIR__."/functions/base.php");
 
 spl_autoload_register(["QAutoload", "AutoloadClass"]);
 
+mysqli_report(MYSQLI_REPORT_OFF);
+
 /**
  * Initialize
  */

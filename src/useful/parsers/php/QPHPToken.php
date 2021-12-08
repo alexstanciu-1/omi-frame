@@ -753,6 +753,12 @@ abstract class QPHPToken
 			return $this->parent;
 	}
 	
+	public static function Parse_Doc_Comment(string $str)
+	{
+		$dc = new \QPHPTokenDocComment();
+		return $dc->parseDocComment($str);
+	}
+	
 	public function parseDocComment($str)
 	{
 		$parts = preg_split("/(\\/\\*\\*\\s+|\\s+\\*\\/|\\n\\s*\\*\\s*\\@)/usim", $str, -1, PREG_SPLIT_DELIM_CAPTURE);

@@ -1146,7 +1146,6 @@ class QSqlModelInfoType
 
 		file_put_contents(QAutoload::GetRuntimeFolder()."temp/sql_model_info.php", $s);
 		
-		
 		// CacheSqlData($className, $cache_path = null)
 		// var_dump(self::$TableTypeList);
 		foreach (self::$TableTypeList as $className => $table)

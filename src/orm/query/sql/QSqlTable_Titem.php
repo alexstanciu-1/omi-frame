@@ -29,6 +29,9 @@ final class QSqlTable_Titem
 	
 	# determined
 	public $table_name;
+	/**
+	 * @var \QModelType
+	 */
 	public $model_type;
 	# public $backrefs_list = [];
 	
@@ -521,7 +524,6 @@ final class QSqlTable_Titem
 							# qvar_dumpk('xxxxxxxxxxxxxx', $value, $one_to_one);
 							$value->{"set{$one_to_one[0]}"}($model);
 							# qvar_dumpk('---------', $value);
-							# die;
 							# $this->setBackReference_New($sql_info, "UPDATE", $cols_inf["ref"], $model, $info_to_set);
 							# $this->setBackReference_New($sql_in, $upd_pairs, $yield_obj_q, $identified_by, $changed_props)
 						}
@@ -603,7 +605,6 @@ final class QSqlTable_Titem
 					#			2. add it in the collection
 					#			3. the collection must be processed last, bu hu hu
 					# qvar_dumpk('$merge_by_needs_insert', $ids_found_by_mby, $model);
-					# die;
 					# flag it as not inserted ?!
 				}
 			}
@@ -676,7 +677,7 @@ final class QSqlTable_Titem
 		# getSqlInfo_collection(&$cache, $one_to_many = false, QModelProperty $property = null, $selector = null)
 		$sql_info = $this->getSqlInfo_collection($sql_cache, $one_to_many, $property);
 		$sql_info_table_types = null;
-		
+	
 		if (!$one_to_many)
 		{
 			$sql_info_tab = str_replace('`', '', $sql_info['tab']);
@@ -1354,7 +1355,14 @@ final class QSqlTable_Titem
 			$cols = [];
 			$rowid_col = $property->getCollectionTableRowId();
 			$cols["bkref"] = $property->getCollectionBackrefColumn();
-			if (($bkref_type = $cols_type_inf_tab[$cols["bkref"]]))
+			
+			if ($property->isOneToMany() && ($oneToMany = $property->storage["oneToMany"]) && 
+					($bkref_type = $cols_type_inf_tab[$oneToMany]))
+			{
+				if (is_string($bkref_type))
+					$cols["bkref_type"] = $bkref_type;
+			}
+			else if (($bkref_type = $cols_type_inf_tab[$cols["bkref"]]))
 				$cols["bkref_type"] = $bkref_type;
 			
 			if ($one_to_many)
@@ -1391,7 +1399,8 @@ final class QSqlTable_Titem
 													$identified_by, array $cols_to_set, 
 													\QModelArray $set_rowid_array = null, $set_rowid_at_pos = null)
 	{
-		$this->backrefs_list[$sql_info['tab']][$sql_action][$idf_by_grouping][] = [$sql_info, $sql_action, $identified_by, $cols_to_set, $set_rowid_array, $set_rowid_at_pos];
+		$this->backrefs_list[$sql_info['tab']][$sql_action][$idf_by_grouping][] = 
+				[$sql_info, $sql_action, $identified_by, $cols_to_set, $set_rowid_array, $set_rowid_at_pos];
 	}
 	
 	protected function setBackReference(&$backrefs_list, $sql_info, $update_column, QIModel $reference, $row_identifier, 
@@ -1619,8 +1628,6 @@ final class QSqlTable_Titem
 					if (($parent_class_name_or_zero !== $app_data_class_name) || ($parent_property_name !== $options_pool_prop))
 					{
 						$type_mergeBy_needs_insert = true;
-						# qvar_dumpk($parent_class_name_or_zero, $parent_property_name, $property, $class_name, $mby_app_props);
-						# die("dasdad");
 					}
 
 					if (!$mby_app_props)
@@ -1665,6 +1672,21 @@ final class QSqlTable_Titem
 			if ($property_is_collection)
 			{
 				$collection_back_ref_column = $sql_property_info['cb'];
+				{
+					$collection_back_ref_column_type = null;
+
+					$cols_type_inf = QSqlModelInfoType::GetColumnsTypeInfo();
+					$cols_type_inf_tab = $cols_type_inf[$sql_property_info['ct']];
+
+						if ($property->isOneToMany() && ($oneToMany = $property->storage["oneToMany"]) && 
+							($bkref_type = $cols_type_inf_tab[$oneToMany]))
+						{
+							if (is_string($bkref_type))
+								$collection_back_ref_column_type = $bkref_type;
+						}
+						else if (($bkref_type = $cols_type_inf_tab[$cols["bkref"]]))
+							$collection_back_ref_column_type = $bkref_type;
+				}
 				if (!$collection_back_ref_column)
 					throw new \Exception("Unable to find collection back reference column for: {$parent_class_name_or_zero}.{$parent_property_name}");
 			}
@@ -1693,6 +1715,7 @@ final class QSqlTable_Titem
 				$ret[$property_mergeBy][8] = $property_is_collection ? $collection_back_ref_column : $reference_column;
 				$ret[$property_mergeBy][9] = $property_is_collection;
 				$ret[$property_mergeBy][10] = false;
+				$ret[$property_mergeBy][11] = $property_is_collection ? $collection_back_ref_column_type : null;
 			}
 			if ($type_mergeBy)
 			{
@@ -1712,6 +1735,7 @@ final class QSqlTable_Titem
 				$ret[$type_mergeBy][8] = $property_is_collection ? $collection_back_ref_column : $reference_column;
 				$ret[$type_mergeBy][9] = $property_is_collection;
 				$ret[$type_mergeBy][10] = $type_mergeBy_needs_insert;
+				$ret[$type_mergeBy][11] = $property_is_collection ? $collection_back_ref_column_type : null;
 			}
 			
 			return $ret;
@@ -1871,11 +1895,14 @@ final class QSqlTable_Titem
 		$prepend_or = false;
 		
 		$collection_backref_column = $mby_info[8];
+		$collection_backref_column_type = $mby_info[11];
 		$columns_splitted = $mby_info[7];
 		
 		$str_for_nulls = null;
 		$cont_cols = count($columns_splitted);
 		# $cont_grps = 
+		
+		$parent_type_id = \QApp::GetStorage()->getTypeIdInStorage($mby_info[4]);
 		
 		foreach ($key_val_data as $parent_obj_id => $in_pairs)
 		{
@@ -1988,8 +2015,10 @@ final class QSqlTable_Titem
 		else if ($has_nulls_str)
 			$str = $str_for_nulls;
 		
+		if ($collection_backref_column_type !== null)
+			$str = "({$str}) AND `{$collection_backref_column_type}`={$parent_type_id}";
+		
 		# qvar_dumpk('$mby_info', $mby_info);
-
 		$query_str = "{$app_prop}.{{$mby_info[6]} WHERE {$str} ".
 						"GROUP BY {$mby_info[6]}"  . (($count_arr > 1) ? ",`{$collection_backref_column}`" : "") . 
 								"}";
@@ -2120,6 +2149,12 @@ final class QSqlTable_Titem
 								$query_in_bkref = $sql_info['cols']['bkref'];
 								$query_in_type = $sql_info['cols']['type'];
 								$query_in_bkref_type = $sql_info['cols']['bkref_type'];
+								
+								if ($query_in_bkref_type)
+								{
+									qvar_dumpk('$query_in_bkref_type', $query_in_bkref_type);
+									die;
+								}
 								
 								$query_in_cols = [$query_in_ref, $query_in_bkref];
 								if ($query_in_type)

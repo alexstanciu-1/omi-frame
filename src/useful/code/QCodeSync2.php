@@ -428,7 +428,7 @@ class QCodeSync2
 		# STAGE 1 - Collect information from files, determine namespaces and populate $this->info_by_class
 		$this->sync_code__collect_info($all_files_grouped, $files, $changed_or_added, $removed_files, $new_files);
 		
-		if ((!$this->full_sync) && ((($first_stack_of_data = reset($this->changes_by_class)) === null) || 
+		if ((!$this->full_sync) && ((($first_stack_of_data = (isset($this->changes_by_class) ? reset($this->changes_by_class) : null)) === null) || 
 										(!isset($first_stack_of_data['files']))))
 		{
 			// no change
@@ -1115,10 +1115,8 @@ class QCodeSync2
 							$this->model_types[$full_class_name] = $full_class_name;
 							$this->cache_types[$full_class_name] = $full_class_name;
 						}
-						else
-						{
-							$this->cache_types[$full_class_name] = $full_class_name;
-						}
+						# else # will be ignored anyway
+						#	$this->cache_types[$full_class_name] = $full_class_name;
 					}
 					else if ($header_inf['type'] === 'url')
 					{

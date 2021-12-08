@@ -3248,7 +3248,7 @@ function q_get_language_data(string $language = null)
 	}
 }
 
-function q_index_array(string $property, iterable $elements = null, bool $as_array = false)
+function q_index_array(string $property = null, $elements = null, bool $as_array = false)
 {
 	if ($elements === null)
 		return null;
@@ -3258,14 +3258,14 @@ function q_index_array(string $property, iterable $elements = null, bool $as_arr
 	{
 		$ret = [];
 		foreach ($elements as $e)
-			$ret[$e[$property]] = $e;
+			$ret[($property === null) ? $e : ((($x = $e->$property) instanceof \QIModel) ? $x->Id : $x)] = $e;
 		return $ret;
 	}
 	else if (is_object($elements))
 	{
 		$ret = $as_array ? [] : (new $elements);
 		foreach ($elements as $e)
-			$ret[$e->$property] = $e;
+			$ret[($property === null) ? $e : ((($x = $e->$property) instanceof \QIModel) ? $x->Id : $x)] = $e;
 		return $ret;
 	}
 	else

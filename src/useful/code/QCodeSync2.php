@@ -161,8 +161,8 @@ class QCodeSync2
 				$this->full_sync = $full_resync;
 				$this->do_not_allow_empty_extended_by = false;
 
-				if ($this->full_sync) # this should only be triggerd explicitly
-					$this->empty_gens = true; # for testing
+				# if ($this->full_sync) # this should only be triggerd explicitly
+				#	$this->empty_gens = true; # for testing
 				
 				$this->run_backend_fix = false;
 				$this->model_only_run = true;

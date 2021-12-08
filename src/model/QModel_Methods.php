@@ -5005,7 +5005,7 @@ trait QModel_Methods
 		foreach ($parsed_sources as $src_key => $src_info)
 		{
 			// @todo : handle multiple requests on the same source
-			$src_from = q_reset($src_info);
+			$src_from = reset($src_info);
 			$is_collection = false;
 			$src_from_types = \QApi::DetermineFromTypes($storage_model, $src_from, $is_collection);
 			
@@ -5019,7 +5019,7 @@ trait QModel_Methods
 					{
 						// determine $data_is_collection - don't use the parameter
 						/*==========================determine if data is provided as collection or as single item=========================*/
-						$_ft = q_reset($src_from_types);
+						$_ft = reset($src_from_types);
 						$decode_type = $_ft ? $_ft.($is_collection ? "[]" : "") : "auto";
 						
 						$data_is_collection = true;
@@ -5053,13 +5053,13 @@ trait QModel_Methods
 			
 			$app = \QApp::NewData();
 			$app->{"set{$from}"}($data);
-			$first_obj = qis_array($data) ? q_reset($data) : $data;
+			$first_obj = qis_array($data) ? (isset($data[0]) ? $data[0] : q_reset($data)) : $data;
 			$selector = [$from => $first_obj::GetForSaveSelector($selector, $from)];
 			// trigger all events without provision
 			$result[$src_key] = $app->save($selector, null, null, false, true, true);
 		}
 		
-		return !$result ? null : ((count($result) === 1) ? q_reset($result) : $result);
+		return !$result ? null : ((count($result) === 1) ? reset($result) : $result);
 		
 	}
 

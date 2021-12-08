@@ -841,14 +841,14 @@ class QApi
 		foreach ($parsed_sources as $src_key => $src_info)
 		{
 			// @todo : handle multiple requests on the same source
-			$src_from = q_reset($src_info);
+			$src_from = reset($src_info);
 			$storage = QApp::GetStorage($src_key);
 			$storage_model = QApp::GetDataClass();
 			$src_from_types = static::DetermineFromTypes($storage_model, $src_from);
 			$result[$src_key] = $storage::ApiQuerySync($storage_model, $src_from, $src_from_types, $selector, $parameters, $only_first, $id, $ids_list, $data_block, $used_app_selectors, $query_by_data_type);
 		}
 		
-		$ret = !$result ? null : ((count($result) === 1) ? q_reset($result) : $result);
+		$ret = !$result ? null : ((count($result) === 1) ? reset($result) : $result);
 		return $ret;
 	}
 
@@ -876,7 +876,7 @@ class QApi
 		foreach ($parsed_sources as $src_key => $src_info)
 		{
 			// @todo : handle multiple requests on the same source
-			$src_from = q_reset($src_info);
+			$src_from = reset($src_info);
 			$storage = QApp::GetStorage($src_key);
 			$storage_model = QApp::GetDataClass();
 			$is_collection = false;
@@ -914,7 +914,7 @@ class QApi
 		}
 
 		static::$_InImportProcess = false;
-		return !$result ? null : ((count($result) === 1) ? q_reset($result) : $result);
+		return !$result ? null : ((count($result) === 1) ? reset($result) : $result);
 	}
 	/**
 	 * Returns true if in import process, false otherwise

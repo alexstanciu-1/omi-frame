@@ -1115,10 +1115,10 @@ class QCodeSync2
 							$this->model_types[$full_class_name] = $full_class_name;
 							$this->cache_types[$full_class_name] = $full_class_name;
 						}
-						/* # there is no point to do this atm ... as it will be ignored
 						else
+						{
 							$this->cache_types[$full_class_name] = $full_class_name;
-						*/
+						}
 					}
 					else if ($header_inf['type'] === 'url')
 					{
@@ -1837,7 +1837,11 @@ class QCodeSync2
 			list($cache_type, $cache_has_changes) = QCodeStorage::CacheData($class_name, $cache_path, true);
 			
 			if ($cache_has_changes)
+			{
+				if (!$cache_type)
+					throw new \Exception('Unable to setup type info for: '.$class_name.'. Make sure is a QIModel.');
 				$has_cache_changes = true;
+			}
 			if ($class_name === Q_DATA_CLASS)
 				$this->saved_data_class_info = $cache_type;
 			unset($cache_type, $cache_has_changes);

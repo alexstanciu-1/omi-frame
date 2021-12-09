@@ -119,7 +119,6 @@ class QCodeSync2
 	public function resync($files, $changed_or_added, $removed_files, $new_files, bool $full_resync = false, array $generator_changes = null)
 	{
 		# ob_start();
-		
 		$this->start_time = microtime(true);
 		
 		try
@@ -141,7 +140,6 @@ class QCodeSync2
 			#	static::after_upgrade();
 			#	die;
 			# }
-			
 			if ($this->upgrage_mode)
 			{
 				ob_end_flush();
@@ -355,10 +353,36 @@ class QCodeSync2
 						$removed_files_2 = $removed_files;
 						$new_files_2 = $new_files;
 						
-						$files_2[$gens_folder] = $info[$gens_folder];
-						$changed_or_added_2[$gens_folder] = $changed[$gens_folder];
-						$removed_files_2[$gens_folder] = $files_state[$gens_folder];
-						$new_files_2[$gens_folder] = $new[$gens_folder];
+						if (!isset($files_2[$gens_folder]))
+							$files_2[$gens_folder] = $info[$gens_folder];
+						else
+						{
+							foreach ($info[$gens_folder] ?: [] as $k => $v)
+								$files_2[$gens_folder][$k] = $v;
+						}
+						
+						if (!isset($changed_or_added_2[$gens_folder]))
+							$changed_or_added_2[$gens_folder] = $changed[$gens_folder];
+						else
+						{
+							foreach ($changed[$gens_folder] ?: [] as $k => $v)
+								$changed_or_added_2[$gens_folder][$k] = $v;
+						}
+						
+						if (!isset($removed_files_2[$gens_folder]))
+							$removed_files_2[$gens_folder] = $files_state[$gens_folder];
+						else
+						{
+							foreach ($files_state[$gens_folder] ?: [] as $k => $v)
+								$removed_files_2[$gens_folder][$k] = $v;
+						}
+						if (!isset($new_files_2[$gens_folder]))
+							$new_files_2[$gens_folder] = $new[$gens_folder];
+						else
+						{
+							foreach ($new[$gens_folder] ?: [] as $k => $v)
+								$new_files_2[$gens_folder][$k] = $v;
+						}
 						
 						// $sync->resync($files_2, $changed_or_added_2, $removed_files_2, $new_files_2, $full_resync);
 						$sync->sync_code($files_2 ?? [], $changed_or_added_2 ?? [], $removed_files_2 ?? [], $new_files_2 ?? []);

@@ -2821,20 +2821,28 @@ function filePutContentsIfChanged_commit(bool $roolback = false)
 	
 	foreach ($_filePutContentsIfChanged_->files ?: [] as $file_path => $file_m_time)
 	{
+		clearstatcache(true, $file_path);
+		clearstatcache(true, $file_path."._fpcic_bak");
+		
 		if ($roolback)
 		{
 			# restore the original file
 			if (file_exists($file_path."._fpcic_bak"))
+			{
 				file_put_contents($file_path, file_get_contents($file_path."._fpcic_bak"));
+				clearstatcache(true, $file_path);
+			}
 		}
-		else if ((filesize($file_path) === filesize($file_path."._fpcic_bak")) && (file_get_contents($file_path) === file_get_contents($file_path."._fpcic_bak")))
+		else if ((filesize($file_path) === filesize($file_path."._fpcic_bak")) && 
+					(file_get_contents($file_path) === file_get_contents($file_path."._fpcic_bak")))
 		{
 			# echo "Restore `{$file_path}` from ".filemtime($file_path)." TO {$file_m_time} <br/>\n";
 			touch($file_path, $file_m_time);
+			clearstatcache(true, $file_path);
 		}
 		else
 		{
-			# echo "OK!<br/>\n";
+			# echo "OK! `{$file_path}` <br/>\n";
 		}
 		# in all cases release the backup
 		unlink($file_path."._fpcic_bak");
@@ -2864,6 +2872,7 @@ function filePutContentsIfChanged($filename, $data, $create_dir = false)
 		if (($_filePutContentsIfChanged_ !== null) && file_exists($filename) && (!$_filePutContentsIfChanged_->files[realpath($filename)]))
 		{
 			file_put_contents($filename."._fpcic_bak", file_get_contents($filename));
+			clearstatcache(true, $filename);
 			$_filePutContentsIfChanged_->files[realpath($filename)] = filemtime($filename);
 		}
 		

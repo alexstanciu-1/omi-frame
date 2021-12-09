@@ -1178,9 +1178,9 @@ class QCodeSync2
 		$gen_path = $gen_dir.$short_class_name.".gen.php";
 		
 		$expected_content = $this->compile_setup_class($full_class_name, $short_class_name, $extend_class, $extends_info['namespace'], $extends_info['doc_comment'], $extends_info);
-			
+		
+		
 		# in case the file does not exist, or the begining is not what we expect, reset it
-		if ((!file_exists($gen_path)) || (substr(file_get_contents($gen_path), 0, strlen($expected_content[0])) !== $expected_content[0]))
 		{
 			# @TODO - if the file already exists, make sure the triats inside it are there & ok for autoload !
 			$content_str = "";
@@ -1193,8 +1193,13 @@ class QCodeSync2
 			else
 				$content_str = implode("", $expected_content);
 			
-			file_put_contents($gen_path, $content_str);
-			opcache_invalidate($gen_path);
+			if ((!file_exists($gen_path)) || (file_get_contents($gen_path) !== $content_str))
+			{
+				$rc = file_put_contents($gen_path, $content_str);
+				if ($rc === false)
+					throw new \Exception('Unable to write to: '.$gen_path);
+				opcache_invalidate($gen_path);
+			}
 		}
 		if (!file_exists($gen_path))
 			throw new \Exception('Unable to setup class file: '.$gen_path);

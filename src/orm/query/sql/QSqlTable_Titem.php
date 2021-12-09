@@ -2150,12 +2150,6 @@ final class QSqlTable_Titem
 								$query_in_type = $sql_info['cols']['type'];
 								$query_in_bkref_type = $sql_info['cols']['bkref_type'];
 								
-								if ($query_in_bkref_type)
-								{
-									qvar_dumpk('$query_in_bkref_type', $query_in_bkref_type);
-									die;
-								}
-								
 								$query_in_cols = [$query_in_ref, $query_in_bkref];
 								if ($query_in_type)
 									$query_in_cols[] = $query_in_type;

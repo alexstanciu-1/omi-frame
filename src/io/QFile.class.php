@@ -29,3 +29,4 @@ abstract class QFile_frame_ extends QModel
 		
 	}
 }
+

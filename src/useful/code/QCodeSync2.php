@@ -1373,9 +1373,23 @@ class QCodeSync2
 		$include_name = $this->get_generated_xml_template_name($header_inf, $method_tag);
 		
 		// extract defaults from ($header_inf['q-args'])
+		$q_args = $header_inf['q-args'] ?? null;
+		if (($q_args === null) && isset($full_class_info['files']))
+		{
+			# @TODO - try to inherit and not to default
+			foreach ($full_class_info['files'] as $layer_taag => $items)
+			{
+				if ($layer_taag === $header_inf['layer'])
+					break; # no more than the current one
+				$n_q_args = $items[$header_inf['tag']]['q-args'] ?? null;
+				if ($n_q_args !== null)
+					$q_args = $n_q_args; # do not break ... let the last one overwrite
+			}
+		}
 		
 		# a bit dirty ...
-		$q_args = $header_inf['q-args'] ?: "\$settings = null, \$data = null, \$bind_params = null, ".
+		if ($q_args === null)
+			$q_args = "\$settings = null, \$data = null, \$bind_params = null, ".
 											"\$grid_mode = null, \$id = null, \$vars_path = '', \$_qengine_args = null";
 		
 		list(, $params_names_only_str) = $q_args ? $this->compile_template_prepare_args($q_args, $method_name) : [null, ""];

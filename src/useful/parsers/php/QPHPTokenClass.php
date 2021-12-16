@@ -1529,9 +1529,9 @@ class QPHPTokenClass extends QPHPToken
 		return null;
 	}
 	
-	public function get_full_name()
+	public function get_full_name(string $namespace = null)
 	{
-		return static::ApplyNamespaceToName($this->className, $this->getNamespace());
+		return static::ApplyNamespaceToName($this->className, $namespace ?? $this->getNamespace());
 	}
 		
 }

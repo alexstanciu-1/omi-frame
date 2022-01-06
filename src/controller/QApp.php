@@ -761,5 +761,4 @@ class QApp extends QAppModule
 	{
 		return [false, null];
 	}
-	
 }

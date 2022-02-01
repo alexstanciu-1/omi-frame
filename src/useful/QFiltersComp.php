@@ -30,7 +30,7 @@ final class QFiltersComp
 				$is_valid = true;
 				foreach ($this->config['fields'] ?: [] as $f_name => $field)
 				{
-					$ok = static::respects_filter($item, $f_name, $field, $search_data);
+					$ok = static::respects_filter($item, $f_name, $field, $search_data);					
 					if (!$ok)
 					{
 						$is_valid = false;
@@ -41,7 +41,7 @@ final class QFiltersComp
 					$keep_items[$i_key] = $item;
 			}
 		}
-		
+
 		foreach ($this->config['fields'] ?: [] as $f_name => $field)
 		{
 			foreach ($data ?: [] as $i_key => $item)
@@ -49,7 +49,7 @@ final class QFiltersComp
 				$is_valid = true;
 				# obtain $possible_filters
 				foreach ($this->config['fields'] ?: [] as $fs_k => $field_sub)
-				{
+				{					
 					if ($fs_k === $f_name)
 						continue;
 					
@@ -152,7 +152,10 @@ final class QFiltersComp
 		}
 		else if ($field_config['@pattern'] === 'options')
 		{
-			return in_array($value, $field_config['@options']);
+			if (is_object($search_data))
+				$search_data_arr = $search_data->toArray();
+			
+			return in_array($value, $search_data_arr[$search_field]);
 		}
 		else if ($field_config['@pattern'] === 'range')
 		{

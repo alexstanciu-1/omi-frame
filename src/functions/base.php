@@ -3278,11 +3278,11 @@ function q_reset($list = null)
 		return null;
 	else if (is_array($list))
 	{
-		if (\QAutoload::GetDevelopmentMode())
+		/*if (\QAutoload::GetDevelopmentMode())
 		{
 			$dbg = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)[0];
 			echo "<pre>\nreset called &array line:{$dbg['line']}/{$dbg['file']}</pre>";
-		}
+		}*/
 		return reset($list);
 	}
 	else if (($list instanceof QModelArray))

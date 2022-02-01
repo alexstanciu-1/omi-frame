@@ -19,12 +19,28 @@ final class QFiltersComp
 		$keep_items = [];
 		$possible_filters = [];
 		
-		foreach ($this->config['fields'] ?: [] as $field)
+		foreach ($this->config['fields'] ?: [] as $f_name => $field)
 		{
-			foreach ($data ?: [] as $item)
+			foreach ($data ?: [] as $i_key => $item)
 			{
 				$field_type = $field['@type'];
 				$field_pattern = $field['@type'];
+				
+				if ($search_data[$f_name])
+				{
+					# @TODO # obtain $keep_items
+				}
+				else
+					$keep_items[$i_key] = $item;
+				
+				# obtain $possible_filters
+				foreach ($this->config['fields'] ?: [] as $fs_k => $field_sub)
+				{
+					if ($fs_k === $f_name)
+						continue;
+					
+					
+				}
 			}
 		}
 		
@@ -64,7 +80,7 @@ final class QFiltersComp
 					'@pattern' => 'options',
 				],
 				'Room_Facilities' => [
-					'@type' => 'xxxx',
+					'@type' => function ($data_item) { /* ... */ } ,
 					'@pattern' => 'options',
 				],
 			]

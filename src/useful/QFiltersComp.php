@@ -151,11 +151,8 @@ final class QFiltersComp
 				return true;
 		}
 		else if ($field_config['@pattern'] === 'options')
-		{
-			if (is_object($search_data))
-				$search_data_arr = $search_data->toArray();
-			
-			return in_array($value, $search_data_arr[$search_field]);
+		{			
+			return in_array($value, $search_data[$search_field]);
 		}
 		else if ($field_config['@pattern'] === 'range')
 		{

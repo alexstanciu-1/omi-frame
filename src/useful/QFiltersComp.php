@@ -159,17 +159,22 @@ final class QFiltersComp
 			$search_field_min = $field_config['@search-min'];
 			$search_field_max = $field_config['@search-max'];
 			
-			$search_requirement_min = (is_object($search_data) ? (isset($search_data->$search_field_min) ? $search_data->$search_field_min : null) : 
-						(isset($search_data[$search_field_min]) ? $search_data[$search_field_min] : null));
-			$search_requirement_max = (is_object($search_data) ? (isset($search_data->$search_field_max) ? $search_data->$search_field_max : null) : 
-						(isset($search_data[$search_field_max]) ? $search_data[$search_field_max] : null));
+			$search_requirement_min =  isset($search_data[$search_field_min]) ? $search_data[$search_field_min] : null;
+			$search_requirement_max = isset($search_data[$search_field_max]) ? $search_data[$search_field_max] : null;
 			
 			if (empty($search_requirement_min) && empty($search_requirement_max))
 				return true;
 			else if ($value === null)
 				return false;
-			else if (($value >= $search_requirement_min) && ($value <= $search_requirement_max))
-				return true;
+			else if ($search_requirement_min || $search_requirement_max)
+			{
+				if (($value >= $search_requirement_min) && ($value <= $search_requirement_max))
+					return true;
+				else if (isset($search_requirement_min) && ($value >= $search_requirement_min))
+					return true;
+				else if (isset($search_requirement_max) && ($value >= $search_requirement_max))
+					return true;
+			}
 			else
 				return false;
 		}

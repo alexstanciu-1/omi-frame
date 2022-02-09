@@ -55,6 +55,11 @@ final class QFiltersComp
 						continue;
 					
 					$ok = static::respects_filter($item, $fs_k, $field_sub, $search_data);
+					if (!$ok)
+					{
+						$is_valid = false;
+						break;
+					}
 				}
 				
 				$value = static::extract_value($item, $f_name, $field);
@@ -108,6 +113,9 @@ final class QFiltersComp
 		
 		# qvar_dumpk('$possible_filters', $possible_filters, $all_options);
 		# die("zzzqrwer");
+		
+		qvar_dumpk('$keep_items, $possible_filters, $all_options, $possible_count', 
+				$keep_items, $possible_filters, $all_options, $possible_count);
 		
 		return [$keep_items, $possible_filters, $all_options, $possible_count];
 	}

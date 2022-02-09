@@ -27,7 +27,7 @@ final class QFiltersComp
 			if ($search_data === null)
 				$keep_items[$i_key] = $item;
 			else
-			{
+			{				
 				$is_valid = true;
 				foreach ($this->config['fields'] ?: [] as $f_name => $field)
 				{
@@ -113,9 +113,6 @@ final class QFiltersComp
 		
 		# qvar_dumpk('$possible_filters', $possible_filters, $all_options);
 		# die("zzzqrwer");
-		
-		qvar_dumpk('$keep_items, $possible_filters, $all_options, $possible_count', 
-				$keep_items, $possible_filters, $all_options, $possible_count);
 		
 		return [$keep_items, $possible_filters, $all_options, $possible_count];
 	}

@@ -20,6 +20,7 @@ final class QFiltersComp
 		$keep_items = [];
 		$possible_filters = [];
 		$all_options = [];
+		$possible_count = [];
 		
 		foreach ($data ?: [] as $i_key => $item)
 		{
@@ -90,6 +91,10 @@ final class QFiltersComp
 				else if ($field['@pattern'] === 'options')
 				{
 					$all_options[$f_name][$value] = $value;
+					
+					if (!isset($possible_count[$f_name][$value]))
+						$possible_count[$f_name][$value] = 0;
+					$possible_count[$f_name][$value]++;
 				}
 				else if ($field['@pattern'] === 'range')
 				{
@@ -104,13 +109,15 @@ final class QFiltersComp
 		# qvar_dumpk('$possible_filters', $possible_filters, $all_options);
 		# die("zzzqrwer");
 		
-		return [$keep_items, $possible_filters, $all_options];
+		return [$keep_items, $possible_filters, $all_options, $possible_count];
 	}
 	
 	protected static function extract_value($item, string $field_name, array $field_config)
 	{
 		if ($item === null)
 			return null;
+		else if ($field_config['@getter'])
+			return $field_config['@getter']($item);
 		else if (is_array($item))
 			return $item[$field_name];
 		else if (is_object($item))
@@ -219,6 +226,14 @@ final class QFiltersComp
 						'@options' => $meal_options,
 						'@pattern' => 'options',
 					],
+					
+					'Available_Rooms' => [
+						'@getter' => function ($data) { 
+								return ($data->All_Rooms_Count < 10) ?  '1-9' : ($data->All_Rooms_Count < 20 ? '10-19' : '>19'); },
+						'@options' => ['1-9', '10-19', '>19'],
+						'@pattern' => 'options',
+					]
+					
 					/*
 					'Facilities' => [
 						'@type' => 'xxxx',

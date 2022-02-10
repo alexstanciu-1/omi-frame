@@ -111,7 +111,7 @@ final class QFiltersComp
 			}
 		}
 		
-		# qvar_dumpk('$possible_filters', $possible_filters, $all_options);
+		qvar_dumpk('$possible_filters', $possible_filters, $all_options, $possible_count);
 		# die("zzzqrwer");
 		
 		return [$keep_items, $possible_filters, $all_options, $possible_count];
@@ -122,7 +122,7 @@ final class QFiltersComp
 		if ($item === null)
 			return null;
 		else if ($field_config['@getter'])
-			return $field_config['@getter']($item);
+			return $field_config['@getter']($item, $field_name);
 		else if (is_array($item))
 			return $item[$field_name];
 		else if (is_object($item))

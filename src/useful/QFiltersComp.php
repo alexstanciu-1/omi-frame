@@ -111,7 +111,7 @@ final class QFiltersComp
 			}
 		}
 		
-		qvar_dumpk('$possible_filters', $possible_filters, $all_options, $possible_count);
+		# qvar_dumpk('$possible_filters', $possible_filters, $all_options, $possible_count);
 		# die("zzzqrwer");
 		
 		return [$keep_items, $possible_filters, $all_options, $possible_count];

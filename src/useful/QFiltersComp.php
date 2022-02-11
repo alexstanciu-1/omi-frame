@@ -22,10 +22,7 @@ final class QFiltersComp
 		$all_options = [];
 		$possible_count = [];
 		
-		# unset($search_data['Rooms_Count'], $this->config['fields']['Rooms_Count']);
-		# qvar_dumpk('$search_data', $search_data);
-		# die;
-		
+		# STAGE 1. - filter data
 		foreach ($data ?: [] as $i_key => $item)
 		{
 			if ($search_data === null)
@@ -46,16 +43,12 @@ final class QFiltersComp
 					}
 				}
 				
-				if (!$is_valid)
-				{
-					
-				}
-				
 				if ($is_valid)
 					$keep_items[$i_key] = $item;
 			}
 		}
 		
+		# STAGE 2. Foreach defined filter we compute possible options, ranges, min/max ... etc
 		foreach ($this->config['fields'] ?: [] as $f_name => $field)
 		{
 			foreach ($data ?: [] as $i_key => $item)
@@ -63,7 +56,8 @@ final class QFiltersComp
 				$is_valid = true;
 				# obtain $possible_filters
 				foreach ($this->config['fields'] ?: [] as $fs_k => $field_sub)
-				{					
+				{
+					# SKIP ITSELF
 					if ($fs_k === $f_name)
 						continue;
 					
@@ -149,18 +143,6 @@ final class QFiltersComp
 		list ($possible_filters, $all_options, $possible_count) = $sorted;
 		*/
 		
-		# qvar_dumpk('$possible_filters', $possible_filters, $all_options, $possible_count);
-		# die;
-		# die("zzzqrwer");
-		
-		# qvar_dumpk('$possible_count', $possible_count, $keep_items);
-		#foreach ($data as $d)
-		#{
-		#	qvar_dumpk($d['Property_Name'] . ' : ' . $d['Property_Building_Info_Total_Rooms']);
-		#}
-		#qvar_dumpk('$keep_items',$keep_items);
-		#die;
-		
 		return [$keep_items, $possible_filters, $all_options, $possible_count];
 	}
 	
@@ -225,7 +207,6 @@ final class QFiltersComp
 		else if ($field_config['@pattern'] === 'options')
 		{			
 			$ret = in_array($value, $search_requirement);
-			$debug .= 'xxxxx';
 			return $ret;
 		}
 		else if ($field_config['@pattern'] === 'range')
@@ -242,12 +223,8 @@ final class QFiltersComp
 				return false;
 			else if ($search_requirement_min || $search_requirement_max)
 			{
-				if (($value >= $search_requirement_min) && ($value <= $search_requirement_max))
-					return true;
-				else if (isset($search_requirement_min) && ($value >= $search_requirement_min))
-					return true;
-				else if (isset($search_requirement_max) && ($value >= $search_requirement_max))
-					return true;
+				return ((!isset($search_requirement_min)) || ($value >= $search_requirement_min)) && 
+						((!isset($search_requirement_max)) || ($value <= $search_requirement_max));
 			}
 			else
 				return false;

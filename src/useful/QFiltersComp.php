@@ -129,6 +129,30 @@ final class QFiltersComp
 			}
 		}
 		
+		/*
+		$sorted = [];
+		foreach ([$possible_filters, $all_options, $possible_count] as $elem)
+		{
+			$srt = [];
+			foreach ($elem as $field_name => $data)
+			{
+				$cfg = $this->config['fields'];
+				if (is_array($data) && is_array($cfg['@options']) && ($cfg['@pattern'] === 'options'))
+				{
+					foreach ($cfg['@options'] as $ck => $cv)
+					{
+						if (isset($data[$ck]))
+							$srt[$field_name][$ck] = $data[$ck];
+					}
+				}
+				else
+					$srt[$field_name] = $data;
+			}
+			$sorted[] = $srt;
+		}
+		list ($possible_filters, $all_options, $possible_count) = $sorted;
+		*/
+		
 		# qvar_dumpk('$possible_filters', $possible_filters, $all_options, $possible_count);
 		# die;
 		# die("zzzqrwer");

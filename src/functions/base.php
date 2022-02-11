@@ -2055,6 +2055,12 @@ function qDSDumpVar($var, $max_depth = 8, &$bag = null, $depth = 0, $accessModif
 				break;
 			}
 			
+			if ($obj_class === 'Closure')
+			{
+				echo "#Closure";
+				break;
+			}
+			
 			$ref_id = array_search($var, $bag, true);
 			if ($ref_id === false)
 			{

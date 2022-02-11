@@ -22,27 +22,33 @@ final class QFiltersComp
 		$all_options = [];
 		$possible_count = [];
 		
+		# unset($this->config['fields']['Cancellation_Policy']['_ty']);
+		# qvar_dumpk($search_data, $this->config['fields']['Cancellation_Policy_Text']);
+		# die;
+		
 		foreach ($data ?: [] as $i_key => $item)
 		{
 			if ($search_data === null)
 				$keep_items[$i_key] = $item;
 			else
-			{				
+			{
 				$is_valid = true;
 				foreach ($this->config['fields'] ?: [] as $f_name => $field)
 				{
-					$ok = static::respects_filter($item, $f_name, $field, $search_data);					
+					$ok = static::respects_filter($item, $f_name, $field, $search_data);
+					
 					if (!$ok)
 					{
 						$is_valid = false;
 						break;
 					}
 				}
+				
 				if ($is_valid)
 					$keep_items[$i_key] = $item;
 			}
 		}
-
+		
 		foreach ($this->config['fields'] ?: [] as $f_name => $field)
 		{
 			foreach ($data ?: [] as $i_key => $item)
@@ -55,6 +61,18 @@ final class QFiltersComp
 						continue;
 					
 					$ok = static::respects_filter($item, $fs_k, $field_sub, $search_data);
+					
+					/*
+					if (!$ok)
+					{
+						if ($f_name === 'Cancellation_Policy')
+						{
+							qvar_dumpk('FAIL ON : '.$f_name, $item, $field, $search_data);
+							die;
+						}
+					}
+					*/
+					
 					if (!$ok)
 					{
 						$is_valid = false;
@@ -74,6 +92,10 @@ final class QFiltersComp
 					else if ($field['@pattern'] === 'options')
 					{
 						$possible_filters[$f_name][$value] = $value;
+						
+						if (!isset($possible_count[$f_name][$value]))
+							$possible_count[$f_name][$value] = 0;
+						$possible_count[$f_name][$value]++;
 					}
 					else if ($field['@pattern'] === 'range')
 					{
@@ -96,10 +118,6 @@ final class QFiltersComp
 				else if ($field['@pattern'] === 'options')
 				{
 					$all_options[$f_name][$value] = $value;
-					
-					if (!isset($possible_count[$f_name][$value]))
-						$possible_count[$f_name][$value] = 0;
-					$possible_count[$f_name][$value]++;
 				}
 				else if ($field['@pattern'] === 'range')
 				{
@@ -112,17 +130,18 @@ final class QFiltersComp
 		}
 		
 		# qvar_dumpk('$possible_filters', $possible_filters, $all_options, $possible_count);
+		# die;
 		# die("zzzqrwer");
 		
 		return [$keep_items, $possible_filters, $all_options, $possible_count];
 	}
 	
-	protected static function extract_value($item, string $field_name, array $field_config)
+	protected static function extract_value($item, string $field_name, array $field_config, bool $for_search = false)
 	{
 		if ($item === null)
 			return null;
 		else if ($field_config['@getter'])
-			return $field_config['@getter']($item, $field_name);
+			return $field_config['@getter']($item, $field_name, $for_search);
 		else if (is_array($item))
 			return $item[$field_name];
 		else if (is_object($item))
@@ -138,12 +157,14 @@ final class QFiltersComp
 			case 'like':
 			case 'options':
 			{
-				$search_field = $field_config['@search-name'] ?? $field_name;
-		
-				$search_requirement = (is_object($search_data) ? (isset($search_data->$search_field) ? $search_data->$search_field : null) : 
-						(isset($search_data[$search_field]) ? $search_data[$search_field] : null));
+				$search_requirement = static::extract_value($search_data, $field_name, $field_config, true);
+				
 				if ($search_requirement === null)
 					return true;
+				
+				if (!is_array($search_requirement))
+					$search_requirement = [$search_requirement];
+
 				break;
 			}
 		}
@@ -164,7 +185,8 @@ final class QFiltersComp
 		}
 		else if ($field_config['@pattern'] === 'options')
 		{			
-			return in_array($value, $search_data[$search_field]);
+			$ret = in_array($value, $search_requirement);
+			return $ret;
 		}
 		else if ($field_config['@pattern'] === 'range')
 		{

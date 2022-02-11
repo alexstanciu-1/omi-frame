@@ -22,8 +22,8 @@ final class QFiltersComp
 		$all_options = [];
 		$possible_count = [];
 		
-		# unset($this->config['fields']['Cancellation_Policy']['_ty']);
-		# qvar_dumpk($search_data, $this->config['fields']['Cancellation_Policy_Text']);
+		# unset($search_data['Rooms_Count'], $this->config['fields']['Rooms_Count']);
+		# qvar_dumpk('$search_data', $search_data);
 		# die;
 		
 		foreach ($data ?: [] as $i_key => $item)
@@ -35,13 +35,20 @@ final class QFiltersComp
 				$is_valid = true;
 				foreach ($this->config['fields'] ?: [] as $f_name => $field)
 				{
-					$ok = static::respects_filter($item, $f_name, $field, $search_data);
+					$debug = null;
+					$ok = static::respects_filter($item, $f_name, $field, $search_data, $debug);
 					
 					if (!$ok)
 					{
+						# qvar_dumpk('rejected '.$item['Property_Name'].' @ '.$f_name, $debug);
 						$is_valid = false;
 						break;
 					}
+				}
+				
+				if (!$is_valid)
+				{
+					
 				}
 				
 				if ($is_valid)
@@ -61,17 +68,6 @@ final class QFiltersComp
 						continue;
 					
 					$ok = static::respects_filter($item, $fs_k, $field_sub, $search_data);
-					
-					/*
-					if (!$ok)
-					{
-						if ($f_name === 'Cancellation_Policy')
-						{
-							qvar_dumpk('FAIL ON : '.$f_name, $item, $field, $search_data);
-							die;
-						}
-					}
-					*/
 					
 					if (!$ok)
 					{
@@ -157,6 +153,14 @@ final class QFiltersComp
 		# die;
 		# die("zzzqrwer");
 		
+		# qvar_dumpk('$possible_count', $possible_count, $keep_items);
+		#foreach ($data as $d)
+		#{
+		#	qvar_dumpk($d['Property_Name'] . ' : ' . $d['Property_Building_Info_Total_Rooms']);
+		#}
+		#qvar_dumpk('$keep_items',$keep_items);
+		#die;
+		
 		return [$keep_items, $possible_filters, $all_options, $possible_count];
 	}
 	
@@ -164,8 +168,17 @@ final class QFiltersComp
 	{
 		if ($item === null)
 			return null;
-		else if ($field_config['@getter'])
+		else if ($field_config['@getter'] && (!$for_search))
 			return $field_config['@getter']($item, $field_name, $for_search);
+		else if ($for_search && isset($field_config['@search-getter']))
+			return $field_config['@search-getter']($item, $field_name, $for_search);
+		else if ($for_search && isset($field_config['@search-field']))
+		{
+			if (is_array($item))
+				return $item[$field_config['@search-field']];
+			else if (is_object($item))
+				return $item->$field_config['@search-field'];
+		}
 		else if (is_array($item))
 			return $item[$field_name];
 		else if (is_object($item))
@@ -174,7 +187,7 @@ final class QFiltersComp
 			throw new \Exception('Bad data.');
 	}
 	
-	protected static function respects_filter($item, string $field_name, array $field_config, $search_data)
+	protected static function respects_filter($item, string $field_name, array $field_config, $search_data, &$debug = null)
 	{
 		switch ($field_config['@pattern'])
 		{
@@ -186,7 +199,9 @@ final class QFiltersComp
 				if ($search_requirement === null)
 					return true;
 				
-				if (!is_array($search_requirement))
+				if (is_object($search_requirement))
+					$search_requirement = (array)$search_requirement;
+				else if (!is_array($search_requirement))
 					$search_requirement = [$search_requirement];
 
 				break;
@@ -210,6 +225,7 @@ final class QFiltersComp
 		else if ($field_config['@pattern'] === 'options')
 		{			
 			$ret = in_array($value, $search_requirement);
+			$debug .= 'xxxxx';
 			return $ret;
 		}
 		else if ($field_config['@pattern'] === 'range')

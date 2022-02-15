@@ -175,7 +175,7 @@ final class QFiltersComp
 		{
 			case 'like':
 			case 'options':
-			{
+			{				
 				$search_requirement = static::extract_value($search_data, $field_name, $field_config, true);
 				
 				if ($search_requirement === null)
@@ -194,6 +194,8 @@ final class QFiltersComp
 		
 		if ($field_config['@pattern'] === 'like')
 		{
+			$search_requirement = reset($search_requirement);
+			
 			# $reg_ex = "/". preg_replace(["/[^\\w]/uis"], $field_config, $field_name)."/uis";
 			if (empty($search_requirement) || (!trim($search_requirement)))
 				return true;

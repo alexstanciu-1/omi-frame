@@ -3293,12 +3293,13 @@ function q_reset($list = null)
 	}
 	else if (($list instanceof QModelArray))
 	{
+		/*
 		if (\QAutoload::GetDevelopmentMode())
 		{
 			$dbg = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)[0];
 			echo "<pre>\nreset called &QARRAY line:{$dbg['line']}/{$dbg['file']}</pre>";
 		}
-		
+		*/
 		return $list->reset();
 	}
 	else

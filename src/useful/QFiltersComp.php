@@ -22,11 +22,22 @@ final class QFiltersComp
 		$all_options = [];
 		$possible_count = [];
 		
+		$group_by_cbk = $this->config['group_by'];
+		
 		# STAGE 1. - filter data
 		foreach ($data ?: [] as $i_key => $item)
 		{
 			if ($search_data === null)
-				$keep_items[$i_key] = $item;
+			{
+				if ($group_by_cbk)
+				{
+					list ($keep_it, $keep_pos) = $group_by_cbk($keep_items, $item, $i_key);
+					if ($keep_it)
+						$keep_items[$keep_pos] = $item;
+				}
+				else
+					$keep_items[$i_key] = $item;
+			}
 			else
 			{
 				$is_valid = true;
@@ -37,7 +48,6 @@ final class QFiltersComp
 					
 					if (!$ok)
 					{
-						# qvar_dumpk('rejected '.$item['Property_Name'].' @ '.$f_name, $debug);
 						$is_valid = false;
 						break;
 					}
@@ -51,6 +61,8 @@ final class QFiltersComp
 		# STAGE 2. Foreach defined filter we compute possible options, ranges, min/max ... etc
 		foreach ($this->config['fields'] ?: [] as $f_name => $field)
 		{
+			$group_by_map = []; # we will reset for each filter
+			
 			foreach ($data ?: [] as $i_key => $item)
 			{
 				$is_valid = true;
@@ -85,7 +97,20 @@ final class QFiltersComp
 						
 						if (!isset($possible_count[$f_name][$value]))
 							$possible_count[$f_name][$value] = 0;
-						$possible_count[$f_name][$value]++;
+						
+						if ($group_by_cbk)
+						{
+							list (/*$keep_it*/, /*$keep_pos*/, $map_key) = $group_by_cbk($group_by_map, $item, $i_key);
+							if (!isset($group_by_map[$map_key]))
+							{
+								$possible_count[$f_name][$value]++;
+								$group_by_map[$map_key] = $item;
+							}
+						}
+						else
+						{
+							$possible_count[$f_name][$value]++;
+						}
 					}
 					else if ($field['@pattern'] === 'range')
 					{

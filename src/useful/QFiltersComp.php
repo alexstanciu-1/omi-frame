@@ -54,7 +54,16 @@ final class QFiltersComp
 				}
 				
 				if ($is_valid)
-					$keep_items[$i_key] = $item;
+				{
+					if ($group_by_cbk)
+					{
+						list ($keep_it, $keep_pos) = $group_by_cbk($keep_items, $item, $i_key);
+						if ($keep_it)
+							$keep_items[$keep_pos] = $item;
+					}
+					else
+						$keep_items[$i_key] = $item;
+				}
 			}
 		}
 		
@@ -100,11 +109,11 @@ final class QFiltersComp
 						
 						if ($group_by_cbk)
 						{
-							list (/*$keep_it*/, /*$keep_pos*/, $map_key) = $group_by_cbk($group_by_map, $item, $i_key);
-							if (!isset($group_by_map[$map_key]))
+							list (/*$keep_it*/, /*$keep_pos*/, $map_key) = $group_by_cbk($group_by_map[$value], $item, $i_key);
+							if (!isset($group_by_map[$value][$map_key]))
 							{
 								$possible_count[$f_name][$value]++;
-								$group_by_map[$map_key] = $item;
+								$group_by_map[$value][$map_key] = $item;
 							}
 						}
 						else
@@ -167,7 +176,7 @@ final class QFiltersComp
 		}
 		list ($possible_filters, $all_options, $possible_count) = $sorted;
 		*/
-		
+				
 		return [$keep_items, $possible_filters, $all_options, $possible_count];
 	}
 	

@@ -256,9 +256,9 @@ class QUrl
 	/**
 	 * Gets part of the URL as string from the current position onward
 	 * 
-	 * @return string
+	 * @return array
 	 */
-	public function getFromCurrentAsString()
+	public function getFromCurrent()
 	{
 		$key = key($this->parts);
 		if ($key === null)
@@ -267,7 +267,17 @@ class QUrl
 		// looks like array_slice() is reseting the pointer in the array we need to make sure it's modified
 		$save_arr[] = "";
 		array_pop($save_arr);
-		return implode("/", array_slice($save_arr, $key));
+		return array_slice($save_arr, $key);
+	}
+	
+	/**
+	 * Gets part of the URL as string from the current position onward
+	 * 
+	 * @return string
+	 */
+	public function getFromCurrentAsString()
+	{
+		return implode("/", $this->getFromCurrent());
 	}
 	
 	/**

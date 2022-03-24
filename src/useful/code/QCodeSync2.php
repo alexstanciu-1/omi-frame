@@ -101,6 +101,12 @@ class QCodeSync2
 	 * @var float
 	 */
 	protected $start_time = null;
+	/**
+	 * Know what JS generated files were reset in case of a full sync
+	 * 
+	 * @var array
+	 */
+	protected $js_gens_reset_map = [];
 	
 	public function init()
 	{
@@ -1665,7 +1671,7 @@ class QCodeSync2
 						$this->dependencies[$patch_header_info['class_full']][$patch_header_info['layer']][$patch_header_info['tag']]
 								[$dep_header_info['class_full']][$dep_header_info['layer']][$dep_header_info['tag']] = $dep_header_info['tag'];
 					}
-					
+										
 					if (!$patch_header_info)
 					{
 						if (defined('Q_RUN_CODE_NEW_IGNORE_MISSING_PATCHES') && Q_RUN_CODE_NEW_IGNORE_MISSING_PATCHES)
@@ -1679,6 +1685,7 @@ class QCodeSync2
 									'$patch_header_info' => $patch_header_info, 
 									'xml-requesting' => $xml_node->getRoot()]);
 						}
+						
 						return null;
 						// @TODO - we should throw an error, or at least do not render it !!!
 						// throw new \Exception('Unable to find a parent for patching');

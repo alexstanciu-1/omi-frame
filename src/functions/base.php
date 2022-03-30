@@ -3305,3 +3305,9 @@ function q_reset($list = null)
 	else
 		throw new \Exception('Invalid argument.');
 }
+
+function q_property_to_trans(string $view_name, string $label, string $property)
+{
+	$dotted = trim(str_replace(["[", "]"], [".", ""], trim($property, "'[] \t\n\r")));
+	return $view_name."~".$label."~".$dotted;
+}

@@ -3660,6 +3660,17 @@ trait QModel_Methods
 		return $prop->storage["enum_values"] ? json_decode($prop->storage["enum_values"], true) : null;
 	}
 	
+	public static function Get_Enum_Options(string $property, string $class_name = null)
+	{
+		$cc = $class_name ?? get_called_class();
+		$options = \QModel::GetTypeByName($cc)->properties[$property]->storage['type'];
+		$matches = null;
+		preg_match("/[^\\(]*\\(([^\\)]*)\\)[^\\)]*/uis", $options, $matches);
+		if (!isset($matches[1]))
+			throw new \Exception('Unable to get enum type.');
+		return json_decode( "[" . str_replace("'", "\"", $matches[1]) . "]" );
+	}
+	
 	public function getEnumCaptions($property)
 	{
 		$prop = $this->getModelType()->properties[$property];

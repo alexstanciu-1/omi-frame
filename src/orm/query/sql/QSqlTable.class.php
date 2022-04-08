@@ -1458,7 +1458,7 @@ abstract class QSqlTable_frame_ extends QStorageTable
 			}
 			
 			$props = $model->getModelType()->properties;
-			$loop_by_selector = ($selector_isarr && (count($selector_isarr) < count($props)));
+			$loop_by_selector = ($selector_isarr && (count($selector) < count($props)));
 			$loop_by = $loop_by_selector ? $selector : $props;
 			
 			if ($loop_by && $props)

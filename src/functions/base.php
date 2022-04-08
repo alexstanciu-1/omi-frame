@@ -2981,8 +2981,10 @@ function _T($uid, $defaultText)
 	// qvar_dumpk($c_user);
 	
 	if ($_T___INF_LANG && $_T___INF_DATA)
+	{
 		$ret_text = (($txt = $_T___INF_DATA[$_T___INF_LANG][$uid]) !== null) ? $txt : 
 					((($s_txt = $_T___INF_DATA[$_T___INF_LANG][$defaultText]) !== null) ? $s_txt : $defaultText);
+	}
 	else
 		$ret_text = $defaultText;
 	if (false && \QAutoload::GetDevelopmentMode()) # || ($_SERVER['REMOTE_ADDR'] === '176.24.78.34'))
@@ -3284,21 +3286,22 @@ function q_reset($list = null)
 		return null;
 	else if (is_array($list))
 	{
-		# if (\QAutoload::GetDevelopmentMode())
+		/*if (\QAutoload::GetDevelopmentMode())
 		{
-			# $dbg = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)[0];
-			# echo "<pre>\nreset called &array line:{$dbg['line']}/{$dbg['file']}</pre>";
-		}
+			$dbg = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)[0];
+			echo "<pre>\nreset called &array line:{$dbg['line']}/{$dbg['file']}</pre>";
+		}*/
 		return reset($list);
 	}
 	else if (($list instanceof QModelArray))
 	{
-		# if (\QAutoload::GetDevelopmentMode())
+		/*
+		if (\QAutoload::GetDevelopmentMode())
 		{
-			# $dbg = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)[0];
-			# echo "<pre>\nreset called &QARRAY line:{$dbg['line']}/{$dbg['file']}</pre>";
+			$dbg = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)[0];
+			echo "<pre>\nreset called &QARRAY line:{$dbg['line']}/{$dbg['file']}</pre>";
 		}
-		
+		*/
 		return $list->reset();
 	}
 	else
@@ -3315,3 +3318,10 @@ function q_is_remove(\QModelArray $array = null, int $pos = null)
 	else
 		return false;
 }
+
+function q_property_to_trans(string $view_name, string $label, string $property, string $val = null)
+{
+	$dotted = trim(str_replace(["[", "]"], [".", ""], trim($property, "'[] \t\n\r")));
+	return $view_name."~".$label."~".$dotted.($val !== null ? "=".$val : "");
+}
+

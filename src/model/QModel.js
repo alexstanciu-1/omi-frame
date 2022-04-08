@@ -263,8 +263,6 @@ QExtendClass("QModel", "QObject",
 		return false;
 	},
 
-
-
 	ajax : function(method, parameters, send_instance, callback, callback_obj, callback_params, use_loader)
 	{
 		// TO DO: call function qbMakeCtrlRequest(url, req_method, ctrl, ctrl_id, meth_class, method_name, method_params, request_params, has_file)

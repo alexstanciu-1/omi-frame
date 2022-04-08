@@ -93,9 +93,9 @@ class QUrl
 	 * 
 	 * @return string
 	 */
-	public function current()
+	public function current(int $offset = 0)
 	{
-		return current($this->parts);
+		return ($offset === 0) ? current($this->parts) : $this->parts[key($this->parts) + $offset];
 	}
 	
 	/**

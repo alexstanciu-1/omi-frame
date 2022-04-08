@@ -457,7 +457,8 @@ function qbMakeCtrlRequest(url, req_method, ctrl, ctrl_id, meth_class, method_na
 	}
 
 	var user_func = request_params ? 
-						((typeof(request_params) === "function") ? request_params : ((request_params.ajax && request_params.ajax.success) ? request_params.ajax.success : null)) : null;
+						((typeof(request_params) === "function") ? request_params : 
+						((request_params.ajax && request_params.ajax.success) ? request_params.ajax.success : null)) : null;
 						
 	var user_ajax = request_params && request_params.ajax ? request_params.ajax : null;
 	var ajax_params = user_ajax || {};
@@ -2438,3 +2439,20 @@ function debounce(func, wait, immediate) {
 	};
 }
 
+function q_download(fileURL)
+{
+	var save = document.createElement('a');
+	save.href = fileURL;
+	save.target = '_blank';
+	save.download = '';
+
+	var evt = new MouseEvent('click', {
+		'view': window,
+		'bubbles': true,
+		'cancelable': false
+	});
+
+	save.dispatchEvent(evt);
+
+	(window.URL || window.webkitURL).revokeObjectURL(save.href);
+}

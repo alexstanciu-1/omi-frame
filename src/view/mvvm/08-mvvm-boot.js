@@ -23,7 +23,7 @@ else
  */
 omi._setup = {
 	// the events we will be registering to
-	events: ["click", "dblclick", "submit", "input", "change", "focus", "focusin", "focusout", "DOMFocusIn", "mouseover"],
+	events: ["click", "dblclick", "submit", "input", "change", "focus", "focusin", "focusout", "DOMFocusIn", "mouseover", "select"],
 	delay_timeout: 500, // min time in ms between retries
 	delay_retry_timeout: 50 // time between rechecks 
 };

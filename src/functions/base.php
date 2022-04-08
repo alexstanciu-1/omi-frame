@@ -2055,6 +2055,12 @@ function qDSDumpVar($var, $max_depth = 8, &$bag = null, $depth = 0, $accessModif
 				break;
 			}
 			
+			if ($obj_class === 'Closure')
+			{
+				echo "#Closure";
+				break;
+			}
+			
 			$ref_id = array_search($var, $bag, true);
 			if ($ref_id === false)
 			{
@@ -3258,14 +3264,14 @@ function q_index_array(string $property = null, $elements = null, bool $as_array
 	{
 		$ret = [];
 		foreach ($elements as $e)
-			$ret[($property === null) ? $e : ((($x = $e->$property) instanceof \QIModel) ? $x->Id : $x)] = $e;
+			$ret[($property === null) ? $e : ((($x = $e->$property) instanceof \QIModel) ? $x->Id : (($x === null) ? 0 : $x))] = $e;
 		return $ret;
 	}
 	else if (is_object($elements))
 	{
 		$ret = $as_array ? [] : (new $elements);
 		foreach ($elements as $e)
-			$ret[($property === null) ? $e : ((($x = $e->$property) instanceof \QIModel) ? $x->Id : $x)] = $e;
+			$ret[($property === null) ? $e : ((($x = $e->$property) instanceof \QIModel) ? $x->Id : (($x === null) ? 0 : $x))] = $e;
 		return $ret;
 	}
 	else
@@ -3278,23 +3284,34 @@ function q_reset($list = null)
 		return null;
 	else if (is_array($list))
 	{
-		if (\QAutoload::GetDevelopmentMode())
+		# if (\QAutoload::GetDevelopmentMode())
 		{
-			$dbg = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)[0];
-			echo "<pre>\nreset called &array line:{$dbg['line']}/{$dbg['file']}</pre>";
+			# $dbg = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)[0];
+			# echo "<pre>\nreset called &array line:{$dbg['line']}/{$dbg['file']}</pre>";
 		}
 		return reset($list);
 	}
 	else if (($list instanceof QModelArray))
 	{
-		if (\QAutoload::GetDevelopmentMode())
+		# if (\QAutoload::GetDevelopmentMode())
 		{
-			$dbg = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)[0];
-			echo "<pre>\nreset called &QARRAY line:{$dbg['line']}/{$dbg['file']}</pre>";
+			# $dbg = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)[0];
+			# echo "<pre>\nreset called &QARRAY line:{$dbg['line']}/{$dbg['file']}</pre>";
 		}
 		
 		return $list->reset();
 	}
 	else
 		throw new \Exception('Invalid argument.');
+}
+
+function q_is_remove(\QModelArray $array = null, int $pos = null)
+{
+	if (($array === null) || ($pos === null))
+		return false;
+	else if (($array->getTransformState($pos) & \QModel::TransformDelete) || 
+				((($item = $array[$pos]) instanceof \QIModel) && ($item->getTransformState() & \QModel::TransformDelete)))
+		return true;
+	else
+		return false;
 }

@@ -72,7 +72,7 @@ var QViewBase_proto = {
 	{
 		url = url || window.location.pathname;
 		req_method = req_method ? req_method : "ajax";
-			
+		
 		return this.call(method, c_arguments, callback, req_method, url);
 	},
 
@@ -324,5 +324,6 @@ var QViewBase_proto = {
 	}
 };
 
+// QExtendClass("QViewBase", "omi", QViewBase_proto);
 QExtendClass("QViewBase", "QModel", QViewBase_proto);
 

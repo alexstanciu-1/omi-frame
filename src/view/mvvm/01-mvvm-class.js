@@ -98,7 +98,7 @@ QExtendClass("omi", "QObject", {
 		// alert('You called me ? ' + this._className + "::" + method );
 		var dyn_inst = this.dom.getAttribute('q-dyn-inst');
 		
-		var call_on_element = this._className + "::" + method;
+		var call_on_element = (this._ty ? this._ty : this._className) + "::" + method;
 		if (dyn_inst && (dyn_inst.trim().length > 0))
 		{
 			// we need to call on the dynamic instance

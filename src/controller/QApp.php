@@ -221,10 +221,10 @@ class QApp extends QAppModule
 	{
 		if (!self::$Data)
 		{
-			self::$Data = new self::$DataClass();
-			self::$Data->setId(self::$DataId);
+			self::$Data = new static::$DataClass();
+			self::$Data->setId(static::$DataId);
 			if (self::$DataContainer)
-				self::$Data->setContainers(self::$DataContainer);
+				self::$Data->setContainers(static::$DataContainer);
 			self::$Data->init();
 		}
 		return self::$Data;
@@ -247,8 +247,8 @@ class QApp extends QAppModule
 	 */
 	public static final function NewData()
 	{
-		$data = new self::$DataClass();
-		$data->setId(self::$DataId);
+		$data = new static::$DataClass();
+		$data->setId(static::$DataId);
 		if (self::$DataContainer)
 			$data->setContainers(self::$DataContainer);
 		$data->init();

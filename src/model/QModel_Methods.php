@@ -1321,6 +1321,12 @@ trait QModel_Methods
 		return rtrim($path, "\\/")."/".(($this->$property_name instanceof QFile) ? $this->$property_name->Path : $this->$property_name);
 	}
 	
+	public function getFullPath_URL_Escaped($property_name)
+	{
+		$path = $this->getModelType()->properties[$property_name]->storage["filePath"];
+		return rtrim($path, "\\/")."/".rawurlencode(($this->$property_name instanceof QFile) ? $this->$property_name->Path : $this->$property_name);
+	}
+	
 	/**
 	 * In case the property is a file type, gets it's name based on the value of the property for this instance
 	 * 

@@ -193,6 +193,10 @@ class QPHPTokenXmlElement extends QPHPToken
 						// $_tofind = is_array($parsed_code) ? reset($parsed_code) : $parsed_code;
 						if (!$_tofind)
 						{
+							if (defined('Q_RUN_CODE_NEW_IGNORE_MISSING_PATCHES') && Q_RUN_CODE_NEW_IGNORE_MISSING_PATCHES)
+							{
+								return;
+							}
 							// qvar_dump($___pc, $this::To_String($q_matches));
 							// qvar_dump($q_matches);
 							qvar_dumpk([

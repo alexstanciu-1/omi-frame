@@ -1693,8 +1693,10 @@ class QCodeSync
 					// if (!$parent_class_for_js_class)
 					$parent_class_for_js_class = $this->getJsParentClass($js_func_class, $classParents);
 					// var_dump("getJsParentClass", $js_func_class, $parent_class_for_js_class);
+					
+					$out_parent_class_for_js_class = ($parent_class_for_js_class === 'QWebControl') ? 'omi' : $parent_class_for_js_class;
 
-					$new_first_elem = "QExtendClass(\"".qaddslashes($js_func_class)."\", \"".qaddslashes($parent_class_for_js_class)."\", {\n";
+					$new_first_elem = "QExtendClass(\"".qaddslashes($js_func_class)."\", \"".qaddslashes($out_parent_class_for_js_class)."\", {\n";
 
 					// fix $func_code for namespace : OrderCtrl.prototype.renderEditItem = function
 					$new_first_elem .= "{$func_name}: function";

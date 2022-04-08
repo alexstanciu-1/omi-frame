@@ -27,7 +27,7 @@
 		console.error(class_exists);
 		// alert(class_exists.prototype);
 	}
-    var prototype = class_exists && class_exists.prototype ? class_exists.prototype : new this();
+    var prototype = (class_exists && class_exists.prototype) ? class_exists.prototype : new this();
 
 	initializing = false;
 	
@@ -314,7 +314,17 @@ function QExtendClass(newClassName, parentClass, properties, prefix_patch)
 				// alert((class_obj.parentClass ? class_obj.parentClass : parentClass) + " | " + newClassName);
 			}
 			
-			window[class_obj.parentClass ? class_obj.parentClass : parentClass].extend(newClassName, properties, class_obj, prefix_patch);
+			if (class_obj.parentClass && parentClass && (class_obj.parentClass !== parentClass))
+			{
+				console.log('Diff parent class : ' + newClassName + " : " + class_obj.parentClass + " != " + parentClass);
+				
+			}
+			
+			var $parent_class_name = class_obj.parentClass ? class_obj.parentClass : parentClass;
+			var $parent_class_ref = window[$parent_class_name];
+			if (!$parent_class_ref)
+				console.error('Can not find class: ' + $parent_class_name + " to be extended by : " + newClassName);
+			$parent_class_ref.extend(newClassName, properties, class_obj, prefix_patch);
 			
 			if (properties.__ClassLoaded)
 			{
@@ -342,8 +352,13 @@ function QExtendClass(newClassName, parentClass, properties, prefix_patch)
 			static_init = properties.__ClassLoaded;
 			delete properties.__ClassLoaded;
 		}
+		
+		var $parent_class_name = parentClass;
+		var $parent_class_ref = window[$parent_class_name];
+		if (!$parent_class_ref)
+			console.error('Can not find class: ' + $parent_class_name + " to be extended by : " + newClassName);
 
-		var class_instance =  window[newClassName] = window[parentClass].extend(newClassName, properties, class_obj, prefix_patch);
+		var class_instance = window[newClassName] = $parent_class_ref.extend(newClassName, properties, class_obj, prefix_patch);
 		var ns_parts = newClassName.split(/\\/);
 		if (ns_parts.length > 1)
 		{

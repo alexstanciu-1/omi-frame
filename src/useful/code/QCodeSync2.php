@@ -935,6 +935,9 @@ class QCodeSync2
 					}
 				}
 				
+				if ($is_model)
+					$needs_class_setup = true;
+				
 				if (file_exists($gen_file_wo_ext.'.model.gen.php'))
 				{
 					if ((!$this->full_sync) && $is_model)
@@ -950,7 +953,7 @@ class QCodeSync2
 					else
 					{
 						$needs_class_setup = true;
-						unlink($gen_file_wo_ext.'.model.gen.php');
+						# unlink($gen_file_wo_ext.'.model.gen.php'); # we have some issues here ... @TODO - we need to make it less fragile
 						unset($this->autoload[$full_class_name.'_GenModel_']);
 					}
 				}
@@ -1264,7 +1267,7 @@ class QCodeSync2
 		$tait_name = $short_class_name."_GenModel_";
 		$gen_path = $full_class_info['gens_dir'];
 		
-		if (!$added_or_changed)
+		if ((!$added_or_changed) && file_exists($gen_path.$short_class_name.".model.gen.php"))
 			return [$tait_name, $gen_path.$short_class_name.".model.gen.php"];
 		
 		$namespace = $header_inf['namespace'];
@@ -1514,12 +1517,26 @@ class QCodeSync2
 		$insert_code = 'a25cd303d592c9c7d9039a0a80943ed6cf9be9ac';
 		$insert_key = '// insert_before_'.$insert_code;
 		
-		$contents = file_exists($js_gens_path) ? file_get_contents($js_gens_path)
-						: "QExtendClass(\"".qaddslashes($full_class_name)."\", \"".qaddslashes($parent_class_for_js).
+		$out_parent_class_for_js = ($parent_class_for_js === 'QWebControl') ? 'omi' : $parent_class_for_js;
+		
+		$force_reset_js = false;
+		if ($this->full_sync)
+		{
+			# make sure we only reset once
+			if (!isset($this->js_gens_reset_map[$js_gens_path]))
+			{
+				$this->js_gens_reset_map[$js_gens_path] = true;
+				$force_reset_js = true;
+			}
+		}
+		
+		$contents = ($force_reset_js || (!file_exists($js_gens_path))) ?
+						"QExtendClass(\"".qaddslashes($full_class_name)."\", \"".qaddslashes($out_parent_class_for_js).
 							"\", {\n".
 							"__dummy_for_comma_syntax: null\n".
 							$insert_key."\n".
-							"\n});";
+							"\n});"
+						: file_get_contents($js_gens_path);
 		
 		foreach ($render_code->jsFunc as $func_tag => $func_code)
 		{

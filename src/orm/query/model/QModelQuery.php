@@ -874,7 +874,13 @@ class QModelQuery
 						else if ($rp === "?@")
 						{
 							if (!preg_match("/^[\\\\\\w\\.\\\$\\_]+\$/ius", $c_bind))
+							{
+								if (\QAutoload::GetDevelopmentMode())
+								{
+									qvar_dumpk($c_bind, $binds);
+								}
 								throw new Exception("Invalid variable for non-parse bind ?@. The variable must only contain alphanumeric or underscore characters.");
+							}
 							$parts[] = $c_bind;
 							// repeat the last bind value if we run out of options
 							$c_next = next($binds);

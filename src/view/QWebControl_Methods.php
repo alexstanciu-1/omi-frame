@@ -247,6 +247,7 @@ trait QWebControl_Methods
 
 		if (self::$IncludeJs)
 		{
+			$included_already = [];
 			foreach (self::$IncludeJs as $js)
 			{
 				if (empty($js))
@@ -256,8 +257,9 @@ trait QWebControl_Methods
 						$js = [$js => $js];
 					
 					foreach ($js as $js_path) :
-						if (empty($js_path))
+						if (empty($js_path) || isset($included_already[$js_path]))
 							continue;
+						$included_already[$js_path] = $js_path;
 					// $use_js = ((!$dev_mode) && file_exists(substr($js, -2)."min.js")) ? substr($js, -2)."min.js" : $css;
 				?>		<script type="text/javascript" src="<?= static::GetPreventCacheResourceSource($js_path) ?>"></script>
 <?php endforeach;

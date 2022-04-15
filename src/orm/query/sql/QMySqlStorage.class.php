@@ -1129,13 +1129,18 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 			curl_setopt($curl, CURLOPT_MAXREDIRS, 3);
 			curl_setopt($curl, CURLOPT_POSTREDIR, 1);
 			curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-			$data = curl_exec($curl);
-			if (!$data)
+			curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
+			curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+			
+			$data_str = curl_exec($curl);
+			if (!$data_str)
 				throw new Exception("Invalid response from: ".Q_FRAME_GET_ID_TYPE."\n\n".curl_error($curl));
 			
-			$data = json_decode($data, true);
+			$data = json_decode($data_str, true);
 			if (!$data)
 			{
+				if (\QAutoload::GetDevelopmentMode())
+					qvar_dumpk('$resp',$data_str);
 				#echo $rawResponse;
 				throw new Exception("Invalid response from: ".Q_FRAME_GET_ID_TYPE."\n\nResponse cannot be decoded");
 			}

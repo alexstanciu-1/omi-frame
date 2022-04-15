@@ -2981,8 +2981,10 @@ function _T($uid, $defaultText)
 	// qvar_dumpk($c_user);
 	
 	if ($_T___INF_LANG && $_T___INF_DATA)
+	{
 		$ret_text = (($txt = $_T___INF_DATA[$_T___INF_LANG][$uid]) !== null) ? $txt : 
 					((($s_txt = $_T___INF_DATA[$_T___INF_LANG][$defaultText]) !== null) ? $s_txt : $defaultText);
+	}
 	else
 		$ret_text = $defaultText;
 	if (false && \QAutoload::GetDevelopmentMode()) # || ($_SERVER['REMOTE_ADDR'] === '176.24.78.34'))
@@ -3264,14 +3266,14 @@ function q_index_array(string $property = null, $elements = null, bool $as_array
 	{
 		$ret = [];
 		foreach ($elements as $e)
-			$ret[($property === null) ? $e : ((($x = $e->$property) instanceof \QIModel) ? $x->Id : $x)] = $e;
+			$ret[($property === null) ? $e : ((($x = $e->$property) instanceof \QIModel) ? $x->Id : (($x === null) ? 0 : $x))] = $e;
 		return $ret;
 	}
 	else if (is_object($elements))
 	{
 		$ret = $as_array ? [] : (new $elements);
 		foreach ($elements as $e)
-			$ret[($property === null) ? $e : ((($x = $e->$property) instanceof \QIModel) ? $x->Id : $x)] = $e;
+			$ret[($property === null) ? $e : ((($x = $e->$property) instanceof \QIModel) ? $x->Id : (($x === null) ? 0 : $x))] = $e;
 		return $ret;
 	}
 	else
@@ -3306,8 +3308,20 @@ function q_reset($list = null)
 		throw new \Exception('Invalid argument.');
 }
 
-function q_property_to_trans(string $view_name, string $label, string $property)
+function q_is_remove(\QModelArray $array = null, int $pos = null)
+{
+	if (($array === null) || ($pos === null))
+		return false;
+	else if (($array->getTransformState($pos) & \QModel::TransformDelete) || 
+				((($item = $array[$pos]) instanceof \QIModel) && ($item->getTransformState() & \QModel::TransformDelete)))
+		return true;
+	else
+		return false;
+}
+
+function q_property_to_trans(string $view_name, string $label, string $property, string $val = null)
 {
 	$dotted = trim(str_replace(["[", "]"], [".", ""], trim($property, "'[] \t\n\r")));
-	return $view_name."~".$label."~".$dotted;
+	return $view_name."~".$label."~".$dotted.($val !== null ? "=".$val : "");
 }
+

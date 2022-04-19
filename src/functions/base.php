@@ -322,10 +322,14 @@ function qaddslashes($val)
  * 
  * @return array
  */
-function qParseEntity(string $str, $mark = false, $expand_stars = false, $start_class = null)
+function qParseEntity(string $str, $mark = false, $expand_stars = false, $start_class = null, bool $for_listing = false)
 {
-	$tokens = preg_split("/(\s+|\,|\.|\:|\{|\})/us", $str, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
-
+	if ($for_listing)
+		# only split on dot (`.`) if followed by `{` - whitespace accepted
+		$tokens = preg_split("/(\s+|\,|\.(?=\\s*\\{)|\:|\{|\})/us", $str, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
+	else
+		$tokens = preg_split("/(\s+|\,|\.|\:|\{|\})/us", $str, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
+	
 	$entity = array();
 
 	$ctx_ent = &$entity;
@@ -410,6 +414,11 @@ function qParseEntity(string $str, $mark = false, $expand_stars = false, $start_
 		qExpandStars($entity, $start_class);
 	
 	return $entity;
+}
+
+function qParseEntity_for_listing(string $str, $mark = false, $expand_stars = false, $start_class = null)
+{
+	return qParseEntity($str, $mark, $expand_stars, $start_class, true);
 }
 
 function qExpandStars(&$entity, $class, $property = null)

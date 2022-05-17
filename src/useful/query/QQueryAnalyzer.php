@@ -764,7 +764,7 @@ final class QQueryAnalyzer
 			// check that we are in the right place
 			if ((!($data)) || (!($inf = $data["__d__"])) || (!($inf["zone"] === "WHERE")) || (!($inf["conditional"])))
 				continue;
-
+			
 			$params = [];
 			$p_pos = 0;
 			foreach ($data as $pk => $p_data)

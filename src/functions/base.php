@@ -3325,3 +3325,110 @@ function q_property_to_trans(string $view_name, string $label, string $property,
 	return $view_name."~".$label."~".$dotted.($val !== null ? "=".$val : "");
 }
 
+function q_parse_str_to_array(string $array_as_string = null, int $tokens_pos = 1, array $tokens = null, int $tokens_len = null)
+{
+	if ($tokens === null)
+	{
+		$tokens = token_get_all("<?php ".$array_as_string);
+		if (!is_array($tokens))
+			return false;
+		$tokens_len = count($tokens);
+	}
+	
+	$ret = null;
+	$after_t_array = false;
+	$array_end_wrap = null;
+	
+	for ($i = $tokens_pos; $i < $tokens_len; $i++)
+	{
+		$tok = $tokens[$i];
+		$t_type = is_array($tok) ? $tok[0] : $tok;
+		$break = false;
+		switch ($t_type)
+		{
+			case T_WHITESPACE:
+				break;
+			case "(":
+			{
+				if ($after_t_array)
+				{
+					$after_t_array = false;
+					break;
+				}
+				else
+					return false;
+			}
+			case T_DOUBLE_ARROW:
+				throw new \Exception('Not implemented atm.');
+			case ",":
+			{
+				# next element
+				break;
+			}
+			case ")":
+			{
+				if ($array_end_wrap === ')')
+					$break = true;
+				else
+					return false; # parse error
+				break;
+			}
+			case "]":
+			{
+				if ($array_end_wrap === ']')
+					$break = true;
+				else
+					return false; # parse error
+				break;
+			}
+			case "[":
+			{
+				if ($after_t_array)
+					return false; # parse error
+				else if ($ret === null)
+				{
+					$ret = [];
+					$array_end_wrap = ']';
+				}
+				else
+				{
+					throw new \Exception('Not implemented atm.'); # recurse in a sub-array
+					# q_parse_str_to_array(null, $i, $tokens, $tokens_len);
+				}
+				break;
+			}
+			case T_CONSTANT_ENCAPSED_STRING:
+			{
+				$ret[] = stripslashes(substr($tok[1], 1, -1));
+				break;
+			}
+			case T_ARRAY:
+			{
+				if ($ret === null)
+				{
+					$ret = [];
+					# then move after the (
+					$after_t_array = true;
+					$array_end_wrap = ')';
+				}
+				else
+				{
+					throw new \Exception('Not implemented atm.'); # recurse in a sub-array
+					# q_parse_str_to_array(null, $i, $tokens, $tokens_len);
+				}
+				break;
+			}
+			default:
+			{
+				qvar_dumpk($tok);
+				die;
+				break;
+			}
+		}
+		
+		if ($break)
+			break;
+	}
+	
+	return $ret;
+}

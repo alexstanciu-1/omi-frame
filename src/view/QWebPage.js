@@ -10,11 +10,24 @@ jQuery(document.body).click(function ($event)
 	// if (!$node.contains($event.target))
 		// $node.__ctx.dom_event($event, $evs[$i][2]);
 	var $items = jQuery(".qHideOnClickAway, .q-hide-on-click-away");
+	
+	var $popup_containers = $items.filter('.js-popup-container');
+	var $remove_popup = null;
+	if ($popup_containers.last().length > 0)
+	{
+		// if we have more than one ... we will only close the last one
+		$remove_popup = $popup_containers.last()[0];
+	}
+
+	var $targetJq = jQuery($event.target);
+	
 	for (var $i = 0; $i < $items.length; $i++)
 	{
 		var $node = $items[$i];
 		var $skipTarget = 'qSkipHideOnClickAway';
-		var $targetJq = jQuery($event.target);
+		
+		if ($remove_popup && (jQuery($items[$i]).hasClass('js-popup-container')) && ($remove_popup !== $node))
+			continue;
 		
 		if (!$node.contains($event.target) && (!$targetJq.hasClass($skipTarget)))
 		{

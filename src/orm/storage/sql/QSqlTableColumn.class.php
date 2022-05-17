@@ -253,23 +253,72 @@ abstract class QSqlTableColumn_frame_ extends QStorageTableColumn
 					switch ($k)
 					{
 						case "values":
-						case "charset":
-						case "collation":
+						{
+							if ($v || $this->$k)
+							{
+								if (($this->type === static::TypeEnum) || ($this->type === static::TypeSet))
+								{
+									$arr_v = q_parse_str_to_array("array({$v})");
+									$arr_this_k = q_parse_str_to_array("[".$this->$k."]");
+									if ($arr_v !== $arr_this_k)
+										$list[] = $k;
+								}
+								// to review this one for better comparison
+								else if ((string)$v !== (string)$this->$k)
+								{
+									$list[] = $k;
+								}
+							}
+							break;
+						}
 						case "default":
 						{
-							// to review this one for better comparison
-							if (($v || $this->$k) && ($v."" !== $this->$k.""))
+							$cmp_v = $v;
+							$cmp_this_k = $this->$k;
+							if (is_string($cmp_v))
 							{
-								// var_dump($k, $v, $this->$k);
+								if ((strtolower($cmp_v) === 'current_timestamp()') || (strtolower($cmp_v) === 'current_timestamp'))
+									$cmp_v = 'current_timestamp';
+							}
+							if (is_string($cmp_this_k))
+							{
+								if ((strtolower($cmp_this_k) === 'current_timestamp()') || (strtolower($cmp_this_k) === 'current_timestamp'))
+									$cmp_this_k = 'current_timestamp';
+							}
+							
+							if (($cmp_v || $cmp_this_k) && ((string)$cmp_v !== (string)$cmp_this_k))
+							{
 								$list[] = $k;
+							}
+							break;
+						}
+						case "charset":
+						case "collation":
+						{
+							if ((!empty($this->$k)) || (!empty($v)))
+							{
+								$comp_len = $this->$k ?: (($k === 'charset') ? $this->table->charset : $this->table->collation);
+								if (($v || $comp_len) && ($v."" !== $comp_len.""))
+								{
+									$list[] = $k;
+								}
 							}
 							break;
 						}
 						case "length":
 						{
 							// var_dump($this->table->name.".".$this->name."(".$v.")/(".$this->$k.")");
-							if ($v != $this->$k)
+							$comp_len = (($this->$k === false) ? null : $this->$k) ?? $this->get_default_numeric_length();
+							if ($v != $comp_len)
+							{
+								# qvar_dumpk($k, $v, $this->$k);
 								$list[] = $k;
+							}
+							break;
+						}
+						case "comment":
+						{
+							# we will not alter for a comment
 							break;
 						}
 						default:
@@ -289,4 +338,64 @@ abstract class QSqlTableColumn_frame_ extends QStorageTableColumn
 		else
 			return null;
 	}
+	
+	function get_default_numeric_length()
+	{
+		switch ($this->type)
+		{
+			case static::TypeInt:
+				return $this->unsigned ? 10 : 11;
+			
+			case static::TypeSmallint:
+				return $this->unsigned ? 5 : 6;
+			
+			case static::TypeBigint:
+				return $this->unsigned ? 20 : 20;
+				
+			case static::TypeTinyint:
+				return $this->unsigned ? 3 : 4;
+			
+			case static::TypeFloat:
+
+			case static::TypeDate:
+			case static::TypeDatetime:
+			case static::TypeVarchar:
+			case static::TypeText:
+			case static::TypeMediumText:
+			case static::TypeLongText:
+			case static::TypeEnum:
+			case static::TypeSet:
+			case static::TypeBlob:
+			case static::TypeLongBlob:
+			case static::TypeTimestamp:
+			{
+				return null;
+			}
+			default:
+			{
+				if (\QAutoload::GetDevelopmentMode())
+					qvar_dumpk($this->type, $this);
+				throw new \Exception('Unknown type.');
+			}
+		}
+	}
+	
+	/*
+bit => 1,
+tinyint => 4,
+tinyint_u => 3,
+smallint => 6,
+smallint_u => 5,
+mediumint => 9,
+mediumint_u => 8,
+int => 11,
+int_u => 10,
+bigint => 20,
+bigint_u => 20,
+decimal => [10,0],
+decimal_u => [10,0],
+dec => [10,0],
+dec_u => [10,0],
+	 */
 }
+

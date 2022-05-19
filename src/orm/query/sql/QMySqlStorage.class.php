@@ -487,7 +487,7 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 			
 			if (!$changed_props)
 				continue;
-			
+				
 			if ($pos > 0)
 				$query .= ",\n";
 
@@ -599,7 +599,7 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 		if ($changed)
 			echo $query."\n\n";
 		unset($query);
-			
+		
 		return;
 	}
 	

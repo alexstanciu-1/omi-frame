@@ -543,7 +543,6 @@ class QSqlModelInfoType
 		$mi->setup($mi, $storage, true);
 		
 		// $db = $storage->getDefaultDatabase();
-		echo "<pre>";
 		
 		ob_start();
 		foreach ($mi->_dbs_list as $db)
@@ -557,10 +556,14 @@ class QSqlModelInfoType
 				}
 			}
 		}
-		$sql_statements = ob_get_clean();
-		echo $sql_statements;
+		$sql_statements = trim(ob_get_clean());
 		
-		echo "</pre>";
+		if (strlen($sql_statements) > 0)
+		{
+			echo "<pre>";
+			echo $sql_statements;
+			echo "</pre>";
+		}
 		
 		$str = qArrayToCode($mi->_multitype, "Q_MultiType_", true);
 		file_put_contents(QAutoload::GetRuntimeFolder()."temp/sql_colstype_info.php", $str);

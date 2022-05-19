@@ -1675,6 +1675,8 @@ trait QModel_Methods
 		/*else if (!(($selector !== null) && is_array($selector)))
 			return;*/
 		
+		$ignore_refs = is_array($selector);
+		
 		$class = get_class($this);
 		
 		$arr = [];
@@ -1682,27 +1684,31 @@ trait QModel_Methods
 			$arr["_ty"] = $class;
 		
 		$id = $this->getId();
+		
 		$was_included = false;
-		if ($id !== null)
+		if (!$ignore_refs)
 		{
-			if ($with_hidden_ids)
-				$arr["_id"] = $id;
-			
-			if ($refs === null)
-				$refs = [];
-			if (isset($refs[$id][$class]))
-				$was_included = true;
+			if ($id !== null)
+			{
+				if ($with_hidden_ids)
+					$arr["_id"] = $id;
+		
+				if ($refs === null)
+					$refs = [];
+				if (isset($refs[$id][$class]))
+					$was_included = true;
+				else
+					$refs[$id][$class] = $this;
+			}
 			else
-				$refs[$id][$class] = $this;
-		}
-		else
-		{
-			if ($refs_no_class === null)
-				$refs_no_class = [];
-			if (($refs_class = $refs_no_class[$class]) && in_array($this, $refs_class, true))
-				$was_included = true;
-			else
-				$refs_no_class[$class][] = $this;
+			{
+				if ($refs_no_class === null)
+					$refs_no_class = [];
+				if (($refs_class = $refs_no_class[$class]) && in_array($this, $refs_class, true))
+					$was_included = true;
+				else
+					$refs_no_class[$class][] = $this;
+			}
 		}
 		
 		if (!$was_included)

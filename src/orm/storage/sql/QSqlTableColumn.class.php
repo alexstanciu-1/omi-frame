@@ -258,6 +258,7 @@ abstract class QSqlTableColumn_frame_ extends QStorageTableColumn
 							{
 								if (($this->type === static::TypeEnum) || ($this->type === static::TypeSet))
 								{
+									# qvar_dumpk($this);
 									$arr_v = q_parse_str_to_array("array({$v})");
 									$arr_this_k = q_parse_str_to_array("[".$this->$k."]");
 									if ($arr_v !== $arr_this_k)
@@ -368,6 +369,7 @@ abstract class QSqlTableColumn_frame_ extends QStorageTableColumn
 			case static::TypeBlob:
 			case static::TypeLongBlob:
 			case static::TypeTimestamp:
+			case static::TypeTime:
 			{
 				return null;
 			}

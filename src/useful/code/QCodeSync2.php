@@ -1,4 +1,4 @@
-$<?php
+<?php
 
 /**
  * Generates and patches platform standards

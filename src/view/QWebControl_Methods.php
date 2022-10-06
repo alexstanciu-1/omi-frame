@@ -47,7 +47,8 @@ trait QWebControl_Methods
 	 */
 	public function execQB($filter = null)
 	{
-		return execQB($filter, $this);
+		throw new \Exception('@deprecated');
+		# return execQB($filter, $this);
 	}
 	
 	/**
@@ -58,7 +59,8 @@ trait QWebControl_Methods
 	 */
 	public function execCallbacks($filter = null)
 	{
-		return execQB($filter, $this);
+		throw new \Exception('@deprecated');
+		# sreturn execQB($filter, $this);
 	}
 
 	/**
@@ -168,7 +170,7 @@ trait QWebControl_Methods
 				$child->render($data, $next_bk);
 		}
 	}
-	
+
 	/**
 	 * Short alias for getUrlForTag
 	 * 
@@ -183,45 +185,10 @@ trait QWebControl_Methods
 	 * Extra render on page to resolve resources 
 	 * @todo Rename this method renderCallbacks -> renderResources
 	 */
-	public function renderCallbacks()
+	public function renderCallbacks(bool $skip_minify = false)
 	{
-		if (QAutoload::$DebugPanel && (!QWebRequest::IsAjaxRequest()))
-		{
-			$dbg_panel = new QDebugPanelCtrl();
-			$this->addControl($dbg_panel, "debugPanel");
-			$dbg_panel->init();
-			$dbg_panel->render();
-		}
-		
-		if ((!QWebRequest::IsAjaxRequest()) && QAutoload::$DebugStacks)
-		{
-			# class='qHideOnClickAway '
-			?><div id='qb-dump-panel' style='z-index: 100000; max-width: 90%; position: fixed; top: 0px; right: 0px; display: block; overflow: scroll; height: 100%; background-color: white; border: 1px solid gray; padding: 10px; margin: 0px;' >
-					<a onclick='jQuery(this).parent().hide();' style='position: absolute; right: 5px; top: 3px; cursor: pointer; color: red;'>x</a>
-					<a onclick='jQuery(this).parent().find("\> pre, \> hr").remove(); jQuery(this).parent().hide();' style='position: absolute; right: 35px; top: 3px; cursor: pointer; color: blue;'>clear</a>
-					<?php 
-						qDebugStackInner_top("_dbg_".uniqid());
-						foreach (QAutoload::$DebugStacks as $dbg_dump) echo $dbg_dump;  
-						echo "</div>";
-					?>
-				</div>
-				<?php
-		}
-		
 		$dev_mode = QAutoload::GetDevelopmentMode();
-		
-		if ($dev_mode)
-		{
-			/*
-			?><a onclick="setTimeout(function () {jQuery('#qb-dump-panel').show();});" style='position: fixed; right: 5px; bottom: 3px; cursor: pointer; color: green;'>[+]</a><?php
-			*/
-		}
 
-		if ($dev_mode && (!($this instanceof QDevModePage))):
-			/*
-			?><div style="position: absolute; top: 0px; right: 0px;"><a href="<?= Q_APP_REL ?>~dev/" style="font-size: 12px; text-decoration: none; font-family: 'Helvetica Neue',Helvetica,Arial,sans-serif; display: block; padding: 3px 10px; opacity: 0.60; background-color: #0782C1; color: white;">Dev Panel</a></div><?php
-			*/
-			endif;
 		
 		static::AddCssLastResources();
 	
@@ -266,9 +233,21 @@ trait QWebControl_Methods
 			}
 		}
 		
+		if (\QAutoload::In_Debug_Mode())
+		{
+			$azz_data = \QAutoload::Debug_Get_Data();
+			if ($azz_data)
+			{
+				?><div id='qb-dump-panel' class=' ' style='z-index: 100000; max-width: 90%; position: fixed; top: 0px; right: 0px; display: block; overflow: scroll; height: 100%; background-color: white; border: 1px solid gray; padding: 10px; margin: 0px;' > 
+					<a onclick='jQuery(this).parent().remove();' style='position: absolute; right: 5px; top: 3px; cursor: pointer; color: red;'>x</a><?php
+				qvar_dump($azz_data);
+				echo '</div>';
+			}
+		}
+		
 		\QWebRequest::RenderBeforeBodyEnds();
 	}
-	
+
 	public function setRenderMethod($renderMethod)
 	{
 		$this->renderMethod = $renderMethod;

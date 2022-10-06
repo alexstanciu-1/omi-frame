@@ -10,5 +10,5 @@ abstract class QWebPage_frame_ extends QWebControl implements QIUrlController
 	
 	public $docType = "<!doctype html>\n";
 	
-
+	public $onPdfExport = false;
 }

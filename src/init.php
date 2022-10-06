@@ -1,11 +1,29 @@
 <?php
 
+if (!defined('Q_IS_TFUSE'))
+	define('Q_IS_TFUSE', false);
+
 if (PHP_VERSION_ID < 80000)
 {
 	define("T_NAME_QUALIFIED", 314);
 	define("T_NAME_FULLY_QUALIFIED", 312);
 	define("T_NAME_RELATIVE", 313);
 }
+
+if (Q_IS_TFUSE)
+{
+	/**
+	 * First include QFirewall
+	 */
+	if (file_exists(__DIR__ . "/useful/QFirewall.php"))
+	{
+		require_once(__DIR__ . "/useful/QFirewall.php");
+		#\QFirewall::BlockIPByCountry();
+		\QFirewall::BlockIP();
+		\QFirewall::UpdateRequestsCount(defined('Q_FIREWALL_LOG_PATH') ? Q_FIREWALL_LOG_PATH : null);
+	}
+}
+
 
 if (!defined("JSON_UNESCAPED_SLASHES"))
 	define("JSON_UNESCAPED_SLASHES", 64);
@@ -22,9 +40,6 @@ if (!defined("QORM_FKPREFIX"))
 	define("QORM_FKPREFIX", "\$");
 if (!defined("PHP_INT_MIN"))
 	define("PHP_INT_MIN", ~PHP_INT_MAX);
-
-if (!defined('QNEW_GRID_GEN_URL'))
-	define('QNEW_GRID_GEN_URL', 'https://php7.softdev.ro/omi-frame-grid-gen/');
 
 if (!defined("Q_Thousands_Separator"))
 	define("Q_Thousands_Separator", ",");
@@ -98,16 +113,3 @@ register_shutdown_function(function () {
 	register_shutdown_function(['QErrorHandler', 'Cleanup_On_End']);
 });
 
-if (defined('Q_DEBUG_API_KEY') && (strlen(Q_DEBUG_API_KEY) >= 40) && (isset($_GET[Q_DEBUG_API_KEY]) || isset($_POST[Q_DEBUG_API_KEY])))
-{
-	require_once(__DIR__."/base/QTrace.php");
-	\QAutoload::IncludeClassesInFolder(Q_FRAME_PATH."debug/", true);
-	\QDebugPanel::Run();
-	# done without error
-	exit(0);
-}
-else
-{
-	require_once(__DIR__."/base/QTrace.php");
-	\QTrace::Run(true);
-}

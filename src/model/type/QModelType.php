@@ -274,9 +274,9 @@ final class QModelType
 	 * @param integer $id
 	 * @return QModelType
 	 */
-	public static function GetModelTypeById($id)
+	public static function GetModelTypeById($id, $check_in_existing = false)
 	{
-		return self::GetModelTypeByClass(QApp::GetStorage()->getTypeNameInStorageById($id));
+		return self::GetModelTypeByClass(QApp::GetStorage()->getTypeNameInStorageById($id, $check_in_existing));
 	}
 	
 	/**

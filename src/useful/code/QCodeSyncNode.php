@@ -1366,7 +1366,7 @@ class QCodeSyncNode
 
 		QCodeSync::filePutContentsIfChanged($save_path, ($str = $final->toString()), true);
 		
-		// die($save_path);
+		// q_die($save_path);
 
 		// update info on file
 		$this->root->files[$this->watchFolder][substr($save_path, strlen($this->watchFolder))] = filemtime($save_path);

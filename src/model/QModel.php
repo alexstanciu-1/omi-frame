@@ -28,6 +28,12 @@ class QModel implements QIModel, Iterator
 	 *
 	 * @var string
 	 */
+	public static $DefaultLanguage = "en";
+	/**
+	 * The default language
+	 *
+	 * @var string
+	 */
 	public static $DefaultLanguage_Dim = "en";
 	/**
 	 * Dimentions definition

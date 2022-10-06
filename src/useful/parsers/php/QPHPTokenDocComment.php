@@ -654,7 +654,7 @@ class QPHPTokenDocComment extends QPHPToken
 		{
 			$ret[] = "\n\t\treturn \$_QOUT;\n};\n";
 			// var_dump(array($info, implode("",$ret)));
-			// die();
+			// q_die();
 		}
 		
 		if ($new_setup_out_var)

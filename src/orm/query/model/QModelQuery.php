@@ -9,6 +9,8 @@ class QModelQuery
 {
 	public static $_tmp_bq = [];
 	public static $_tmp_time = 0;
+	
+	public static $NEW_DEBUG_FILE = null;
 	/**
 	 *
 	 * @var array[]
@@ -24,29 +26,23 @@ class QModelQuery
 	 * @return QIModel
 	 * @throws Exception
 	 */
-	public static function Query($query, $from = null, &$dataBlock = null, $skip_security = true, $binds = null, $initial_query = null, $filter_selector = null, $populate_only = false, \QIStorage $storage = null)
+	public static function Query($query, $from = null, &$dataBlock = null, $skip_security = true, $binds = null, 
+					$initial_query = null, $filter_selector = null, $populate_only = false, \QIStorage $storage = null, $do_log = false)
 	{
+		$t0 = microtime(true);
+		
+		if (is_string($filter_selector))
+			$filter_selector = qParseEntity($filter_selector);
+		// Execute the query
+		if ($storage === null)
+			$storage = QApp::GetStorage();
+		$conn = $storage->connection;
+
+		if ($dataBlock === null)
+			$dataBlock = array();
+
 		try
 		{
-			$t1 = microtime(true);
-			# if (defined('QQQ_START_Qsss') && QQQ_START_Qsss)
-			#	qvar_dumpk($query);
-			
-			# $t1_log = microtime(true);
-			
-			\QTrace::Begin_Trace([],
-					[$query, $binds, $skip_security, $populate_only], ["query"]);
-		
-			if (is_string($filter_selector))
-				$filter_selector = qParseEntity($filter_selector);
-			// Execute the query
-			if ($storage === null)
-				$storage = QApp::GetStorage();
-			$conn = $storage->connection;
-
-			if ($dataBlock === null)
-				$dataBlock = array();
-
 			if (($from instanceof QIModelArray) || is_array($from))
 			{
 				// handle query on an array
@@ -65,9 +61,6 @@ class QModelQuery
 
 					$main_q->storage = $storage;
 
-					if (QAutoload::$DebugPanel)
-						QDebug::AddQuery($main_q->_dbg_query, $from, $binds, $dataBlock ? true : false, $skip_security);
-
 					$main_q->query($dataBlock, $storage, $conn, $frm_arr, $populate_only);
 
 					/*if ((!$skip_security) && QModel::$SecurityCheckQueriedData && $dataBlock)
@@ -83,7 +76,6 @@ class QModelQuery
 					return $mysqli->insert_id;
 				}
 
-
 				return $saved_from;
 			}
 			else
@@ -96,9 +88,6 @@ class QModelQuery
 				$main_q->_dbg_binds = $binds;
 
 				$main_q->storage = $storage;
-
-				if (QAutoload::$DebugPanel)
-					QDebug::AddQuery($main_q->_dbg_query, $from, $binds, $dataBlock ? true : false, $skip_security);
 
 				$main_q->query($dataBlock, $storage, $conn, $frm_arr, $populate_only);
 
@@ -121,14 +110,8 @@ class QModelQuery
 		}
 		finally
 		{
-			$t2 = microtime(true);
-			
-			# if ($t2 - $t1 > 1)
-			#	qvar_dumpk($t2 - $t1, $query, $binds);
-			
-			\QTrace::End_Trace([], ['return' => $from]);
-			
-			# file_put_contents("test_alex_log_qq.txt", date("Y-m-d H:i:s.u")." | ".(microtime(true) - $t1_log).": [".json_encode($binds)."] ".str_replace("\n", " ", $query)."\n", FILE_APPEND);
+			if ($do_log)
+				static::Q_NEW_LOG("q=q:", $query, $t0);
 		}
 	}
 	
@@ -166,25 +149,14 @@ class QModelQuery
 	
 	public static function BindQuery($query, $binds, $from = null, &$dataBlock = null, $skip_security = true, $filter_selector = null, $populate_only = false, \QIStorage $storage = null)
 	{
-		/*if (strpos($query, 'Services_Instances') !== false)
-		{
-			qvar_dumpk($query, $binds);
-			\QSqlParserQuery::$_DebugOn = 1;
-		}*/
-		
-		\QTrace::Begin_Trace(["caption" => "Query: ".substr($query, 0, 24)], ['$query' => $query, '$binds' => $binds, '$populate_only' => $populate_only], ["query"]);
-		
 		try
 		{
 			if (defined('q_lock_queries') && q_lock_queries)
 				throw new \Exception('q_lock_queries');
 
-			$run_query = self::PrepareBindQuery($query, $binds);
-			
-			if (defined('Q_QQuery_Debug_SQL') && Q_QQuery_Debug_SQL)
-				qvar_dumpk($run_query);
+			$run_query = static::PrepareBindQuery($query, $binds);
 
-			$result = self::Query($run_query, $from, $dataBlock, $skip_security, $binds, $query, $filter_selector, $populate_only, $storage);
+			$result = static::Query($run_query, $from, $dataBlock, $skip_security, $binds, $query, $filter_selector, $populate_only, $storage, false);
 			if ($dataBlock)
 			{
 				foreach ($dataBlock as $objs)
@@ -200,11 +172,37 @@ class QModelQuery
 		}
 		finally
 		{
-			// \QSqlParserQuery::$_DebugOn = 0;
-
-			\QTrace::End_Trace();
+			# static::Q_NEW_LOG("q=b:", $query, $t0);
 		}
 	}
+
+	public static function Q_NEW_LOG($type, $query, $t0)
+	{
+
+		return;
+
+		if (static::$NEW_DEBUG_FILE === null)
+		{
+			$domain = $_SERVER["SERVER_NAME"];
+			if (substr($domain, 0, 8) == "https://")
+				$domain = substr($domain, 8);
+			else if (substr($domain, 0, 7) == "http://")
+				$domain = substr($domain, 7);
+			if (substr($domain, 0, 4) == "www.")
+				$domain = substr($domain, 4);
+			static::$NEW_DEBUG_FILE = (($logs_dir = "/home/logs/" . trim(get_current_user()) . "/" . trim(preg_replace("/([^\\w])/uis", "_", $domain)) . "/" . date("Y_m_d") . "/")) . uniqid() . ".txt";
+			if (!is_dir($logs_dir))
+				qmkdir($logs_dir);
+
+			file_put_contents(static::$NEW_DEBUG_FILE, "url=req_uri:" . preg_replace("/(\\r?\\n)/uis", " | ", $_SERVER["REQUEST_URI"]) . "|qs:" . preg_replace("/(\\r?\\n)/uis", " | ", $_SERVER["QUERY_STRING"]) . "\n"
+				. "ip=" . $_SERVER["REMOTE_ADDR"] . "\n", FILE_APPEND);
+		}
+
+		$t1 = microtime(true);
+		file_put_contents(static::$NEW_DEBUG_FILE, $type . preg_replace("/(\\r?\\n)/uis", " | ", $query) . "\ns=" . json_encode(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)) . "\nt=start:" 
+			. date('Y-m-d-H:i:s.', $t0) . preg_replace("/^.*\./i","", $t0) . "|end:" 
+			. date('Y-m-d-H:i:s.', $t1) . preg_replace("/^.*\./i","", $t1) . "|elapsed:" . (($t1 - $t0)) . "\n", FILE_APPEND);
+ 	}
 	
 	/**
 	 * 
@@ -269,7 +267,7 @@ class QModelQuery
 				"\bAS\b|\bSELECT\b|\bUPDATE\b|\bDELETE\b|\bINSERT\b|\bWHERE\b|\bORDER\\s+BY\b|\bHAVING\b|\bGROUP\\s+BY\b|\bAND\b|\bOR\b|\bBETWEEN\b|\bASC\b|\bDESC\b|\bLIMIT\b|".
 					"\bNULL\b|\bTRUE\b|\bFALSE\b|\bIS_A\b|\bIS\b|\bLIKE\b|\bCASE\b|\bBINARY\b|\bNOT\b|\bDIV\b|\bIS\\s*NULL\b|\bIS\\s*NOT\\s*NULL\b|\bSQL_CALC_FOUND_ROWS\b|".
 					"\bDISTINCT\b|\bEND\b|\bELSE\b|\bTHEN\b|\bSEPARATOR\b|".
-					"\bINTERVAL\b|\bMONTH\b|\bDAY\b|\bWEEK\b|\bHOUR\b|\bMINUTE\b|\bSECOND\b|\bYEAR\b|\bUNSIGNED\b|\bSIGNED\b|\bCAST\b|\bINT\b|".
+					"\bSQL_NO_CACHE\b|\bIN\\s+BOOLEAN\\s+MODE\b|\bINTERVAL\b|\bMONTH\b|\bDAY\b|\bWEEK\b|\bHOUR\b|\bMINUTE\b|\bSECOND\b|\bYEAR\b|\bUNSIGNED\b|\bSIGNED\b|\bCAST\b|\bINT\b|".
 				// FUNCTIONS: FuncName (
 				"[\\p{L&}\\$]\\w+\\s*\\("."|\\p{L&}+\\s*\\(|".
 				// Identifiers/entities

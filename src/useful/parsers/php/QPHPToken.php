@@ -235,7 +235,7 @@ abstract class QPHPToken
 			throw new \Exception('Boolean is not allowed. Possible accidental call of static instead of instance.');
 	}
 	
-	public function toString(bool $formated = false, $final = false, $data = null)
+	public function toString($formated = false, $final = false, $data = null)
 	{
 		$str = "";
 		if ($this->children)
@@ -2785,13 +2785,28 @@ abstract class QPHPToken
 		// htmlspecialchars($string, ENT_HTML5 | ENT_COMPAT | ENT_SUBSTITUTE)
 		$reg_exp = "/\\{\\{\\s*(\\$(?:[a-zA-Z0-9\\_\\s\\[\\]\\\"\\'\\$]|(?:\\-\\>))+)\\s*\\}\\}/us"; // matching vars & adding isset
 		$template = preg_replace($reg_exp, "<?= isset(\$1) ? htmlspecialchars(\$1, ENT_QUOTES | ENT_HTML5, 'UTF-8') : \"\" ?>", $template);
+		if ($template === null)
+		{
+			# qvar_dump(PREG_BAD_UTF8_ERROR);
+			throw new \Exception('ParseTemplateMarkings regex error (1) # preg error code: '.preg_last_error().'!');
+		}
 		
 		# handle empty elements like {{ }}
 		$reg_exp = "/\\{\\{(\\s*)\\}\\}/us"; // matching expressions
 		$template = preg_replace($reg_exp, "", $template);
+		if ($template === null)
+		{
+			# qvar_dump(PREG_BAD_UTF8_ERROR);
+			throw new \Exception('ParseTemplateMarkings regex error (1) # preg error code: '.preg_last_error().'!');
+		}
 		
 		$reg_exp = "/\\{\\{\\s*(.*?)\\s*\\}\\}/us"; // matching expressions
 		$template = preg_replace($reg_exp, "<?= htmlspecialchars(\$1, ENT_QUOTES | ENT_HTML5, 'UTF-8') ?>", $template);
+		if ($template === null)
+		{
+			# qvar_dump(PREG_BAD_UTF8_ERROR);
+			throw new \Exception('ParseTemplateMarkings regex error (1) # preg error code: '.preg_last_error().'!');
+		}
 		
 		$predicates = ["@\\$", "@var", "@php", "@code", "@endcode", "@if", "@elseif", "@else", "@endif", "@endforeach", 
 					"@endfor", "@endwhile", "@endswitch", "@break", "@continue", "@endeach", "@foreach", 

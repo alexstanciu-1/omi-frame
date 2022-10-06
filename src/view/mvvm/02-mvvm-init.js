@@ -55,7 +55,8 @@ omi.InitDom = function(dom_element, callback)
 		omi.LoadClass(class_name, function ()
 		{
 			omi.InitControl(dom_element, class_name);
-			callback();
+			if (callback)
+				callback();
 		});
 };
 
@@ -102,8 +103,10 @@ omi.InitControl = function(domCtrl, class_name, class_obj)
 	// alert("InitControl");
 	if (!class_name)
 		class_name = domCtrl.getAttribute("q-ctrl");
+	
 	if (!class_name)
 		class_name = "omi";
+	
 	if (!class_name)
 	{
 		console.error("Missing class name on DOM:");

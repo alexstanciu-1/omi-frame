@@ -485,56 +485,94 @@ function qbMakeCtrlRequest(url, req_method, ctrl, ctrl_id, meth_class, method_na
 								user_ajax.error(jqXHR, textStatus, data);
 								
 							printDump(data);
+							// release dropdown jqs
+							var ddsjqs = jQuery(".qc-dd");
+							for (var i = 0; i < ddsjqs.length; i++)
+							{
+								var ddjq = jQuery(ddsjqs[i]);
+								var ddCtrl = $ctrl(ddjq);
+								ddCtrl.inDropdownSearch = false;
+							}
 							return;
 						}
+						
 						var response = null;
+
 						try
 						{
 							response = JSON.parse(data);
 						}
-						catch(err)
+						catch (err)
 						{
+							var $inDevMode = (jQuery("#dev-panel").length > 0);
 							if (user_ajax && user_ajax.error && (typeof(user_ajax.error) === 'function'))
 								user_ajax.error(jqXHR, textStatus, err + "<br/>\n\n" + data);
 							
+							// log the exception
+							console.error("CATCHED EXCEPTION", data);
 							
 							q_devmode_handle_ajax(jqXHR, textStatus, err);
 							
-							printDump(err + "<br/>\n\n" + data);
+							if ($inDevMode)
+							{
+								printDump(err + "<br/>\n\n" + data);
+							}
+							else				
+							{
+								alert("There was an error receiving data from server! Please try again later!");
+							}
+							// release dropdown jqs
+							var ddsjqs = jQuery(".qc-dd");
+							for (var i = 0; i < ddsjqs.length; i++)
+							{
+								var ddjq = jQuery(ddsjqs[i]);
+								var ddCtrl = $ctrl(ddjq);
+								ddCtrl.inDropdownSearch = false;
+							}
 							return;
-
-							/*
-							jQuery(window).trigger("Q_Event_AjaxError", [ajax_params, jqXHR, textStatus, response.EXCEPTION]);
-							$callOnErr ? user_ajax.onErr(jqXHR, textStatus, response.EXCEPTION) : user_ajax.error(jqXHR, textStatus, response.EXCEPTION);
-							return;
-							*/
 						}
 						
 						q_devmode_handle_ajax(jqXHR, textStatus, false, response);
 						
-						if (response.EXCEPTION)
+						if (response && response.EXCEPTION)
 						{
 							jQuery(window).trigger("Q_Event_AjaxError", [ajax_params, jqXHR, textStatus, response.EXCEPTION]);
+
+							// release dropdown jqs
+							var ddsjqs = jQuery(".qc-dd");
+							for (var i = 0; i < ddsjqs.length; i++)
+							{
+								var ddjq = jQuery(ddsjqs[i]);
+								var ddCtrl = $ctrl(ddjq);
+								ddCtrl.inDropdownSearch = false;
+							}
+
 							($callOnErr && user_ajax.onErr) ? 
 								user_ajax.onErr(jqXHR, textStatus, response.EXCEPTION) : 
 								user_ajax.error(jqXHR, textStatus, response.EXCEPTION);
 							return;
 						}
-
+						
 						var resps = (data === "null") ? null : (extract_callback ? extract_callback(response) : QModel.ExtractData(response));
 
 						var incl_css = null;
 						var incl_js = null;
 
-						if (resps && (typeof(resps) === "object") && ((resps.___css) || (resps.___js)))
+						if (resps && (typeof(resps) === "object"))
 						{
-							incl_css = resps.___css;
-							incl_js = resps.___js;
-							delete resps.___css;
-							delete resps.___js;
+							if ((resps.___css) || (resps.___js))
+							{
+								incl_css = resps.___css;
+								incl_js = resps.___js;
+								delete resps.___css;
+								delete resps.___js;
+							}
+							if (resps._security_random_text_)
+								delete resps._security_random_text_;
 						}
-
+						
 						var dbg_panel = null;
+						
 						if (resps && resps["__debugData__"])
 						{
 							dbg_panel = jQuery("#qDebugPanelCtrlLastAjaxId");
@@ -675,6 +713,15 @@ function qbMakeCtrlRequest(url, req_method, ctrl, ctrl_id, meth_class, method_na
 									if (decoded_error_json && decoded_error_json.EXCEPTION)
 										errorThrown = decoded_error_json.EXCEPTION;
 
+									// release dropdown jqs
+									var ddsjqs = jQuery(".qc-dd");
+									for (var i = 0; i < ddsjqs.length; i++)
+									{
+										var ddjq = jQuery(ddsjqs[i]);
+										var ddCtrl = $ctrl(ddjq);
+										ddCtrl.inDropdownSearch = false;
+									}
+
 									jQuery(window).trigger("Q_Event_AjaxError", [ajax_params, jqXHR, textStatus, errorThrown]);
 									$callOnErr ? user_ajax.onErr(jqXHR, textStatus, errorThrown) : user_ajax.error(jqXHR, textStatus, errorThrown);
 								} : 
@@ -689,7 +736,17 @@ function qbMakeCtrlRequest(url, req_method, ctrl, ctrl_id, meth_class, method_na
 									var is_redirect = ((jqXHR.readyState === 0) && (jqXHR.status === 0) && (jqXHR.statusText === "error"));
 									if (is_redirect)
 										return;
-									
+
+									// release dropdown jqs
+									var ddsjqs = jQuery(".qc-dd");
+									for (var i = 0; i < ddsjqs.length; i++)
+									{
+										var ddjq = jQuery(ddsjqs[i]);
+										var ddCtrl = $ctrl(ddjq);
+										ddCtrl.inDropdownSearch = false;
+									}
+
+
 									jQuery(window).trigger("Q_Event_AjaxError", [ajax_params, jqXHR, textStatus, errorThrown]);
 									// alert("error");
 									printDump("" + textStatus + "<br/>\n" + errorThrown + "<br/>\n" + jqXHR.responseText);
@@ -747,7 +804,7 @@ function qbMakeCtrlRequest(url, req_method, ctrl, ctrl_id, meth_class, method_na
 				
 				jQuery(window).trigger("Q_Event_BeforeAjax", [ajax_params]);
 
-				jQuery(iframe[0]).load(function()
+				jQuery(iframe[0]).on('load', function()
 					{
 						// finally !!!
 						
@@ -2085,15 +2142,15 @@ function qIncludeResourcesIfNotIncluded(css, js, user_func, user_func_param)
 		for (var i = 0; i < css_doms.length; i++)
 		{
 			var href = css_doms[i].getAttribute("href");
-			
 			if (href && href.length)
-			{
-				// make sure that we remove prevent caching property from resource
-				if (href.indexOf("?") > -1)
-					href = href.substr(0, href.indexOf("?"));
-
 				existing[href] = true;
-			}
+		}
+		var extra_css_doms = jQuery(".q-fake-css");
+		for (var i = 0; i < extra_css_doms.length; i++)
+		{
+			var href = extra_css_doms[i].dataset.src;
+			if (href && href.length)
+				existing[href] = true;
 		}
 		
 		for (var k in css)
@@ -2147,6 +2204,13 @@ function qIncludeResourcesIfNotIncluded(css, js, user_func, user_func_param)
 
 				existing[src] = true;
 			}
+		}
+		var extra_js_doms = jQuery(".q-fake-js");
+		for (var i = 0; i < extra_js_doms.length; i++)
+		{
+			var src = extra_js_doms[i].dataset.src;
+			if (src && src.length)
+				existing[src] = true;
 		}
 		
 		for (var k in js)
@@ -2241,6 +2305,31 @@ function getUrlVariable(name, url)
 		return decodeURIComponent(results[1]);
 	else
 		return null;
+}
+
+function qIsValidDate(value)
+{
+	return true;
+	//alert('is valid date: ' + value);
+	//return false;
+}
+
+function qIsValidHour(value)
+{
+	var tv = $.trim(value);
+	var tv_p = tv.split(":");
+	if (tv_p.length !== 3)
+		return false;
+	for (var i = 0; i < tv_p.length; i++)
+	{
+		var tv_pp = tv_p[i];
+		if (tv_pp.length !== 2)
+			return false;
+		var $intVal = parseInt(tv_pp);
+		if (((i === 0) && (($intVal < 0) || ($intVal > 23))) || ((i > 0) && (($intVal < 0) || ($intVal > 59))))
+			return false;
+	}
+	return true;
 }
 
 function qHideOnClickAway(e)
@@ -2401,6 +2490,23 @@ function q_debug_attach_to_ajax($jqXHR, $settings)
 }
 
 // ============ END BINDS =====================================
+
+// trigger on ready
+jQuery(document).ready(function () {
+	var showOnDumpPanelJqs = jQuery(".qb-dump-panel-show-on");
+	if (showOnDumpPanelJqs.length > 0)
+	{
+		showOnDumpPanelHtml = "";
+		for (var i = 0; i < showOnDumpPanelJqs.length; i++)
+		{
+			var showOnDumpPanelJq = jQuery(showOnDumpPanelJqs[i]);
+			//showOnDumpPanelHtml += $('<div>').append(showOnDumpPanelJq.clone()).html();
+			showOnDumpPanelHtml += $('<div>').append(showOnDumpPanelJq).html();
+		}
+		if (showOnDumpPanelHtml.length > 0)
+			printDump(showOnDumpPanelHtml);
+	}
+});
 
 /**
  * TRANSLATE 

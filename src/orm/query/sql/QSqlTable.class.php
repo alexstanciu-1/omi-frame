@@ -263,6 +263,7 @@ abstract class QSqlTable_frame_ extends QStorageTable
 				{
 					unset($obj->_tsx);
 					unset($obj->_ts);
+					unset($obj->_tsp);
 				}
 			}
 			
@@ -427,18 +428,27 @@ abstract class QSqlTable_frame_ extends QStorageTable
 						$update_done = false;
 						if ($item_update && ($rowid || $uniqueness))
 						{
+							$skip_uniq_check = $model->_skip_uniq_check;
 							// select & update
 							if ($rowid)
 							{
-								// $sql_select = "SELECT `".implode("`,`", $sql_info["cols"])."` FROM {$sql_info["tab"]} WHERE `".$sql_info["id_col"]."`=".$this->escapeScalar($rowid, $connection);
-								$yield_obj_q = "SELECT `".implode("`,`", $sql_info["cols"])."`,`".$sql_info["id_col"]."` FROM {$sql_info["tab"]} WHERE ";
-								$yield_obj_binds = [$rowid];
-								
-								$yield_obj = (object)['type' => 'select', 'params' => ['q' => $yield_obj_q, 'c' => ["`".$sql_info["id_col"]."`"], 'binds' => $yield_obj_binds]];
-								yield($yield_obj);
+								if (!$skip_uniq_check)
+								{
+									// $sql_select = "SELECT `".implode("`,`", $sql_info["cols"])."` FROM {$sql_info["tab"]} WHERE `".$sql_info["id_col"]."`=".$this->escapeScalar($rowid, $connection);
+									$yield_obj_q = "SELECT `".implode("`,`", $sql_info["cols"])."`,`".$sql_info["id_col"]."` FROM {$sql_info["tab"]} WHERE ";
+									$yield_obj_binds = [$rowid];
+
+									$yield_obj = (object)['type' => 'select', 'params' => ['q' => $yield_obj_q, 'c' => ["`".$sql_info["id_col"]."`"], 'binds' => $yield_obj_binds]];
+
+									yield($yield_obj);
+
+								}
+								else
+									$yield_obj = null;
 							}
 							else // by uniqueness
 							{
+								$skip_uniq_check = false;
 								/* $sql_select = "SELECT `".implode("`,`", $sql_info["cols"])."`,`{$sql_info["id_col"]}` FROM {$sql_info["tab"]} WHERE ".
 										"`{$sql_info["cols"]["ref"]}`=".$this->escapeScalar($uniqueness[0], $connection)." AND ".
 										"`{$sql_info["cols"]["bkref"]}`=".$this->escapeScalar($uniqueness[1], $connection);*/
@@ -454,7 +464,7 @@ abstract class QSqlTable_frame_ extends QStorageTable
 							$record = $yield_obj ? $yield_obj->result : null;
 							
 							// if select failed
-							if ($record !== null)
+							if ($skip_uniq_check || ($record !== null))
 							{
 								if (!$rowid)
 									$rowid = $record[$sql_info["id_col"]];
@@ -470,16 +480,16 @@ abstract class QSqlTable_frame_ extends QStorageTable
 									$new_type = $this->extractTypeIdForVariable($item);
 									$upd_pairs[] = "`".$sql_info["cols"]["type"]."`=?";
 									$yield_obj_binds[] = $new_type;
-									$has_changed = ($has_changed || ($new_type != $record[$sql_info["cols"]["type"]]));
+									$has_changed = $skip_uniq_check || ($has_changed || ($new_type != $record[$sql_info["cols"]["type"]]));
 								}
 								if ($item_is_model)
 								{
 									if ($sql_info["cols"]["val"])
 									{
 										$upd_pairs[] = "`".$sql_info["cols"]["val"]."`=NULL";
-										$has_changed = ($has_changed || (null !== $record[$sql_info["cols"]["val"]]));
+										$has_changed = $skip_uniq_check || ($has_changed || (null !== $record[$sql_info["cols"]["val"]]));
 									}
-									$has_changed = ($has_changed || (!$item->getId()) || ($item->getId() != $record[$sql_info["cols"]["ref"]]));
+									$has_changed = $skip_uniq_check || ($has_changed || (!$item->getId()) || ($item->getId() != $record[$sql_info["cols"]["ref"]]));
 								}
 								else
 								{
@@ -488,9 +498,9 @@ abstract class QSqlTable_frame_ extends QStorageTable
 									if ($sql_info["cols"]["ref"])
 									{
 										$upd_pairs[] = "`".$sql_info["cols"]["ref"]."`=NULL";
-										$has_changed = ($has_changed || (null !== $record[$sql_info["cols"]["ref"]]));
+										$has_changed = $skip_uniq_check || ($has_changed || (null !== $record[$sql_info["cols"]["ref"]]));
 									}
-									$has_changed = ($has_changed || ($item !== $record[$sql_info["cols"]["val"]]));
+									$has_changed = $skip_uniq_check || ($has_changed || ($item !== $record[$sql_info["cols"]["val"]]));
 								}
 
 								if ((!empty($upd_pairs)) && $has_changed)
@@ -985,12 +995,13 @@ abstract class QSqlTable_frame_ extends QStorageTable
 				if ($do_delete)
 				{
 					// $q_str = "UPDATE {$sql_info["tab"]} SET {$sql_info["tab"]}.`Del__`=1 WHERE `{$sql_info["id_col"]}`=".$this->escapeScalar($model->getId(), $connection);
-					
 					if (!$model->getId())
 						throw new \Exception('Missing Id');
 					
-					$yield_obj_q = "UPDATE {$sql_info["tab"]} SET {$sql_info["tab"]}.`Del__`=1 WHERE `{$sql_info["id_col"]}`=?";
-					// $yield_obj_q = "DELETE FROM {$sql_info["tab"]} WHERE `{$sql_info["id_col"]}`=?";
+					if (Q_IS_TFUSE)
+						$yield_obj_q = "DELETE FROM {$sql_info["tab"]} WHERE `{$sql_info["id_col"]}`=?";
+					else
+						$yield_obj_q = "UPDATE {$sql_info["tab"]} SET {$sql_info["tab"]}.`Del__`=1 WHERE `{$sql_info["id_col"]}`=?";
 					$yield_obj_binds = [$model->getId()];
 
 					$yield_obj = (object)['type' => 'update', 'params' => ['q' => $yield_obj_q, 'binds' => $yield_obj_binds]];
@@ -1009,54 +1020,55 @@ abstract class QSqlTable_frame_ extends QStorageTable
 						}*/
 					
 						# DO NOT APPLY ONE TO ONE ON DELETE FOR SOFT DELETE !!!
-						/*
-						foreach ($meta ?: [] as $p_name => $m_pdata)
+						if (Q_IS_TFUSE)
 						{
-							$value = $model->$p_name;
-							if ($value === null)
+							foreach ($meta ?: [] as $p_name => $m_pdata)
 							{
-								$model_cls = get_class($model);
-								$model_clone = new $model_cls();
-								$model_clone->setId($model->getId());
-								$model_clone->populate($p_name);
-								$value = $model_clone->{$p_name};
-							}
-
-							if (($value instanceof \QIModel) && ($one_to_one = $m_pdata['oneToOne']))
-							{
-								list($one_to_one_name, $one_to_one_types) = $one_to_one;
-								$value->{"set{$one_to_one_name}"}($model);
-
-								$one_to_one_sql_info = $this->getSqlInfo($sql_cache, $backrefs_list, $connection, false, $value, false, false, null, [$one_to_one_name => []]);
-								
-								$_vty = \QModelQuery::GetTypesCache(get_class($value));
-								
-								$one_to_one_table = $_vty["#%table"];
-
-								$upd_pairs = [];
-								$yield_obj_binds = [];
-								
-								if (($c = $one_to_one_sql_info["cols"][$one_to_one_name]["ref"]) !== null)
+								$value = $model->$p_name;
+								if ($value === null)
 								{
-									$upd_pairs[] = "`{$c}`=?";
-									$yield_obj_binds[] = $one_to_one_sql_info["vals"][$one_to_one_name]["ref"];
+									$model_cls = get_class($model);
+									$model_clone = new $model_cls();
+									$model_clone->setId($model->getId());
+									$model_clone->populate($p_name);
+									$value = $model_clone->{$p_name};
 								}
-								if (($c = $one_to_one_sql_info["cols"][$one_to_one_name]["type"]) !== null)
+
+								if (($value instanceof \QIModel) && ($one_to_one = $m_pdata['oneToOne']))
 								{
-									$upd_pairs[] = "`{$c}`=?";
-									$yield_obj_binds[] = $one_to_one_sql_info["vals"][$one_to_one_name]["type"];
-								}
+									list($one_to_one_name, $one_to_one_types) = $one_to_one;
+									$value->{"set{$one_to_one_name}"}($model);
+
+									$one_to_one_sql_info = $this->getSqlInfo($sql_cache, $backrefs_list, $connection, false, $value, false, false, null, [$one_to_one_name => []]);
 								
-								$yield_obj_q = "UPDATE `{$one_to_one_table}` SET ".implode(", ", $upd_pairs).
-												" WHERE `{$one_to_one_sql_info["id_col"]}`=?";
+									$_vty = \QModelQuery::GetTypesCache(get_class($value));
+								
+									$one_to_one_table = $_vty["#%table"];
+
+									$upd_pairs = [];
+									$yield_obj_binds = [];
+								
+									if (($c = $one_to_one_sql_info["cols"][$one_to_one_name]["ref"]) !== null)
+									{
+										$upd_pairs[] = "`{$c}`=?";
+										$yield_obj_binds[] = $one_to_one_sql_info["vals"][$one_to_one_name]["ref"];
+									}
+									if (($c = $one_to_one_sql_info["cols"][$one_to_one_name]["type"]) !== null)
+									{
+										$upd_pairs[] = "`{$c}`=?";
+										$yield_obj_binds[] = $one_to_one_sql_info["vals"][$one_to_one_name]["type"];
+									}
+								
+									$yield_obj_q = "UPDATE `{$one_to_one_table}` SET ".implode(", ", $upd_pairs).
+													" WHERE `{$one_to_one_sql_info["id_col"]}`=?";
 												
-								$yield_obj_binds[] = $value->getId();
+									$yield_obj_binds[] = $value->getId();
 
-								$yield_obj = (object)['type' => 'update', 'params' => ['q' => $yield_obj_q, 'binds' => $yield_obj_binds]];
-								yield($yield_obj);
+									$yield_obj = (object)['type' => 'update', 'params' => ['q' => $yield_obj_q, 'binds' => $yield_obj_binds]];
+									yield($yield_obj);
+								}
 							}
 						}
-						*/
 					}
 				}
 				
@@ -1065,6 +1077,32 @@ abstract class QSqlTable_frame_ extends QStorageTable
 			}
 			
 			# $model->_ts = null;
+		}
+		
+		if ($is_collection)
+		{
+			# reset flags
+			# if (\QAutoload::GetDevelopmentMode())
+			{
+				unset($model->_ts, $model->_tsp);
+				# cleanup _wst/_rowi
+				$wst_unset = [];
+				foreach ($model->_wst ?: [] as $_wst_k => $_wst_v)
+				{
+					if ($model[$_wst_k] === null)
+						$wst_unset[] = $_wst_k;
+				}
+				foreach ($wst_unset as $k_unset)
+					unset($model->_wst[$k_unset]);
+				$rowi_unset = [];
+				foreach ($model->_rowi ?: [] as $_rowi_k => $_rowi_v)
+				{
+					if ($model[$_rowi_k] === null)
+						$rowi_unset[] = $_rowi_k;
+				}
+				foreach ($rowi_unset as $k_unset)
+					unset($model->_rowi[$k_unset]);
+			}
 		}
 	}
 	
@@ -1393,6 +1431,7 @@ abstract class QSqlTable_frame_ extends QStorageTable
 	{
 		if ($model->_lk === 1)
 			return;
+
 		$model->_lk = 1;
 		
 		$selector_isarr = is_array($selector);
@@ -1407,7 +1446,7 @@ abstract class QSqlTable_frame_ extends QStorageTable
 		{
 			// this means all existing items NOT IN the $model will be removed from the collection
 			$replace_elements = ($model->_ts & QModel::TransformDelete) && (($model->_ts & QModel::TransformCreate) || ($model->_ts & QModel::TransformUpdate))
-									&& $parent;
+									&& $parent && $parent->getId();
 			if ($replace_elements)
 				$pure_populate[get_class($parent)][$property->name][] = $parent;
 			

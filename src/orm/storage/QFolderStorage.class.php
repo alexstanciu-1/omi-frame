@@ -1,6 +1,5 @@
 <?php
 
-
 /**
  * @class.name QFolderStorage
  * @class.abstract true

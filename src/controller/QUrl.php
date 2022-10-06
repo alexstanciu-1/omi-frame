@@ -143,6 +143,17 @@ class QUrl
 	 * 
 	 * @return string
 	 */
+	public function first()
+	{
+		$parts = $this->parts;
+		return array_shift($parts);
+	}
+	
+	/**
+	 * Goes to the last postion and returns it.
+	 * 
+	 * @return string
+	 */
 	public function end()
 	{
 		return end($this->parts);
@@ -327,7 +338,9 @@ class QUrl
 			$qs = http_build_query($params);
 		}
 		else
-			$qs = $_SERVER['QUERY_STRING'];
+		{
+			$qs = (\QWebRequest::$QUERY_STRING ?? $_SERVER['QUERY_STRING']);
+		}
 		
 		return implode($url->parts, "/").($qs ? "?" : "").$qs;
 	}

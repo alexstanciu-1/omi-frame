@@ -20,7 +20,7 @@ class QApi
 	public static $_Caller_Company_In_Callee_Box = null;
 
 	public static $_Partner_Call = false;
-
+	
 	/**
 	 * @param string $call_info
 	 * 
@@ -28,9 +28,6 @@ class QApi
 	 */
 	public static function _Call($call_info)
 	{
-		if (static::$DebugApi)
-			$debug_uidf = static::DebugStartApi();
-		
 		list($class_name, $method) = explode("::", $call_info, 2);
 		
 		if ($class_name[0] === "\\")
@@ -39,9 +36,8 @@ class QApi
 			throw new Exception("Class `{$class_name}` was not found");
 		if (!method_exists($class_name, $method))
 			throw new Exception("Method `{$class_name}::{$method}` was not found");
-
+			
 		$m_type = QModel::GetTypeByName($class_name);
-		
 		if ($m_type)
 		{
 			if (!$m_type->methodHasApiAccess($method))
@@ -71,9 +67,6 @@ class QApi
 		if (method_exists($class_name, $method."_out_"))
 			call_user_func_array([$class_name, $method."_out_"], array_unshift($args, $return));
 		
-		if (static::$DebugApi && static::DebugEndApi($debug_uidf))
-			static::DebugCall($return, $class_name, $method, $args);
-		
 		return $return;
 	}
 	
@@ -93,6 +86,251 @@ class QApi
 		}
 		else
 			return QApi::_Call(...func_get_args());
+	}
+		
+	/**
+	 * @api.enable
+	 * 
+	 * @param string $from
+	 * @param string $selector
+	 * @param array $parameters
+	 * 
+	 * @return QIModel
+	 */
+	public static function Query($from, $selector = null, $parameters = null, $only_first = false, $id = null)
+	{
+		$data_class = \QApp::GetDataClass();
+		list ($app_do_return, $app_return) = $data_class::Before_API_Query(...func_get_args());
+		if ($app_do_return)
+			return $app_return;
+		
+		$dataCls = \QApp::GetDataClass();
+
+		$initialFrom = $from;
+		$from = static::GetFrom($from);
+		
+		if (!$parameters)
+			$parameters = [];
+
+		if (property_exists($dataCls, '$_USE_SECURITY_FILTERS') && $dataCls::$_USE_SECURITY_FILTERS)
+		{
+			$usr = \Omi\User::GetCurrentUser();
+			if (!$usr)
+				return null;
+		}
+		
+		if ($selector === null)
+		{
+			$selector = $initialFrom ? 
+				($id || $only_first) ? $dataCls::GetFormEntity_Final($initialFrom) : $dataCls::GetListEntity_Final($initialFrom) : null;
+			$selector_gen_form = $initialFrom ? 
+				($id || $only_first) ? $dataCls::GetEntityForGenerateForm_Final($initialFrom) : $dataCls::GetEntityForGenerateList_Final($initialFrom) : null;
+			
+			if ($initialFrom)
+			{
+				$view_class_name = Q_Gen_Namespace."\\".$initialFrom;
+				$append_extra_selector = null;
+				if (class_exists($view_class_name) && property_exists($view_class_name, 'Extra_Selectors') && $view_class_name::$Extra_Selectors
+						&& ($append_extra_selector = $view_class_name::$Extra_Selectors[($id || $only_first) ? 'form' : 'list']))
+				{
+					# add extra selector to resolve FK/References caption issues
+					$selector = qJoinSelectors($selector, $append_extra_selector);
+				}
+			}
+			
+			$selector = qJoinSelectors($selector, $selector_gen_form);
+			
+			if ($selector === null)
+			{
+				if (\QAutoload::GetDevelopmentMode())
+					throw new \Exception("No selector defined for: `{$initialFrom}`/`{$from}`");
+			}
+		}
+		
+		$fromParams = ($id || $only_first) ? $dataCls::GetFormBinds($initialFrom) : $dataCls::GetListBinds($initialFrom);
+
+		if ($fromParams)
+		{
+			if (!$parameters)
+				$parameters = [];
+			$parameters = array_merge($parameters, $fromParams);
+		}
+		
+		$q = static::__Query(($initialFrom !== $from) ? [$from, $initialFrom] : $from, $selector, $parameters, $only_first, $id);
+		
+		return $q;
+	}	
+	
+	/**
+	 * @api.enable
+	 * 
+	 * @param string $destination
+	 * @param QIModel $data
+	 * @param integer $state
+	 * @return mixed
+	 * @throws Exception
+	 */
+	public static function Save($destination, $data, $state = null, $selector = null, $id = null, $data_is_collection = true)
+	{
+		if ($destination === 'Salesforce_Customers')
+		{
+			// also save in SF
+			\Omi\Vf\SalesForce\SalesForceQuery::SaveAccounts($destination, $data, $state, $selector, $id, $data_is_collection);
+		}
+		else if ($destination === 'Salesforce_Orders')
+		{
+			// also save in SF
+			\Omi\Vf\SalesForce\SalesForceQuery::SaveOrders($destination, $data, $state, $selector, $id, $data_is_collection);
+		}
+		
+		$orig_params = [$destination, $data, $state, $selector, $id, $data_is_collection];
+		
+		$dataCls = \QApp::GetDataClass();
+		
+		$initialDestination = $destination;
+		$destination = static::GetFrom($destination);
+		
+		$parsed_sources = $destination ? static::ParseSourceInfo($destination) : [null, null];
+		if (!$parsed_sources)
+			throw new Exception("Source information error");
+
+		if (is_string($selector))
+			$selector = qParseEntity($selector);
+
+		$result = [];
+		foreach ($parsed_sources as $src_key => $src_info)
+		{
+			// @todo : handle multiple requests on the same source
+			$src_from = reset($src_info);
+			$storage = QApp::GetStorage($src_key);
+			$storage_model = QApp::GetDataClass();
+			$is_collection = false;
+			$property_reflection = null;
+			$src_from_types = static::DetermineFromTypes($storage_model, $src_from, $is_collection, $property_reflection);
+			
+			// we will need to convert data here
+			// $array, $type = "auto", $selector = null, $include_nonmodel_properties
+			if ($src_from_types)
+			{
+				if ($data)
+				{
+					if (is_array($data))
+					{
+						// determine $data_is_collection - don't use the parameter
+						/*==========================determine if data is provided as collection or as single item=========================*/
+						$_ft = reset($src_from_types);
+						$decode_type = $_ft ? $_ft.($is_collection ? "[]" : "") : "auto";
+						
+						$data_is_collection = true;
+						$_ks = array_keys($data);
+						
+						$_dmt = \QModel::GetTypeByName($_ft);
+						
+						foreach ($_ks as $__k)
+						{
+							if ($_dmt->properties[$__k])
+							{
+								$data_is_collection = false;
+								break;
+							}
+						}
+						/*================================================================================================================*/
+
+						if ((!$data_is_collection) && $is_collection)
+							$data = [$data];
+						$data = QModel::FromArray($data, $decode_type);
+					}
+				}
+				else if ($id && (!($data instanceof QIModel)))
+				{
+					$data_ty = q_reset($src_from_types);
+					$data = new $data_ty();
+					$data->setId($id);
+					if ($is_collection)
+					{
+						$_item = $data;
+						$data = new QModelArray();
+						$data[] = $_item;
+					}
+				}
+				
+				if ($is_collection && $data && (!qis_array($data)))
+				{
+					$_item = $data;
+					$data = new QModelArray();
+					$data[] = $_item;
+				}
+				
+				if ($is_collection && $data && (!qis_array($data)))
+				{
+					$_item = $data;
+					$data = new QModelArray();
+					$data[] = $_item;
+				}
+			}
+
+			// do here security check - mihai - to be removed when security module is implemented
+			if ($data && property_exists($dataCls, '$_USE_SECURITY_FILTERS') && $dataCls::$_USE_SECURITY_FILTERS)
+			# if ($dataCls::$_USE_SECURITY_FILTERS && $data)
+			{
+				$user = \Omi\User::GetCurrentUser();
+				// we need to rethink this - now we check only logged in users
+				if ($user)
+				{
+					//if (!$user)
+					//	throw new \Exception("No access!");
+
+					$action = (!$state || ($state == \QModel::TransformMerge) || ($state == \QModel::TransformUpdate)) ? "edit" : 
+						(($state == \QModel::TransformDelete) ? "delete" : (($state == \QModel::TransformCreate) ? "add" : null));
+
+					if (!$action)
+						throw new \Exception("No access");
+
+					$to_check_data = qis_array($data) ? $data : [$data];
+					foreach ($to_check_data ?: [] as $itm)
+					{
+						if (!$itm)
+							continue;
+
+						if (!$itm->getId() && ($action === "edit"))
+							$action = "add";
+
+						if (!$user->can($action, $initialDestination, $itm))
+							throw new \Exception("No access!");
+					}
+				}
+			}
+			
+			if ($src_from === 'SupportTickets')
+			{
+				# qvar_dumpk($storage_model, $src_from, $src_from_types, $data, $state, $selector);
+				# throw new \Exception('remake!');
+				if ($data && ($first_data = q_reset($data)))
+					$first_data::Api_Save($src_from, $data, $state, $selector, $src_from_types);
+			}
+			else if ($property_reflection && ($property_reflection->storage['engine'] === 'model'))
+			{
+				if ((!$src_from_types) || (count($src_from_types) !== 1))
+					throw new \Exception('Only one storage engine is supported by the `model` storage');
+				$model_type = q_reset($src_from_types);
+				$result[$src_key] = $model_type::ApiSave($storage_model, $src_from, $src_from_types, $data, $state, $selector, $initialDestination);
+			}
+			else
+			{
+				$result[$src_key] = $storage::ApiSave($storage_model, $src_from, $src_from_types, $data, $state, $selector, $initialDestination);
+			}
+		}
+		
+		$ret = !$result ? null : ((count($result) === 1) ? reset($result) : $result);
+
+		
+		if (static::$DebugApi && static::DebugEndApi($debug_uidf))
+		{
+			list($orig_destination, $orig_data, $orig_state, $orig_selector, $orig_id, $orig_data_is_collection) = $orig_params;
+			static::DebugSave($ret, $orig_destination, $orig_data, $orig_state, $orig_selector, $orig_id, $orig_data_is_collection);
+		}
+		
+		return $ret;
 	}
 	
 	/**
@@ -299,6 +537,19 @@ class QApi
 	 * @return mixed
 	 * @throws Exception
 	 */
+	public static function BackendMerge($destination, $data, $selector = null)
+	{
+		return static::Merge($destination, $data, $selector);
+	}
+
+	/**
+	 * @api.enable
+	 * 
+	 * @param string $destination
+	 * @param QIModel $data
+	 * @return mixed
+	 * @throws Exception
+	 */
 	public static function Merge($destination, $data, $selector = null)
 	{
 		return static::Save($destination, $data, QIModel::TransformMerge, $selector, null, false);
@@ -330,9 +581,23 @@ class QApi
 		$is_scalar = is_scalar($data_or_id);
 		$data = $is_scalar ? null : $data_or_id;
 		$id = $is_scalar ? $data_or_id : null;
+
 		return static::Save($from, $data, QIModel::TransformDelete, $selector, $id, false);
 	}
 	
+	/**
+	 * @api.enable
+	 * 
+	 * @param string $from
+	 * @param integer|string $id
+	 * @param string $selector
+	 * 
+	 * @return mixed
+	 */
+	public static function BackendDeleteById($from, $id, $selector = null)
+	{
+		return static::DeleteById($from, $id, $selector);
+	}
 	/**
 	 * @api.enable
 	 * 
@@ -347,6 +612,23 @@ class QApi
 		return static::Delete($from, $id, $selector);
 	}
 	
+	/**
+	 * @api.enable
+	 * 
+	 * @param string $from
+	 * @param integer|string $id
+	 * @param string $selector
+	 * 
+	 * @return QIModel
+	 */
+	public static function QueryById($from, $id, $selector = null, array $binds = [])
+	{
+		if (empty($id))
+			return null;
+		$binds["Id"] = $id;
+		return static::Query($from, $selector, null, true, $binds);
+	}
+		
 	/**
 	 * @api.enable
 	 * 
@@ -563,7 +845,7 @@ class QApi
 			case "array":
 			{
 				$arr = [];
-				foreach ($data as $k => $v)
+				foreach ($data ?? [] as $k => $v)
 					$arr[$k] = static::ToArray($v, $selector, $include_nonmodel_properties, $with_type, $with_hidden_ids, $ignore_nulls, $refs, $refs_no_class);
 				return $arr;
 			}
@@ -948,94 +1230,6 @@ class QApi
 	}
 	
 	/**
-	 * @api.enable
-	 * 
-	 * @param string $from
-	 * @param integer|string $id
-	 * @param string $selector
-	 * 
-	 * @return QIModel
-	 */
-	public static function QueryById($from, $id, $selector = null, array $binds = [])
-	{
-		$binds["Id"] = $id;
-		return static::Query($from, $selector, null, true, $binds);
-	}
-		
-	/**
-	 * @api.enable
-	 * 
-	 * @param string $from
-	 * @param string $selector
-	 * @param array $parameters
-	 * 
-	 * @return QIModel
-	 */
-	public static function Query($from, $selector = null, $parameters = null, $only_first = false, $id = null)
-	{
-		$data_class = \QApp::GetDataClass();
-		list ($app_do_return, $app_return) = $data_class::Before_API_Query(...func_get_args());
-		if ($app_do_return)
-			return $app_return;
-		
-		$dataCls = \QApp::GetDataClass();
-
-		$initialFrom = $from;
-		$from = static::GetFrom($from);
-		
-		if (!$parameters)
-			$parameters = [];
-
-		if (property_exists($dataCls, '$_USE_SECURITY_FILTERS') && $dataCls::$_USE_SECURITY_FILTERS)
-		{
-			$usr = \Omi\User::GetCurrentUser();
-			if (!$usr)
-				return null;
-		}
-		
-		if ($selector === null)
-		{
-			$selector = $initialFrom ? 
-				($id || $only_first) ? $dataCls::GetFormEntity_Final($initialFrom) : $dataCls::GetListEntity_Final($initialFrom) : null;
-			$selector_gen_form = $initialFrom ? 
-				($id || $only_first) ? $dataCls::GetEntityForGenerateForm_Final($initialFrom) : $dataCls::GetEntityForGenerateList_Final($initialFrom) : null;
-			
-			if ($initialFrom)
-			{
-				$view_class_name = Q_Gen_Namespace."\\".$initialFrom;
-				$append_extra_selector = null;
-				if (class_exists($view_class_name) && property_exists($view_class_name, 'Extra_Selectors') && $view_class_name::$Extra_Selectors
-						&& ($append_extra_selector = $view_class_name::$Extra_Selectors[($id || $only_first) ? 'form' : 'list']))
-				{
-					# add extra selector to resolve FK/References caption issues
-					$selector = qJoinSelectors($selector, $append_extra_selector);
-				}
-			}
-			
-			$selector = qJoinSelectors($selector, $selector_gen_form);
-			
-			if ($selector === null)
-			{
-				if (\QAutoload::GetDevelopmentMode())
-					throw new \Exception("No selector defined for: `{$initialFrom}`/`{$from}`");
-			}
-		}
-		
-		$fromParams = ($id || $only_first) ? $dataCls::GetFormBinds($initialFrom) : $dataCls::GetListBinds($initialFrom);
-
-		if ($fromParams)
-		{
-			if (!$parameters)
-				$parameters = [];
-			$parameters = array_merge($parameters, $fromParams);
-		}
-		
-		$q = static::__Query(($initialFrom !== $from) ? [$from, $initialFrom] : $from, $selector, $parameters, $only_first, $id);
-		
-		return $q;
-	}
-	
-	/**
 	 * Setup owner in binds
 	 * 
 	 * @param array $parameters
@@ -1100,181 +1294,6 @@ class QApi
 		return null;
 	}
 
-	/**
-	 * @api.enable
-	 * 
-	 * @param string $destination
-	 * @param QIModel $data
-	 * @param integer $state
-	 * @return mixed
-	 * @throws Exception
-	 */
-	public static function Save($destination, $data, $state = null, $selector = null, $id = null, $data_is_collection = true)
-	{
-		if (static::$DebugApi)
-			$debug_uidf = static::DebugStartApi();
-		
-		if ($destination === 'Salesforce_Customers')
-		{
-			// also save in SF
-			\Omi\Vf\SalesForce\SalesForceQuery::SaveAccounts($destination, $data, $state, $selector, $id, $data_is_collection);
-		}
-		else if ($destination === 'Salesforce_Orders')
-		{
-			// also save in SF
-			\Omi\Vf\SalesForce\SalesForceQuery::SaveOrders($destination, $data, $state, $selector, $id, $data_is_collection);
-		}
-		
-		$orig_params = [$destination, $data, $state, $selector, $id, $data_is_collection];
-		
-		$dataCls = \QApp::GetDataClass();
-		
-		$initialDestination = $destination;
-		$destination = static::GetFrom($destination);
-		
-		$parsed_sources = $destination ? static::ParseSourceInfo($destination) : [null, null];
-		if (!$parsed_sources)
-			throw new Exception("Source information error");
-
-		if (is_string($selector))
-			$selector = qParseEntity($selector);
-
-		$result = [];
-		foreach ($parsed_sources as $src_key => $src_info)
-		{
-			// @todo : handle multiple requests on the same source
-			$src_from = reset($src_info);
-			$storage = QApp::GetStorage($src_key);
-			$storage_model = QApp::GetDataClass();
-			$is_collection = false;
-			$property_reflection = null;
-			$src_from_types = static::DetermineFromTypes($storage_model, $src_from, $is_collection, $property_reflection);
-			
-			// we will need to convert data here
-			// $array, $type = "auto", $selector = null, $include_nonmodel_properties
-			if ($src_from_types)
-			{
-				if ($data)
-				{
-					if (is_array($data))
-					{
-						// determine $data_is_collection - don't use the parameter
-						/*==========================determine if data is provided as collection or as single item=========================*/
-						$_ft = reset($src_from_types);
-						$decode_type = $_ft ? $_ft.($is_collection ? "[]" : "") : "auto";
-						
-						$data_is_collection = true;
-						$_ks = array_keys($data);
-						
-						$_dmt = \QModel::GetTypeByName($_ft);
-						
-						foreach ($_ks as $__k)
-						{
-							if ($_dmt->properties[$__k])
-							{
-								$data_is_collection = false;
-								break;
-							}
-						}
-						/*================================================================================================================*/
-
-						if ((!$data_is_collection) && $is_collection)
-							$data = [$data];
-						$data = QModel::FromArray($data, $decode_type);
-					}
-				}
-				else if ($id && (!($data instanceof QIModel)))
-				{
-					$data_ty = q_reset($src_from_types);
-					$data = new $data_ty();
-					$data->setId($id);
-					if ($is_collection)
-					{
-						$_item = $data;
-						$data = new QModelArray();
-						$data[] = $_item;
-					}
-				}
-				
-				if ($is_collection && $data && (!qis_array($data)))
-				{
-					$_item = $data;
-					$data = new QModelArray();
-					$data[] = $_item;
-				}
-				
-				if ($is_collection && $data && (!qis_array($data)))
-				{
-					$_item = $data;
-					$data = new QModelArray();
-					$data[] = $_item;
-				}
-			}
-
-			// do here security check - mihai - to be removed when security module is implemented
-			if ($data && property_exists($dataCls, '$_USE_SECURITY_FILTERS') && $dataCls::$_USE_SECURITY_FILTERS)
-			#														if ($dataCls::$_USE_SECURITY_FILTERS && $data)
-			{
-				$user = \Omi\User::GetCurrentUser();
-				// we need to rethink this - now we check only logged in users
-				if ($user)
-				{
-					//if (!$user)
-					//	throw new \Exception("No access!");
-
-					$action = (!$state || ($state == \QModel::TransformMerge) || ($state == \QModel::TransformUpdate)) ? "edit" : 
-						(($state == \QModel::TransformDelete) ? "delete" : (($state == \QModel::TransformCreate) ? "add" : null));
-
-					if (!$action)
-						throw new \Exception("No access");
-
-					$to_check_data = qis_array($data) ? $data : [$data];
-					foreach ($to_check_data ?: [] as $itm)
-					{
-						if (!$itm)
-							continue;
-
-						if (!$itm->getId() && ($action === "edit"))
-							$action = "add";
-
-						if (!$user->can($action, $initialDestination, $itm))
-							throw new \Exception("No access!");
-					}
-				}
-			}
-			
-			if ($src_from === 'SupportTickets')
-			{
-				# qvar_dumpk($storage_model, $src_from, $src_from_types, $data, $state, $selector);
-				# throw new \Exception('remake!');
-				if ($data && ($first_data = q_reset($data)))
-					$first_data::Api_Save($src_from, $data, $state, $selector, $src_from_types);
-			}
-			else if ($property_reflection && ($property_reflection->storage['engine'] === 'model'))
-			{
-				if ((!$src_from_types) || (count($src_from_types) !== 1))
-					throw new \Exception('Only one storage engine is supported by the `model` storage');
-				$model_type = q_reset($src_from_types);
-				$result[$src_key] = $model_type::ApiSave($storage_model, $src_from, $src_from_types, $data, $state, $selector, $initialDestination);
-			}
-			else
-			{
-				$result[$src_key] = $storage::ApiSave($storage_model, $src_from, $src_from_types, $data, $state, $selector, $initialDestination);
-			}
-		}
-		
-		$ret = !$result ? null : ((count($result) === 1) ? reset($result) : $result);
-
-		
-		if (static::$DebugApi && static::DebugEndApi($debug_uidf))
-		{
-			list($orig_destination, $orig_data, $orig_state, $orig_selector, $orig_id, $orig_data_is_collection) = $orig_params;
-			static::DebugSave($ret, $orig_destination, $orig_data, $orig_state, $orig_selector, $orig_id, $orig_data_is_collection);
-		}
-		
-		return $ret;
-	}
-	
 	/**
 	 * 
 	 * 

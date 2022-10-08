@@ -29,7 +29,6 @@ final class QWebRequest
 	
 	public static $_pid = null;
 
-	
 	/**
 	 * The URL that will answer to SOAP requests
 	 *
@@ -94,14 +93,34 @@ final class QWebRequest
 	
 	protected static $MultiResponseId;
 	protected static $MultiRequestId;
+	protected static $MultiRequestNoWait;
 	
 	protected static $RequestId;
 	
+	protected static $Request_Id;
+	
+	public static $REQUEST_URI = null;
+		
 	protected static $AjaxResponseSent = false;
 	protected static $ControllerOutputSent = false;
 	
 	protected static $_DebugDataFile = null;
 
+	public static $QUERY_STRING = null;
+	
+	public static function DecodeOriginalRequest()
+	{
+		if ($_GET["__or__"] || ($_GET["__or__"] !== null))
+		{
+			$qs = static::$QUERY_STRING ?: (static::$QUERY_STRING = $_SERVER["QUERY_STRING"]);
+			$matches = null;
+			//preg_match("/__or__\\=(.*?)(?:\\&|\$)/us", $qs, $matches);
+			preg_match("/(?:^|\\&|\\?)__or__\\=(.*?)(?:\\&|\$)/us", $qs, $matches);
+			return urldecode($matches[1]);
+		}
+
+		return null;
+	}
 
 	/**
 	 * Processes the request
@@ -114,14 +133,16 @@ final class QWebRequest
 			if (!defined('Q_REQUEST_UID'))
 				define('Q_REQUEST_UID', uniqid("", true));
 			static::$RequestId = Q_REQUEST_UID;
+			if (static::$Request_Id === null)
+				static::$Request_Id = uniqid("", true);
+				
+			$tinit = microtime(true);
+			
 			self::$AjaxRequest = self::IsAjaxRequest();
 			self::$FastAjax = $fast_call = ($_POST["__qFastAjax__"] || $_GET["__qFastAjax__"]);
 			
-			\QTrace::Begin_Trace([],
-					['static::$RequestId' => static::$RequestId, 'self::$FastAjax' => self::$FastAjax, '$_GET["__or__"]' => $_GET["__or__"], '$_SERVER' => $_SERVER], ["request"]);
-		
-			// audit request
-			\QAudit::AuditRequest();
+			if (static::$QUERY_STRING === null)
+				static::$QUERY_STRING = $_SERVER["QUERY_STRING"];
 
 			// disabled atm
 			if (false && (Q_DEBUG || Q_DEV) && (!static::$AjaxRequest) && (!self::$FastAjax))
@@ -163,7 +184,7 @@ final class QWebRequest
 			if ($_GET["__or__"] || ($_GET["__or__"] !== null))
 			{
 				// var_dump($_GET["__or__"]);
-				$qs = $_SERVER["QUERY_STRING"];
+				$qs = static::$QUERY_STRING ?? (static::$QUERY_STRING = $_SERVER["QUERY_STRING"]);
 				$matches = null;
 				//preg_match("/__or__\\=(.*?)(?:\\&|\$)/us", $qs, $matches);
 				preg_match("/(?:^|\\&|\\?)__or__\\=(.*?)(?:\\&|\$)/us", $qs, $matches);
@@ -178,6 +199,12 @@ final class QWebRequest
 			{
 				static::$MultiRequestId = (string)$_GET["__MultiResponseId"];
 				unset($_GET["__MultiResponseId"]);
+			}
+			
+			if ($_GET["__MultiResponseNoWait"])
+			{
+				static::$MultiRequestNoWait = (bool)$_GET["__MultiResponseNoWait"];
+				unset($_GET["__MultiResponseNoWait"]);
 			}
 
 			self::$BaseHref = BASE_HREF;
@@ -205,7 +232,7 @@ final class QWebRequest
 				file_put_contents("dump.".date("Y-m-d H:i:s", time()).".json", json_encode($_POST));
 			}
 			*/
-		   $managed = false;
+			$managed = false;
 
 			// we need to convert the raw request into one or more manageble callbacks
 			$compare_or = trim(self::$OriginalRequest);
@@ -238,58 +265,35 @@ final class QWebRequest
 				self::$RequestProtocol = "HTTP";
 
 				$url = QUrl::$Requested = new QUrl(self::$OriginalRequest);
-
-				if ($_GET['_deploy_'])
-				{
-					if (!QAutoload::GetDevelopmentMode())
-					{
-						http_response_code('403');
-						echo 'HTTP/1.1 403 Forbidden';
-					}
-					else
-					{
-						$managed = QDeploy::Run();
-					}
-				}
+				
+				ob_start();
 				// URL managed or not
-				else if ($fast_call)
+				if ($fast_call)
 				{
-					\QTrace::Begin_Trace([],
-						['execQB' => true, '$fast_call' => $fast_call, '$controller' => is_string($controller) ? $controller : get_class($controller) ,
-								], ["request", "fast-call"]);
-					try
-					{
-						if ($controller)
-							$managed = is_string($controller) ? $controller::initController($url) : $controller->initController($url);
-						else
-							$managed = $App::initController($url);
-						// execute the fast call : qbMethod="fast-ajax"
-						execQB();
-					}
-					finally
-					{
-						\QTrace::End_Trace();
-					}
+					if (Q_IS_TFUSE && (!$controller))
+						# this is a security workaround (should be removed after a full security setup)
+						throw new \Exception('Not allowed @webrequest');
+					if ($controller)
+						$managed = is_string($controller) ? $controller::initController($url) : $controller->initController($url);
+					else
+						$managed = $App::initController($url);
+					// execute the fast call : qbMethod="fast-ajax"
+					execQB();
 				}
 				else 
 				{
-					\QTrace::Begin_Trace([],
-						['$controller' => is_string($controller) ? $controller : get_class($controller) ,
-								], ["request", "fast-call"]);
-					try
-					{
-						ob_start();
 						if ($controller)
 							$managed = is_string($controller) ? $controller::loadFromUrl($url) : $controller->loadFromUrl($url);
 						else
 							$managed = $App::loadFromUrl($url);
-						static::$ControllerOutput = ob_get_clean();
-					}
-					finally
-					{
-						\QTrace::End_Trace();
-					}
+						
 				}
+				
+				if (Q_IS_TFUSE)
+					static::$ControllerOutput = static::ReplaceCdnUrl(ob_get_clean());
+				else
+					static::$ControllerOutput = ob_get_clean();
+
 
 				if ((!$managed) && (!$fast_call))
 				{
@@ -299,13 +303,15 @@ final class QWebRequest
 					{
 						header("HTTP/1.1 404 Not Found");
 						header("Status: 404 Not Found");
-						die("HTTP/1.1 404 Not Found");
+						q_die("HTTP/1.1 404 Not Found");
 					}
 				}
 			}
 
 			if (self::$AjaxRequest || self::$FastAjax)
 			{
+				if (Q_IS_TFUSE)
+					self::$AjaxResponse = static::ReplaceCdnUrl(self::$AjaxResponse);
 				if ($IframeWorkaround)
 				{
 					echo "<!doctype html>\n<html>\n<head>\n<title>Iframe</title>\n</head>\n<body>\n<textarea>";
@@ -339,8 +345,50 @@ final class QWebRequest
 		}
 		finally
 		{
-			\QTrace::End_Trace([], ['return' => $managed]);
+			# \QTrace::End_Trace([], ['return' => $managed]);
 		}
+	}
+	
+	public static function ReplaceCdnUrl($ret, &$_bag = [], $depth = 0)
+	{
+		$depth++;
+		if (is_scalar($ret))
+			return preg_replace("#cdn.travelfuse.ro#", "cdn-prod.travelfuse.ro", $ret);
+		else if (($is_arr = is_array($ret)) || is_object($ret))
+		{
+			$is_obj = (!$is_arr);
+
+			if ($is_obj)
+			{
+				if (!$ret->__repcdnurluuid)
+					$ret->__repcdnurluuid = uniqid();
+				if (isset($_bag[$ret->__repcdnurluuid]))
+					return $_bag[$ret->__repcdnurluuid];
+			}
+
+			foreach ($ret ?: [] as $k => $v)
+			{
+				if ($k[0] == "_")
+				{
+					if ($is_arr)
+						$ret[$k] = $v;
+					else
+						$ret->{$k} = $v;
+					continue;
+				}
+				else
+				{
+					if ($is_arr)
+						$ret[$k] = static::ReplaceCdnUrl($v, $_bag, $depth);
+					else
+						$ret->{$k} = static::ReplaceCdnUrl($v, $_bag, $depth);
+				}
+			}
+
+			if ($is_obj)
+				$_bag[$ret->__repcdnurluuid] = $ret;
+		}
+		return $ret;
 	}
 
 	/**
@@ -499,6 +547,7 @@ final class QWebRequest
 			
 			if (static::$MultiResponseId)
 				self::$AjaxResponse["__MultiResponseId"] = static::$MultiResponseId;
+			self::$AjaxResponse[" _security_random_text_"] = static::GetSecurityCode();
 			$refs = [];
 			if (\QAutoload::GetDevelopmentMode())
 				self::$AjaxResponse['__devmode__'] = true;
@@ -565,7 +614,7 @@ final class QWebRequest
 
 	public static function GetServerName()
 	{
-		$protocol = (isset($_SERVER['HTTPS'])) ? (($_SERVER['HTTPS'] && $_SERVER['HTTPS'] != "off") ? "https" : "http") : 'http';
+		$protocol = (($forceHttps = (defined("FORCE_HTTPS") && FORCE_HTTPS)) || (isset($_SERVER['HTTPS']))) ? (($forceHttps || ($_SERVER['HTTPS'] && ($_SERVER['HTTPS'] != "off"))) ? "https" : "http") : 'http';
 		return  $protocol . "://" . $_SERVER['HTTP_HOST'];
 	}
 
@@ -574,13 +623,13 @@ final class QWebRequest
 	 * 
 	 * @return string
 	 */
-	public static function GetBaseUrl()
+	public static function GetBaseUrl($force = false)
 	{
-		if (self::$BaseUrl)
+		if (self::$BaseUrl && !$force)
 			return self::$BaseUrl;
-		return self::$BaseUrl = ((substr(BASE_HREF, 0, 4) != "http") ? self::GetServerName() : "").BASE_HREF;
+		return self::$BaseUrl = ((substr(BASE_HREF, 0, 4) != "http") ? self::GetServerName() : "") . BASE_HREF;
 	}
-	
+
 	public static function SetMultiResponseId($multi_id)
 	{
 		static::$MultiResponseId = $multi_id;
@@ -590,7 +639,12 @@ final class QWebRequest
 	{
 		return static::$MultiRequestId;
 	}
-	
+
+	public static function GetMultiRequestNoWait()
+	{
+		return static::$MultiRequestNoWait;
+	}
+
 	public static function SetMultiRequestId($multi_req_id)
 	{
 		static::$MultiRequestId = $multi_req_id;
@@ -599,6 +653,18 @@ final class QWebRequest
 	public static function GetMultiResponseId()
 	{
 		return static::$MultiResponseId;
+	}
+	
+	public static function GetSecurityCode()
+	{
+		$str = sha1(rand() . uniqid("", true) . uniqid("", true) . uniqid("", true)).
+				sha1(rand() . uniqid("", true) . uniqid("", true) . uniqid("", true)).
+				sha1(rand() . uniqid("", true) . uniqid("", true) . uniqid("", true)).
+				sha1(rand() . uniqid("", true) . uniqid("", true) . uniqid("", true)).
+				sha1(rand() . uniqid("", true) . uniqid("", true) . uniqid("", true));
+		
+		return substr($str, 0, rand((int)(strlen($str)/2), strlen($str)));
+		
 	}
 	
 	public static function RenderBeforeBodyEnds()
@@ -619,6 +685,11 @@ final class QWebRequest
 		</script>
 <?php
 		}
+	}
+	
+	public static function Get_Request_Id()
+	{
+		return static::$Request_Id ?? (static::$Request_Id = ((defined('Q_REQUEST_ID') && (Q_REQUEST_ID !== null)) ? Q_REQUEST_ID : uniqid("", true)));
 	}
 	
 	public static function GetRequestId()
@@ -912,6 +983,11 @@ final class QWebRequest
 		
 		fwrite(static::$_DebugDataFile, ",\n");
 		fwrite(static::$_DebugDataFile, json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE, 5));
+	}
+	
+	public static function Get_Request_Id_For_Logs()
+	{
+		return $_GET['__Request_Id_Log'] ?: static::Get_Request_Id();
 	}
 	
 	public static function DebugDataFlush()

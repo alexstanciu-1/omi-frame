@@ -2,7 +2,6 @@
 
 trait QWebPage_Methods
 {
-	
 	/**
 	 * The init
 	 * 
@@ -14,7 +13,8 @@ trait QWebPage_Methods
 			return true;
 		$this->_ini = true;
 		
-		self::$IncludeJs[] = QAutoload::GetTempWebPath("model_type.js");
+		$modelJsPath = QAutoload::GetTempWebPath("model_type.js");
+		self::$IncludeJs[$modelJsPath] = $modelJsPath;
 		$this->includeJsClass("QModel");
 		$this->includeJsClass("QModelArray");
 		
@@ -59,5 +59,13 @@ trait QWebPage_Methods
 	public function renderBody()
 	{
 		
+	}
+	
+	public static function GetMinifyTempFolder()
+	{
+		$ret = "code/temp/res/";
+		if (!is_dir($ret))
+			qmkdir($ret);
+		return $ret;
 	}
 }

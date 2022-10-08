@@ -18,6 +18,8 @@ abstract class QFile_frame_ extends QModel
 	public $Path;
 	
 	/**
+	 * DEPRECATED !!!
+	 * 
 	 * Called when an upload was made and you need to do something with the file
 	 * As an option the file could be handled on upload
 	 * 

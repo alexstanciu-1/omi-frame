@@ -1353,7 +1353,6 @@ trait QModel_Trait
 		return $ret;
 	}
 	
-	
 	/**
 	 * Extracts data from a JSON string
 	 * 
@@ -1379,19 +1378,20 @@ trait QModel_Trait
 	 * 
 	 * @return QIModel|QIModel[]
 	 */
-	public static function FromArray($array, $type = "auto", $selector = null, $include_nonmodel_properties = false)
+	public static function FromArray($array, $type = "auto", $selector = null, $include_nonmodel_properties = false, $checkChild = false, $setup_refs = false, &$refs_new = null)
 	{
 		if ($array === null)
 			return null;
+
 		else if (!is_array($array))
 			throw new Exception("Input argument \$array must be an array or null");
-		
+
 		$using_called_class = null;
 		$type = ($type === "auto") ? ($using_called_class = get_called_class()) : $type;
-		
+
 		if (is_string($selector))
 			$selector = qParseEntity($selector);
-		
+
 		// we also accept $type = "array"
 		if ($type === "array")
 		{
@@ -1410,8 +1410,17 @@ trait QModel_Trait
 		else if (($arr_class = $array["_ty"]) && class_exists($arr_class) && qIsA($arr_class, "QIModelArray"))
 			$is_array = true;
 		else
-			$is_array = false;
-		
+		{
+			if ($checkChild)
+			{
+				$objClass = (($c = $array["_ty"]) && class_exists($c)) ? $c : (((($type[0] === "\\") || ($type[0] !== strtolower($type[0]))) && class_exists($type)) ? $type : null);	
+				// if we don't have the class for the child object - treat it as array
+				$is_array = (!$objClass);
+			}
+			else
+				$is_array = false;
+		}
+
 		if ($is_array)
 		{
 			if (($arr_class ?: $array["_ty"]) !== null)
@@ -1430,7 +1439,7 @@ trait QModel_Trait
 				if (is_array($item))
 				{
 					$i_class = (($c = $item["_ty"]) && class_exists($c)) ? $c : (((($type[0] === "\\") || ($type[0] !== strtolower($type[0]))) && class_exists($type)) ? $type : null);
-					$ret[$k] = static::FromArray($item, $i_class, $selector, $include_nonmodel_properties);
+					$ret[$k] = static::FromArray($item, $i_class, $selector, $include_nonmodel_properties, $checkChild, $setup_refs, $refs_new);
 				}
 				else
 					$ret[$k] = $item;
@@ -1447,12 +1456,12 @@ trait QModel_Trait
 			if (($obj_id = $array["_id"]) !== null)
 				$obj->setId($obj_id);
 			$refs = [];
-			$obj->extractFromArray($array, $selector, null, $include_nonmodel_properties, $refs);
+			$obj->extractFromArray($array, $selector, null, $include_nonmodel_properties, $refs, $setup_refs, $refs_new);
 			return $obj;
 		}
 	}
-	
-	public function extractFromArray($array, $selector = null, $parent = null, $include_nonmodel_properties = false, &$refs = null)
+
+	public function extractFromArray($array, $selector = null, $parent = null, $include_nonmodel_properties = false, &$refs = null, $setup_refs = false, &$refs_new = null)
 	{
 		$all_keys = $selector && ($selector["*"] !== null);
 		$type_inf = QModelQuery::GetTypesCache(get_class($this));
@@ -1465,10 +1474,11 @@ trait QModel_Trait
 		{
 			switch ($k)
 			{
+				case "Id":
 				case "_id":
 				{
 					if ($v !== null)
-						$this->setId($v);
+						$this->setId(($v === '') ? null : (int)$v);
 					break;
 				}
 				case "_ty":
@@ -1506,27 +1516,55 @@ trait QModel_Trait
 										if (!is_dir($save_dir))
 											qmkdir($save_dir);
 
-										$save_path_fn = pathinfo($upload_info["name"], PATHINFO_FILENAME);
-										$save_path_ext = pathinfo($upload_info["name"], PATHINFO_EXTENSION);
-										$index = 0;
-										// make sure we don't overwrite
-										while (file_exists($save_path = $save_dir.$save_path_fn.($index ? "-".$index : "").".".$save_path_ext))
-												$index++;
+										if (Q_IS_TFUSE)
+										{
+											$upload_file_name = $upload_info["name"];
 
-										$muf_rc = move_uploaded_file($upload_info["tmp_name"], $save_path);
-										if (!$muf_rc)
-											throw new \Exception('Unable to upload file (A): '.$upload_info["name"]);
+											#$save_path_fn = pathinfo($upload_info["name"], PATHINFO_FILENAME);
+											#$save_path_ext = pathinfo($upload_info["name"], PATHINFO_EXTENSION);
+											# $index = 0;
+											#$save_path_rel = $save_path_fn.".".$save_path_ext;
+											// make sure we don't overwrite
+											#while (file_exists($save_path = $save_dir . ($save_path_rel = ($save_path_fn.($index ? "-".$index : "").".".$save_path_ext))))
+											#	$index++;
 
-										$upload_Mode = $prop_inf->storage["fileMode"];
-										if ($upload_Mode)
-											chmod($save_path, octdec($upload_Mode));
-										$upload_withPath = $prop_inf->storage["fileWithPath"];
-										$property_value = $upload_withPath ? $save_path : basename($save_path);
+											# move_uploaded_file($upload_info["tmp_name"], $save_path);
+											$save_path = q_move_uploaded_file($upload_info["tmp_name"], $save_dir, $upload_file_name, ($upload_Mode = $prop_inf->storage["fileMode"]), $prop_inf->storage["uniqid_gen"] ?: false);
 
+											//$save_path = $save_dir.$save_path_fn_with_ext;
+											/*$upload_Mode = $prop_inf->storage["fileMode"];
+											if ($upload_Mode)
+												chmod($save_path, octdec($upload_Mode));*/
+
+											$upload_withPath = $prop_inf->storage["fileWithPath"];
+											$property_value = $upload_withPath ? $save_path : basename($save_path);
+											$this->{"set{$upload_key}"}($property_value);
+											$array[$upload_key] = $property_value;
+										}
+										else
+										{
+											$save_path_fn = pathinfo($upload_info["name"], PATHINFO_FILENAME);
+											$save_path_ext = pathinfo($upload_info["name"], PATHINFO_EXTENSION);
+											$index = 0;
+											// make sure we don't overwrite
+											while (file_exists($save_path = $save_dir.$save_path_fn.($index ? "-".$index : "").".".$save_path_ext))
+													$index++;
+
+											$muf_rc = move_uploaded_file($upload_info["tmp_name"], $save_path);
+											if (!$muf_rc)
+												throw new \Exception('Unable to upload file (A): '.$upload_info["name"]);
+
+											$upload_Mode = $prop_inf->storage["fileMode"];
+											if ($upload_Mode)
+												chmod($save_path, octdec($upload_Mode));
+											$upload_withPath = $prop_inf->storage["fileWithPath"];
+											$property_value = $upload_withPath ? $save_path : basename($save_path);
+
+											$this->{"set{$upload_key}"}($property_value);
+											$keys_to_setup[$upload_key] = $property_value;
+										}
+										
 										static::$Moved_Uploaded_Files[$upload_info["tmp_name"]] = [$property_value, realpath($save_path)];
-
-										$this->{"set{$upload_key}"}($property_value);
-										$keys_to_setup[$upload_key] = $property_value;
 									}
 									else if (isset(static::$Moved_Uploaded_Files[$upload_info["tmp_name"]]))
 									{
@@ -1554,8 +1592,10 @@ trait QModel_Trait
 				{
 					// not in the selector
 					// or we have wst flag and the property was not set
-					if (($k[0] === "_") || (($selector !== null) && (!$all_keys) && ($selector[$k] === null)) || ($wst && !$wst[$k]))
+					if ((($k[0] === "_") && ((!$selector) || (!isset($selector[$k])))) || (($selector !== null) && (!$all_keys) && ($selector[$k] === null)) || ($wst && (!$wst[$k])))
+					{
 						break;
+					}
 
 					$ty = gettype($v);
 					
@@ -1583,6 +1623,7 @@ trait QModel_Trait
 							if (($vc = $v["_ty"]) && class_exists($vc))
 							{
 								$expected_type = $vc;
+								$v["_ity"] = $v["_ty"];
 								unset($v["_ty"]);
 							}
 							else
@@ -1593,16 +1634,18 @@ trait QModel_Trait
 									$expected_type = "\\QModelArray";
 								else
 								{
-									if (!$prop_inf["#"])
+									if ((!$prop_inf["#"]) && (!$include_nonmodel_properties))
 									{
 										if (\QAutoload::GetDevelopmentMode())
 											qvardumpk($k, $v, $prop_inf, $type_inf);
 										throw new \Exception("Expected type cannot be identified!");
 									}
-									$expected_type = "\\".reset($prop_inf["#"]);
+
+									if ($prop_inf["#"])
+										$expected_type = "\\".reset($prop_inf["#"]);
 								}
 							}
-							
+
 							if ($expected_type && class_exists($expected_type))
 							{
 								$obj_id = is_array($v) ? ($v["_id"] ?: ($v["Id"] ?: ($v["id"] ?: $v["ID"]))) : null;
@@ -1616,6 +1659,12 @@ trait QModel_Trait
 								
 								if ($obj instanceof QIModelArray)
 								{
+									$obj_id = is_array($v) ? ($v["_id"] ?: ($v["Id"] ?: ($v["id"] ?: $v["ID"]))) : null;
+									if ($obj_id)
+										$obj = $refs[$obj_id][$expected_type] ?: ($refs[$obj_id][$expected_type] = new $expected_type());
+									else
+										$obj = new $expected_type();
+
 									$obj->setModelProperty($this->getModelType()->properties[$k], $this);
 									$this->{"set{$k}"}($obj);
 									
@@ -1643,15 +1692,9 @@ trait QModel_Trait
 									}
 									else
 										$use_v = $v;
-
-									/*
-									if (($use_v = $v["_items"]))
-									{
-										unset($v["_items"]);
-									}
-									else
-										$use_v = $v;
-									*/
+									
+									if (isset($use_v['_ity']))
+										unset($use_v['_ity']);
 
 									foreach ($use_v as $vk => $vv)
 									{
@@ -1674,13 +1717,30 @@ trait QModel_Trait
 													$v_obj = $refs[$v_obj_id][$v_expected_type] ?: ($refs[$v_obj_id][$v_expected_type] = new $v_expected_type());
 												else
 													$v_obj = new $v_expected_type();
-												
-												if ($v_obj instanceof QIModel)
-													$v_obj->extractFromArray($vv, $prop_selector, $obj, $include_nonmodel_properties, $refs);
 
+												if ($v_obj instanceof QIModel)
+												{
+													$ref_vobj = null;
+													if ($setup_refs && $vv['_is_ref'] && ($_ty = ($vv['_ty'] ?: $vv['_ity'])) && ($vv['_id'] || $vv['_tmpid']))
+													{
+														$refIndx = $_ty . ($vv['_id'] ? "_id_" . $vv['_id'] : "_tmpid_" . $vv['_tmpid']);
+														if (!($ref_vobj = $refs_new['refs'][$refIndx]))
+														{
+															$refs_new['awlist'][$refIndx][] = [$this, $k, true, $vk];
+														}
+													}
+
+													// put the loaded ref
+													if (!$ref_vobj)
+													{
+														$v_obj->extractFromArray($vv, $prop_selector, $obj, $include_nonmodel_properties, $refs, $setup_refs, $refs_new);
+													}
+													else
+														$v_obj = $ref_vobj;
+												}
 												$this->{"set{$k}_Item_"}($v_obj, $vk);
 											}
-											else 
+											else
 												$this->{"set{$k}_Item_"}($vv, $vk);
 										}
 										else
@@ -1710,31 +1770,45 @@ trait QModel_Trait
 											unset($obj->_tsp[$unsettsp_key]);
 									}
 									
-									/*
-									if (\QAutoload::GetDevelopmentMode())
-									{
-										# we need to set the transform state info on the items where possible
-										if ($obj->_tsp && $obj->_rowi)
-										{
-											foreach ($obj->_tsp as $_tsp_pos => $_tsp_state)
-											{
-												if (($_tsp_state & \QModel::TransformDelete) && ($obj[$_tsp_pos] instanceof \QIModel))
-													$obj[$_tsp_pos]->setTransformState($_tsp_state);
-											}
-										}
-									}
-									*/
 								}
 								else if ($obj instanceof QIModel)
 								{
-									$obj->extractFromArray($v, $prop_selector, $this, $include_nonmodel_properties, $refs);
+									$ref_obj = null;
+									if ($setup_refs && $v['_is_ref'] && ($_ty = ($v['_ty'] ?: $v['_ity'])) && ($v['_id'] || $v['_tmpid']))
+									{
+										$refIndx = $_ty . ($v['_id'] ? "_id_" . $v['_id'] : "_tmpid_" . $v['_tmpid']);
+										if (!($ref_obj = $refs_new['refs'][$refIndx]))
+										{
+											$refs_new['awlist'][$refIndx][] = [$this, $k];
+										}
+									}
+
+									// put the loaded ref
+									if (!$ref_obj)
+									{
+										$obj->extractFromArray($v, $prop_selector, $this, $include_nonmodel_properties, $refs, $setup_refs, $refs_new);
+									}
+									else
+										$obj = $ref_obj;
+
 									$this->{"set{$k}"}($obj);
 								}
 								else
 									$this->{"set{$k}"}($obj);
 							}
 							else
-								$this->{"set{$k}"}($v);
+							{
+								$hasSetter = true;
+								if ($include_nonmodel_properties)
+								{
+									$hasSetter = (method_exists($this, "set{$k}"));
+									if (!$hasSetter)
+										$this->{$k} = $v;
+								}
+
+								if ($hasSetter)
+									$this->{"set{$k}"}($v);									
+							}
 							
 							break;
 						}
@@ -1746,6 +1820,35 @@ trait QModel_Trait
 								throw new Exception("should not be, to do ?!");
 							}
 						}
+					}
+				}
+			}
+		}
+		
+		if ($setup_refs && (!$array['_is_ref']) && (($_ty = ($array['_ty'] ?: $array['_ity'])) && ($array['_id'] || $array['_tmpid'])))
+		{
+			$refIndx = $_ty . ($array['_id'] ? "_id_" . $array['_id'] : "_tmpid_" . $array['_tmpid']);
+			if (isset($refs_new['refs'][$refIndx]))
+			{
+				if (\QAutoload::GetDevelopmentMode())
+				{
+					throw new \Exception('duplicate at indx: ' . $refIndx);
+				}
+			}
+
+			$refs_new['refs'][$refIndx] = $this;
+			if (($to_set_on = $refs_new['awlist'][$refIndx]))
+			{
+				foreach ($to_set_on ?: [] as $tson_itm)
+				{
+					list($p, $kinp, $in_arr, $in_arr_k) = $tson_itm;
+					if ($in_arr)
+					{
+						$p->{"set{$kinp}_Item_"}($this, $in_arr_k);
+					}
+					else
+					{
+						$p->{"set{$kinp}"}($this);
 					}
 				}
 			}
@@ -2254,45 +2357,173 @@ trait QModel_Trait
 	 */
 	protected function setupSyncPropsInSelector(&$selector, &$bag = [], $depth = 0)
 	{
-		if (!$bag)
-			$bag = [];
-
-		// selector can't be null at this stage
-		if (($selector === null) || ($selector === true) || isset($bag[$this->getTemporaryId()]))
-			return;
-
-		$bag[$this->getTemporaryId()] = $this;
-
-		$is_root = ($depth === 0);
-		$depth++;
-
-		if (!$this->_synchronizable && !$is_root)
-			return;
-
-		if (!$selector)
-			$selector = [];
-		else if (is_string($selector))
-			$selector = qParseEntity($selector);
-
-		if ($this->_synchronizable)
-			$selector = array_merge($selector, qParseEntity($this::GetSyncProps()));
-
-		foreach ($this as $k => $itms)
+		if (Q_IS_TFUSE)
 		{
-			if ((!($itms instanceof \QIModel)) || ($selector[$k] === null))
-				continue;
+				// selector can't be null at this stage
+			if (($selector === null) || ($selector === true))
+				return;
 
-			if (qis_array($itms))
+			$cc = get_class($this);
+			$id = $this->_id;
+			if ($bag === null)
+				$bag = [];
+
+			else if (($id && ($this === $bag[$cc][$id])) || ($bag[$cc][""] && in_array($this, $bag[$cc][""], true)))
+				return;
+
+			if ($id)
+				$bag[$cc][$id] = $this;
+			else
+				$bag[$cc][""][] = $this;
+
+			$is_root = ($depth === 0);
+			$depth++;
+
+			if ((!($this instanceof \Omi\TF\FiltrableByOwnership)) && !$is_root)
+				return;
+
+			if (!$selector)
+				$selector = [];
+
+			else if (is_string($selector))
+				$selector = qParseEntity($selector);
+
+			if ($this instanceof \Omi\TF\FiltrableByOwnership)
 			{
-				foreach ($itms as $itm)
+				$selector = array_merge($selector, qParseEntity($this::GetFiltrableEntity()));
+			}
+
+			foreach ($this as $k => $itms)
+			{
+				if ((!($itms instanceof \QIModel)) || ($selector[$k] === null))
+					continue;
+
+				if (qis_array($itms))
 				{
-					if ($itm instanceof \QModel)
-						$itm->setupSyncPropsInSelector($selector[$k], $bag, $depth);
+					foreach ($itms as $itm)
+					{
+						if ($itm instanceof \QModel)
+							$itm->setupSyncPropsInSelector($selector[$k], $bag, $depth);
+					}
+				}
+				else
+					$itms->setupSyncPropsInSelector($selector[$k], $bag, $depth);
+			}
+		}
+		else
+		{
+			if (!$bag)
+				$bag = [];
+
+			// selector can't be null at this stage
+			if (($selector === null) || ($selector === true) || isset($bag[$this->getTemporaryId()]))
+				return;
+
+			$bag[$this->getTemporaryId()] = $this;
+
+			$is_root = ($depth === 0);
+			$depth++;
+
+			if (!$this->_synchronizable && !$is_root)
+				return;
+
+			if (!$selector)
+				$selector = [];
+			else if (is_string($selector))
+				$selector = qParseEntity($selector);
+
+			if ($this->_synchronizable)
+				$selector = array_merge($selector, qParseEntity($this::GetSyncProps()));
+
+			foreach ($this as $k => $itms)
+			{
+				if ((!($itms instanceof \QIModel)) || ($selector[$k] === null))
+					continue;
+
+				if (qis_array($itms))
+				{
+					foreach ($itms as $itm)
+					{
+						if ($itm instanceof \QModel)
+							$itm->setupSyncPropsInSelector($selector[$k], $bag, $depth);
+					}
+				}
+				else
+					$itms->setupSyncPropsInSelector($selector[$k], $bag, $depth);
+			}
+		}
+	}
+	
+	/**
+	 * USED BY TFUSE !!!
+	 * 
+	 * @param type $value
+	 * @param type $selector
+	 * @param type $include_nonmodel_properties
+	 * @param type $with_type
+	 * @param type $with_hidden_ids
+	 * @param type $ignore_nulls
+	 * @param type $refs
+	 * @param type $refs_no_class
+	 * @param type $include_refs
+	 * @return type
+	 */
+	public static function ArrayToArray($value, $selector = null, $include_nonmodel_properties = false, $with_type = true, $with_hidden_ids = true, $ignore_nulls = true, &$refs = null, 
+		&$refs_no_class = null, $include_refs = false)
+	{
+		$arr = [];
+		foreach ($value ?: [] as $key => $val)
+		{
+			$ty = gettype($val);
+			
+			/* "boolean" "integer" "double" "string" "array" "object" "resource" "NULL" "unknown type"*/
+			switch ($ty)
+			{
+				case "string":
+				#case "array":
+				case "integer":
+				case "double":
+				case "boolean":
+				{
+					$validUTF8 = (!(false === mb_detect_encoding($val, 'UTF-8', true)));
+					if (!$validUTF8)
+						$val = iconv("UTF-8", "ISO-8859-1//TRANSLIT", $val);
+					$validUTF8 = (!(false === mb_detect_encoding($val, 'UTF-8', true)));
+
+					if (!$validUTF8)
+					{
+						if (\QAutoload::GetDevelopmentMode())
+							echo '<div style="color: red;">Not utf8 - ' . $val . '</div>';
+					}
+					$arr[$prop] = $val;
+					break;
+				}
+				case "NULL":
+				{
+					if (!$ignore_nulls)
+						$arr[$prop] = null;
+					break;
+				}
+				case "array":
+				{
+					$arr[$key] = static::ArrayToArray($val, $selector, $include_nonmodel_properties, $with_type, $with_hidden_ids, $ignore_nulls, $refs, $refs_no_class, $include_refs);
+					break;
+				}
+				case "object":
+				{
+					if ($val instanceof \QIModel)
+						$arr[$key] = $val->toArray($selector, $include_nonmodel_properties, $with_type, $with_hidden_ids, $ignore_nulls, $refs, $refs_no_class, $include_refs);
+					else
+						$arr[$key] = (array)$val;
+					break;
+				}
+				default:
+				{
+					break;
 				}
 			}
-			else
-				$itms->setupSyncPropsInSelector($selector[$k], $bag, $depth);
 		}
+		return $arr;
 	}
 	
 	protected static $Sync_Mapping = [
@@ -2558,5 +2789,6 @@ trait QModel_Trait
 		"Users.Context" => true,
 		
 	];
+	
 }
 

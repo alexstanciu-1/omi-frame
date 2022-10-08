@@ -568,29 +568,7 @@ trait QModel_Methods
 		else
 			return null;
 	}
-
-	/**
-	 * Default setter in case we force getters and setters with the `private` or `protected` keywords
-	 * 
-	 * @param string $property
-	 * @param mixed $value
-	 * 
-	 * @return boolean
-	 */
 	
-	/*
-	public function __set($property, $value)
-	{
-		if ($property[0] == '_')
-		{
-			$this->{$property} = $value;
-			return;
-		}
-		return $this->set($property, $value);
-	}
-	 * 
-	 */
-
 	/**
 	 * Run a transform on a MODEL
 	 * The action is one of the QIModel::ModelState*, custom actions may be used as strings
@@ -614,8 +592,6 @@ trait QModel_Methods
 			bool $trigger_save = false, bool $trigger_import = false)
 	{
 		// if the object is not marked for transform or a lock is already in place on this object we avoid infinte loop
-		//var_dump($recurse);
-		//die();
 
 		if ($this->_lk && ($recurse === true))
 			return $this;
@@ -797,7 +773,7 @@ trait QModel_Methods
 		// link it as a reference
 		$m_type = $this->getModelType();
 		
-		$str .= "{\"_ty\":\"".$m_type->class."\"";
+		$str .= "{\"_ty\":" . json_encode($m_type->class);
 		$id = $this->getId();
 		if ($id === null)
 			$str .= ",\"_tmpid\":".$this->getTemporaryId();
@@ -1653,11 +1629,228 @@ trait QModel_Methods
 		return true;
 	}
 	
+	/**
+	 * 
+	 * @param type $selector
+	 * @param type $transform_state
+	 * @param type $_bag
+	 * @return type
+	 */
+	public function beforeCommitTransaction($selector = null, $transform_state = null, &$_bag = null, $is_starting_point = true, $appProp = null)
+	{
+		$cc = get_class($this);
+
+		$id = $this->_id;
+		if ($_bag === null)
+			$_bag = [];
+		else if (($id && ($this === $_bag[$cc][$id])) || ($_bag[$cc][""] && in_array($this, $_bag[$cc][""], true)))
+			return;
+
+		if ($id)
+			$_bag[$cc][$id] = $this;
+		else
+			$_bag[$cc][""][] = $this;
+
+		// do the call on the entire entity
+		$this->callOnEntity($selector, "beforeCommitTransaction", $transform_state, $_bag, $is_starting_point, $cc, $appProp);
+	}
+	
 	public function getBindValue()
 	{
 		return get_class($this)."|".$this->getId();
 	}
 	
+	/**
+	 * Outputs the content of the object into a JSON string. 
+	 * The function avoids recursion
+	 * Also 2 objects of the same class and same id (getId() is used), will not be included twice.
+	 * 
+	 * @return string
+	 */
+	public function toJSON($selector = null, $include_nonmodel_properties = false, $with_type = true, $with_hidden_ids = true, 
+						$ignore_nulls = true, &$refs = null, &$refs_no_class = null)
+	{
+		if ($selector === null)
+			$selector = static::GetModelEntity();
+		if (is_string($selector))
+			$selector = qParseEntity($selector);
+
+		if (!(($selector !== null) && is_array($selector)))
+			return;
+
+		$class = get_class($this);
+
+		$str = "{";
+		$pp_comma = "";
+		if ($with_type)
+		{
+			$str .= "\"_ty\":".json_encode($class, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+			$pp_comma = ",";
+		}
+
+		$id = $this->getId();
+		$was_included = false;
+		if ($id !== null)
+		{
+			if ($with_hidden_ids)
+			{
+				$str .= "{$pp_comma}\"_id\":".json_encode($id, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+				$pp_comma = ",";
+			}
+
+			if ($refs === null)
+				$refs = [];
+			if (isset($refs[$id][$class]))
+				$was_included = true;
+			else
+				$refs[$id][$class] = $this;
+		}
+		else if (!is_array($selector))
+		{
+			if ($refs_no_class === null)
+				$refs_no_class = [];
+			if (($refs_class = $refs_no_class[$class]) && in_array($this, $refs_class, true))
+				$was_included = true;
+			else
+				$refs_no_class[$class][] = $this;
+		}
+
+		$data = reset($selector);
+		$prop = key($selector);
+		$all_keys = ($prop === "*");
+		$type_inf = $all_keys ? QModelQuery::GetTypesCache(get_class($this)) : null;
+		
+		if (!$was_included)
+		{
+			// handle all properties in the selector
+			if ($all_keys)
+			{
+				if ($include_nonmodel_properties || !$type_inf)
+				{
+					$exposedProps = [];
+					$refCls = new ReflectionClass($this);
+					$props = $refCls->getProperties();
+					if ($props && (count($props) > 0))
+					{
+						foreach ($props as $prop)
+						{
+							if ($prop->isPublic())
+								$exposedProps[$prop->name] = $prop->name;
+						}
+					}
+
+					reset($exposedProps);
+					$prop = key($exposedProps);
+				}
+				else
+				{
+					// skip #%tables
+					next($type_inf);
+					// skip #%table
+					next($type_inf);
+					// skip #%id
+					next($type_inf);
+					// skip #%misc
+					next($type_inf);
+
+					$prop = key($type_inf);
+				}
+				// we no longer loop
+				$data = null;
+			}
+
+			while ($prop)
+			{
+				$val = $this->{$prop};
+				$ty = gettype($val);
+				
+				/* "boolean" "integer" "double" "string" "array" "object" "resource" "NULL" "unknown type"*/
+				switch ($ty)
+				{
+					case "string":
+					{
+						$str .= "{$pp_comma}\"{$prop}\":".
+								(((($enc = json_encode($val, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)) !== false) && ($enc !== null)) ? $enc : 
+									json_encode(iconv('UTF-8', 'UTF-8//IGNORE', $val), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+								//json_encode($val, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+						$pp_comma = ",";
+						break;
+					}
+					case "NULL":
+					{
+						if (!$ignore_nulls)
+						{
+							$str .= "{$pp_comma}\"{$prop}\":null";
+							$pp_comma = ",";
+						}
+						break;
+					}
+					case "integer":
+					case "double":
+					{
+						$str .= "{$pp_comma}\"{$prop}\":".$val;
+						$pp_comma = ",";
+						break;
+					}
+					case "boolean":
+					{
+						$str .= "{$pp_comma}\"{$prop}\":".($val ? "true" : "false");
+						$pp_comma = ",";
+						break;
+					}
+					case "array":
+					case "object":
+					{
+						if ($val instanceof QIModel)
+						{
+							$str .= "{$pp_comma}\"{$prop}\":";
+							$str .= $val->toJSON($data, $include_nonmodel_properties, $with_type, $with_hidden_ids, $ignore_nulls, $refs, $refs_no_class);
+						}
+						else if ($include_nonmodel_properties)
+						{
+							$str .= "{$pp_comma}\"{$prop}\":";
+							$str .= self::NMtoJSON($val, $data, $include_nonmodel_properties, $with_type, $with_hidden_ids, $ignore_nulls, $refs, $refs_no_class);
+						}
+						else
+						{
+							$str .= "{$pp_comma}\"{$prop}\":".
+								(((($enc = json_encode($val, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)) !== false) && ($enc !== null)) ? $enc : 
+									json_encode(iconv('UTF-8', 'UTF-8//IGNORE', $val), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+							//json_encode($val, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+						}
+						$pp_comma = ",";
+						break;
+					}
+					default:
+						break;
+				}
+
+				if ($all_keys)
+				{
+					if ($include_nonmodel_properties || !$type_inf)
+					{
+						next($exposedProps);
+						$prop = key($exposedProps);
+					}
+					else
+					{
+						next($type_inf);
+						$prop = key($type_inf);
+					}
+					$data = $selector[$prop] ?: [];
+				}
+				else
+				{
+					$data = next($selector);
+					$prop = key($selector);
+				}
+			}
+		}
+		$str .= "}";
+		
+		return $str;
+	}
+		
 	/**
 	 * Transforms the object into a PHP array. 
 	 * The function avoids recursion
@@ -1665,7 +1858,8 @@ trait QModel_Methods
 	 * 
 	 * @return array
 	 */
-	public function toArray($selector = null, $include_nonmodel_properties = false, $with_type = true, $with_hidden_ids = true, $ignore_nulls = true, &$refs = null, &$refs_no_class = null)
+	public function toArray($selector = null, $include_nonmodel_properties = false, $with_type = true, $with_hidden_ids = true, $ignore_nulls = true, &$refs = null, 
+					&$refs_no_class = null, $include_refs = false)
 	{
 		/*if ($selector === null)
 			$selector = static::GetModelEntity();*/
@@ -1675,6 +1869,8 @@ trait QModel_Methods
 		/*else if (!(($selector !== null) && is_array($selector)))
 			return;*/
 		
+		$ignore_refs = is_array($selector);
+		
 		$class = get_class($this);
 		
 		$arr = [];
@@ -1682,27 +1878,34 @@ trait QModel_Methods
 			$arr["_ty"] = $class;
 		
 		$id = $this->getId();
+		
 		$was_included = false;
-		if ($id !== null)
+		if (!$ignore_refs)
 		{
-			if ($with_hidden_ids)
-				$arr["_id"] = $id;
-			
-			if ($refs === null)
-				$refs = [];
-			if (isset($refs[$id][$class]))
-				$was_included = true;
+			if ($id !== null)
+			{
+				if ($with_hidden_ids)
+					$arr["_id"] = $id;
+		
+				if ($refs === null)
+					$refs = [];
+				if (isset($refs[$id][$class]))
+					$was_included = true;
+				else
+					$refs[$id][$class] = $this;
+			}
 			else
-				$refs[$id][$class] = $this;
-		}
-		else
-		{
-			if ($refs_no_class === null)
-				$refs_no_class = [];
-			if (($refs_class = $refs_no_class[$class]) && in_array($this, $refs_class, true))
-				$was_included = true;
-			else
-				$refs_no_class[$class][] = $this;
+			{
+				if ($refs_no_class === null)
+					$refs_no_class = [];
+				if (($refs_class = $refs_no_class[$class]) && in_array($this, $refs_class, true))
+					$was_included = true;
+				else
+					$refs_no_class[$class][] = $this;
+					
+				if (Q_IS_TFUSE)
+					$arr["_tmpid"] = $this->getTemporaryId();
+			}
 		}
 		
 		if (!$was_included)
@@ -1724,7 +1927,8 @@ trait QModel_Methods
 					reset($obj_props);
 					$prop = key($obj_props);
 					// skip model reserved properties
-					while($prop && (($prop === "_ty") || ($prop === "_id") || ($prop === "_sc") || ($prop === "_tmpid")))
+					while($prop && (($prop === "_ty") || ($prop === "_id") || ($prop === "_sc") || ($prop === "_tmpid")) || ($prop === "_qini") || ($prop === "_found_on_merge") || 
+						($prop === "_typeIdsPath"))
 					{
 						next($obj_props);
 						$prop = key($obj_props);
@@ -1751,16 +1955,29 @@ trait QModel_Methods
 			{
 				$val = $this->{$prop};
 				$ty = gettype($val);
-				
+
 				/* "boolean" "integer" "double" "string" "array" "object" "resource" "NULL" "unknown type"*/
 				switch ($ty)
 				{
 					case "string":
-					case "array":
+					#case "array":
 					case "integer":
 					case "double":
 					case "boolean":
 					{
+						if (Q_IS_TFUSE)
+						{
+							$validUTF8 = (!(false === mb_detect_encoding($val, 'UTF-8', true)));
+							if (!$validUTF8)
+								$val = iconv("UTF-8", "ISO-8859-1//TRANSLIT", $val);
+							$validUTF8 = (!(false === mb_detect_encoding($val, 'UTF-8', true)));
+
+							if (!$validUTF8)
+							{
+								if (\QAutoload::GetDevelopmentMode())
+									echo '<div style="color: red;">Not utf8 - ' . $val . '</div>';
+							}
+						}
 						$arr[$prop] = $val;
 						break;
 					}
@@ -1770,10 +1987,21 @@ trait QModel_Methods
 							$arr[$prop] = null;
 						break;
 					}
+					case "array":
+					{
+						if (Q_IS_TFUSE)
+						{
+							$arr[$prop] = static::ArrayToArray($val, $selector, $include_nonmodel_properties, $with_type, $with_hidden_ids, $ignore_nulls, 
+								$refs, $refs_no_class, $include_refs);
+						}
+						else
+							$arr[$prop] = $val;
+						break;
+					}
 					case "object":
 					{
-						if ($val instanceof QIModel)
-							$arr[$prop] = $val->toArray($data, $include_nonmodel_properties, $with_type, $with_hidden_ids, $ignore_nulls, $refs, $refs_no_class);
+						if ($val instanceof \QIModel)
+							$arr[$prop] = $val->toArray($data, $include_nonmodel_properties, $with_type, $with_hidden_ids, $ignore_nulls, $refs, $refs_no_class, $include_refs);
 						else
 							$arr[$prop] = (array)$val;
 						break;
@@ -1791,7 +2019,8 @@ trait QModel_Methods
 						next($obj_props);
 						$prop = key($obj_props);
 						// skip model reserved properties
-						while($prop && (($prop === "_ty") || ($prop === "_id") || ($prop === "_sc") || ($prop === "_tmpid")))
+						while($prop && (($prop === "_ty") || ($prop === "_id") || ($prop === "_sc") || ($prop === "_tmpid") || ($prop === "_qini") || ($prop === "_found_on_merge") || 
+							($prop === "_typeIdsPath")))
 						{
 							next($obj_props);
 							$prop = key($obj_props);
@@ -1811,7 +2040,15 @@ trait QModel_Methods
 				}
 			}
 		}
-		
+		else if (Q_IS_TFUSE && $include_refs)
+		{
+			$arr["_is_ref"] = true;
+		}
+
+		// put the temporary id all the time
+		if (Q_IS_TFUSE && $include_refs && (!isset($arr["_tmpid"])))
+			$arr["_tmpid"] = $this->getTemporaryId();
+
 		return $arr;
 	}
 	
@@ -1875,6 +2112,7 @@ trait QModel_Methods
 		else
 			return false;
 	}
+	
 	/**
 	 * TODO - change it for bulk remove
 	 * 
@@ -1900,6 +2138,8 @@ trait QModel_Methods
 			return $le;
 		
 		$type_inf = QModelQuery::GetTypesCache($class);
+		if (!($type_inf))
+			throw new \Exception("Cannot load type for [{$class}]");
 		next($type_inf);
 		next($type_inf);
 		next($type_inf);
@@ -1939,6 +2179,35 @@ trait QModel_Methods
 		return (is_array($selector) ? qImplodeEntity($selector) : $selector)." ??LIMIT[LIMIT ?,?]";
 	}
 
+	/**
+	 * Gets a default for a item selector if none was specified
+	 * 
+	 * @return string
+	 */
+	public static function GetItemQuery($view_tag = null, $selector = null)
+	{
+		if ($view_tag && ($selector === null))
+		{
+			throw new \Exception('Deprecated situation, this should not happen!');
+			
+			/**
+			$app = \QApp::GetDataClass();
+			$selector = $app::GetFormEntity_Final($view_tag);
+			if (is_string($selector))
+				$selector = qParseEntity($selector);
+			// join it with static::GetModelEntity()
+			$selector = qJoinSelectors($selector, static::GetModelEntity());
+			if (is_array($selector))
+				$selector = qImplodeEntity($selector);
+			*/
+		}
+		return (($selector !== null) ? (is_array($selector) ? qImplodeEntity($selector) : $selector) : static::GetModelEntity())." WHERE 1 "
+				. " ??Id?<AND[Id=?] "
+				. " ??Owner?<AND[Owner.Id=?] "
+				. " ??CreatedBy?<AND[CreatedBy.Id=?] "
+		. " LIMIT 1";
+	}
+	
 	/**
 	 * Gets a default for a item selector if none was specified
 	 * 
@@ -2427,7 +2696,17 @@ trait QModel_Methods
 	
 	public static function GetDefaultLanguage_Dim()
 	{
-		return (static::$DimsDef && static::$DimsDef["lang"]) ? q_reset(static::$DimsDef["lang"]) : (static::$DefaultLanguage_Dim ?: static::$Language_Dim);
+		return (static::$DimsDef && static::$DimsDef["lang"]) ? reset(static::$DimsDef["lang"]) : (static::$DefaultLanguage_Dim ?: static::$Language_Dim);
+	}
+	
+	/**
+	 * Gets a default for a listing selector if none was specfied
+	 * 
+	 * @return string
+	 */
+	public static function GetPropertyListingQuery($property)
+	{
+		return null;
 	}
 	
 	/**
@@ -2493,6 +2772,16 @@ trait QModel_Methods
 	public static function GetQueryForView()
 	{
 		return static::GetItemQuery();
+	}
+	
+	/**
+	 * Gets a default for a item selector if none was specfied
+	 * 
+	 * @return string
+	 */
+	public static function GetPropertyItemQuery($property)
+	{
+		return null;
 	}
 
 	/**
@@ -2574,6 +2863,7 @@ trait QModel_Methods
 			$this->{"set{$property}"}($value);
 		//$this->{"set{$property}"}($value);
 	}
+	
 	/**
 	 * @param string $name
 	 * @param array $arguments
@@ -2712,7 +3002,9 @@ trait QModel_Methods
 					echo ",";
 				if ($is_assoc)
 				{
-					echo json_encode((string)$k, JSON_UNESCAPED_SLASHES);
+					//echo json_encode((string)$k, JSON_UNESCAPED_SLASHES);
+					echo ((($enc = json_encode((string)$k, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)) !== false) && ($enc !== null)) ? $enc : 
+						json_encode(iconv('UTF-8', 'UTF-8//IGNORE', (string)$k), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 					echo ":";
 				}
 				echo static::QOutputJson($v, $ignore_nulls, $refs, $metadata, $array_in_items);
@@ -2733,43 +3025,84 @@ trait QModel_Methods
 	 * @param type $array_in_items
 	 * @return null
 	 */
-	public static function QToJSon($data, $ignore_nulls = false, &$refs = null, &$refs_no_class = null, $metadata = true, $array_in_items = true)
+	public static function QToJSon($data, $ignore_nulls = true, &$refs = null, &$refs_no_class = null, $metadata = true, $array_in_items = true)
 	{
-		if ($refs === null)
-			$refs = [];
-		if ($refs_no_class === null)
-			$refs_no_class = [];
-		if ($data === null)
-			echo "null";
-		else if (is_string($data))
-			echo json_encode($data, JSON_UNESCAPED_SLASHES);
-		else if (is_bool($data))
-			echo $data ? "true" : "false";
-		else if (is_integer($data) || is_float($data))
-			echo $data;
-		else if ($data instanceof \QIModel)
-			echo $data->toJSON(null, false, false, true, $ignore_nulls, $refs, $refs_no_class);
-		else if (is_array($data) || ($is_obj = is_object($data)))
+		if (Q_IS_TFUSE)
 		{
-			$is_assoc = $is_obj || (array_values($data) !== $data);
-			echo $is_assoc ? "{" : "[";
-			$comma = false;
-			foreach ($data as $k => $v)
+			$ret = [];
+			if ($data === null)
+				$ret[] = "null";
+			else if (is_string($data))
+				$ret[] = json_encode($data, JSON_UNESCAPED_SLASHES);
+			else if (is_bool($data))
+				$ret[] = $data ? "true" : "false";
+			else if (is_integer($data) || is_float($data))
+				$ret[] = $data;
+			else if ($data instanceof \QIModel)
+				# toJSON($selector = null, $include_nonmodel_properties = false, $with_type = true, $with_hidden_ids = true, $ignore_nulls = true, &$refs = null, &$refs_no_class = null)
+				$ret[] = $data->exportToJs($ignore_nulls); # $selector, $include_nonmodel_properties, $with_type, $with_hidden_ids, $ignore_nulls, $refs, $refs_no_class);
+			else if (($is_obj = is_object($data)) || is_array($data))
 			{
-				if ($comma)
-					echo ",";
-				if ($is_assoc)
+				$is_assoc = $is_obj || (array_values($data) !== $data);
+				$ret[] = $is_assoc ? "{" : "[";
+				$comma = false;
+				foreach ($data as $k => $v)
 				{
-					echo json_encode((string)$k, JSON_UNESCAPED_SLASHES);
-					echo ":";
+					if ($comma)
+						$ret[] = ",";
+					if ($is_assoc)
+					{
+						$ret[] = json_encode((string)$k, JSON_UNESCAPED_SLASHES);
+						$ret[] = ":";
+					}
+					$ret[] = static::QToJSon($v, $ignore_nulls);
+					$comma = true;
 				}
-				echo static::QToJSon($v, $ignore_nulls, $refs, $refs_no_class, $metadata, $array_in_items);
-				$comma = true;
+				$ret[] = $is_assoc ? "}" : "]";
 			}
-			echo $is_assoc ? "}" : "]";
+			else
+				throw new Exception("Unknow data type");
+		
+			return implode('', $ret);
 		}
 		else
-			throw new Exception("Unknow data type");
+		{
+			if ($refs === null)
+				$refs = [];
+			if ($refs_no_class === null)
+				$refs_no_class = [];
+			if ($data === null)
+				echo "null";
+			else if (is_string($data))
+				echo json_encode($data, JSON_UNESCAPED_SLASHES);
+			else if (is_bool($data))
+				echo $data ? "true" : "false";
+			else if (is_integer($data) || is_float($data))
+				echo $data;
+			else if ($data instanceof \QIModel)
+				echo $data->toJSON(null, false, false, true, $ignore_nulls, $refs, $refs_no_class);
+			else if (is_array($data) || ($is_obj = is_object($data)))
+			{
+				$is_assoc = $is_obj || (array_values($data) !== $data);
+				echo $is_assoc ? "{" : "[";
+				$comma = false;
+				foreach ($data as $k => $v)
+				{
+					if ($comma)
+						echo ",";
+					if ($is_assoc)
+					{
+						echo json_encode((string)$k, JSON_UNESCAPED_SLASHES);
+						echo ":";
+					}
+					echo static::QToJSon($v, $ignore_nulls, $refs, $refs_no_class, $metadata, $array_in_items);
+					$comma = true;
+				}
+				echo $is_assoc ? "}" : "]";
+			}
+			else
+				throw new Exception("Unknow data type");
+		}
 	}
 
 	//======================================================== CSV Export ========================================================
@@ -3388,6 +3721,75 @@ trait QModel_Methods
 		return \QModel::$TransactionFlag;
 	}
 	
+	/**
+	 * 
+	 * @param type $selector
+	 * @param type $transform_state
+	 * @param type $_bag
+	 * @return type
+	 */
+	public function afterBeginTransaction($selector = null, $transform_state = null, &$_bag = null, $is_starting_point = true, $appProp = null)
+	{
+		$cc = get_class($this);
+
+		$id = $this->_id;
+		if ($_bag === null)
+			$_bag = [];
+		else if (($id && ($this === $_bag[$cc][$id])) || ($_bag[$cc][""] && in_array($this, $_bag[$cc][""], true)))
+			return;
+
+		if ($id)
+			$_bag[$cc][$id] = $this;
+		else
+			$_bag[$cc][""][] = $this;
+
+		// do the call on the entire entity
+		$this->callOnEntity($selector, "afterBeginTransaction", $transform_state, $_bag, $is_starting_point, $cc, $appProp);
+	}
+
+	public function afterBeginTransaction_trait($selector = null, $transform_state = null, &$_bag = null, $parentProp = null, $parent = null)
+	{
+		if (!$this->getId())
+			$this->__isNEW__ = true;
+		if (($dataCls = \QApp::GetDataClass()) && $dataCls::$_USE_FILTER_BY_OWNERSHIP && ($this instanceof \Omi\TF\FiltrableByOwnership) && !$this->getId())
+		{
+			$isAgg = (defined('IS_AGREGATOR') && IS_AGREGATOR);
+			$IS_STARTUP = \Omi\App::Package_IsStartup();
+			$isStartingPoint = ($parent && ($parent instanceof \Omi\App));
+
+			// is starting point
+			$isFiltrable = false;
+			$isFiltrableForDynamic = false;
+			if ($isStartingPoint)
+			{
+				$prop = $parent->getModelType()->properties[$parentProp];
+				$isFiltrable = ($prop && $prop->storage && $prop->storage["filtrable"]);
+				$isFiltrableForDynamic = ($prop && $prop->storage && $prop->storage["filtrable_dynamic"]);
+			}
+
+			// we must not set the owner here
+			if ((!$this->wasSet("Owner") || !$this->wasSet("OwnerGroup")) && 
+				($isFiltrable || ($IS_STARTUP && $isFiltrableForDynamic)))
+			{
+				$user = \Omi\User::GetCurrentUser();
+				if ($user && !$this->wasSet("Owner"))
+					$this->setOwner($user->getClone("Id"));
+
+				if (!($this->wasSet("OwnerGroup")))
+				{
+					if (!$user || !$user->OwnerGroup)
+						throw new \Exception("User must be defined - Owner Group cannot be setup!");
+					$this->setOwnerGroup($user->OwnerGroup->getClone("Id"));	
+				}
+			}
+		}
+		else
+		{
+
+		}
+		return $this->afterBeginTransaction($selector, $transform_state, $_bag, $parentProp, $parent);
+	}
+	
 	######## QMODEL PATCH #############
 	
 	public function isNew(bool $test_with_merge_by = false, string $app_prop = null)
@@ -3698,188 +4100,6 @@ trait QModel_Methods
 	}
 
 	/**
-	 * Outputs the content of the object into a JSON string. 
-	 * The function avoids recursion
-	 * Also 2 objects of the same class and same id (getId() is used), will not be included twice.
-	 * 
-	 * @return string
-	 */
-	public function toJSON($selector = null, $include_nonmodel_properties = false, $with_type = true, $with_hidden_ids = true, $ignore_nulls = true, &$refs = null, &$refs_no_class = null)
-	{
-		if ($selector === null)
-			$selector = static::GetModelEntity();
-		if (is_string($selector))
-			$selector = qParseEntity($selector);
-
-		if (!(($selector !== null) && is_array($selector)))
-			return;
-
-		$class = get_class($this);
-
-		$str = "{";
-		$pp_comma = "";
-		if ($with_type)
-		{
-			$str .= "\"_ty\":".json_encode($class, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-			$pp_comma = ",";
-		}
-
-		$id = $this->getId();
-		$was_included = false;
-		if ($id !== null)
-		{
-			if ($with_hidden_ids)
-			{
-				$str .= "{$pp_comma}\"_id\":".json_encode($id, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-				$pp_comma = ",";
-			}
-
-			if ($refs === null)
-				$refs = [];
-			if (isset($refs[$id][$class]))
-				$was_included = true;
-			else
-				$refs[$id][$class] = $this;
-		}
-		else if (!is_array($selector))
-		{
-			if ($refs_no_class === null)
-				$refs_no_class = [];
-			if (($refs_class = $refs_no_class[$class]) && in_array($this, $refs_class, true))
-				$was_included = true;
-			else
-				$refs_no_class[$class][] = $this;
-		}
-
-		$data = reset($selector);
-		$prop = key($selector);
-		$all_keys = ($prop === "*");
-		$type_inf = $all_keys ? QModelQuery::GetTypesCache(get_class($this)) : null;
-		
-		if (!$was_included)
-		{
-			// handle all properties in the selector
-			if ($all_keys)
-			{
-				if ($include_nonmodel_properties || !$type_inf)
-				{
-					$exposedProps = [];
-					$refCls = new ReflectionClass($this);
-					$props = $refCls->getProperties();
-					if ($props && (count($props) > 0))
-					{
-						foreach ($props as $prop)
-						{
-							if ($prop->isPublic())
-								$exposedProps[$prop->name] = $prop->name;
-						}
-					}
-
-					reset($exposedProps);
-					$prop = key($exposedProps);
-				}
-				else
-				{
-					// skip #%tables
-					next($type_inf);
-					// skip #%table
-					next($type_inf);
-					// skip #%id
-					next($type_inf);
-					// skip #%misc
-					next($type_inf);
-
-					$prop = key($type_inf);
-				}
-				// we no longer loop
-				$data = null;
-			}
-
-			while ($prop)
-			{
-				$val = $this->{$prop};
-				$ty = gettype($val);
-				
-				/* "boolean" "integer" "double" "string" "array" "object" "resource" "NULL" "unknown type"*/
-				switch ($ty)
-				{
-					case "string":
-					{
-						$str .= "{$pp_comma}\"{$prop}\":".json_encode($val, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-						$pp_comma = ",";
-						break;
-					}
-					case "NULL":
-					{
-						if (!$ignore_nulls)
-						{
-							$str .= "{$pp_comma}\"{$prop}\":null";
-							$pp_comma = ",";
-						}
-						break;
-					}
-					case "integer":
-					case "double":
-					{
-						$str .= "{$pp_comma}\"{$prop}\":".$val;
-						$pp_comma = ",";
-						break;
-					}
-					case "boolean":
-					{
-						$str .= "{$pp_comma}\"{$prop}\":".($val ? "true" : "false");
-						$pp_comma = ",";
-						break;
-					}
-					case "array":
-					case "object":
-					{
-						if ($val instanceof QIModel)
-						{
-							$str .= "{$pp_comma}\"{$prop}\":";
-							$str .= $val->toJSON($data, $include_nonmodel_properties, $with_type, $with_hidden_ids, $ignore_nulls, $refs, $refs_no_class);
-						}
-						else if ($include_nonmodel_properties)
-						{
-							$str .= "{$pp_comma}\"{$prop}\":";
-							$str .= self::NMtoJSON($val, $data, $include_nonmodel_properties, $with_type, $with_hidden_ids, $ignore_nulls, $refs, $refs_no_class);
-						}
-						else
-							$str .= "{$pp_comma}\"{$prop}\":".json_encode($val, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-						$pp_comma = ",";
-						break;
-					}
-					default:
-						break;
-				}
-
-				if ($all_keys)
-				{
-					if ($include_nonmodel_properties || !$type_inf)
-					{
-						next($exposedProps);
-						$prop = key($exposedProps);
-					}
-					else
-					{
-						next($type_inf);
-						$prop = key($type_inf);
-					}
-					$data = $selector[$prop] ?: [];
-				}
-				else
-				{
-					$data = next($selector);
-					$prop = key($selector);
-				}
-			}
-		}
-		$str .= "}";
-		
-		return $str;
-	}
-	
-	/**
 	 * Export to json non model properties if needed
 	 * 
 	 * @param array|obj $data
@@ -3923,7 +4143,10 @@ trait QModel_Methods
 			{
 				case "string":
 				{
-					$str .= "{$pp_comma}\"{$prop}\":".json_encode($val, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+					$str .= "{$pp_comma}\"{$prop}\":".
+								(((($enc = json_encode($val, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)) !== false) && ($enc !== null)) ? $enc : 
+									json_encode(iconv('UTF-8', 'UTF-8//IGNORE', $val), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+							//json_encode($val, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 					$pp_comma = ",";
 					break;
 				}
@@ -3992,9 +4215,18 @@ trait QModel_Methods
 	 */
 	public function transform($parameters = null, $containers = null, $recurse = true, QBacktrace $backtrace = null, $as_simulation = false, &$issues = null, &$root_issues = null, bool $trigger_provision = true, bool $trigger_events = true, bool $trigger_save = false, bool $trigger_import = false)
 	{
-		$is_root_call = ((!$backtrace) || ($backtrace === $backtrace->root));
-		if ($is_root_call)
-			$this->setupSyncPropsInSelector($recurse);
+		if (Q_IS_TFUSE)
+		{
+			$is_root_call = ((!$backtrace) || ($backtrace === $backtrace->root));
+			if ($is_root_call && ($dataCls = \QApp::GetDataClass()) && $dataCls::$_USE_FILTER_BY_OWNERSHIP)
+				$this->setupSyncPropsInSelector($recurse);
+		}
+		else
+		{
+			$is_root_call = ((!$backtrace) || ($backtrace === $backtrace->root));
+			if ($is_root_call)
+				$this->setupSyncPropsInSelector($recurse);
+		}
 		return $this->frame_transform($parameters, $containers, $recurse, $backtrace, $as_simulation, $issues, $root_issues, $trigger_provision, $trigger_events, $trigger_save, $trigger_import);
 	}
 
@@ -4180,57 +4412,6 @@ trait QModel_Methods
 	}
 	
 	
-	/**
-	 * 
-	 * @param type $selector
-	 * @param type $transform_state
-	 * @param type $_bag
-	 * @return type
-	 */
-	public function afterBeginTransaction($selector = null, $transform_state = null, &$_bag = null, $is_starting_point = true, $appProp = null)
-	{
-		$cc = get_class($this);
-
-		$id = $this->_id;
-		if ($_bag === null)
-			$_bag = [];
-		else if (($id && ($this === $_bag[$cc][$id])) || ($_bag[$cc][""] && in_array($this, $_bag[$cc][""], true)))
-			return;
-
-		if ($id)
-			$_bag[$cc][$id] = $this;
-		else
-			$_bag[$cc][""][] = $this;
-
-		// do the call on the entire entity
-		$this->callOnEntity($selector, "afterBeginTransaction", $transform_state, $_bag, $is_starting_point, $cc, $appProp);
-	}
-
-	/**
-	 * 
-	 * @param type $selector
-	 * @param type $transform_state
-	 * @param type $_bag
-	 * @return type
-	 */
-	public function beforeCommitTransaction($selector = null, $transform_state = null, &$_bag = null, $is_starting_point = true, $appProp = null)
-	{
-		$cc = get_class($this);
-
-		$id = $this->_id;
-		if ($_bag === null)
-			$_bag = [];
-		else if (($id && ($this === $_bag[$cc][$id])) || ($_bag[$cc][""] && in_array($this, $_bag[$cc][""], true)))
-			return;
-
-		if ($id)
-			$_bag[$cc][$id] = $this;
-		else
-			$_bag[$cc][""][] = $this;
-
-		// do the call on the entire entity
-		$this->callOnEntity($selector, "beforeCommitTransaction", $transform_state, $_bag, $is_starting_point, $cc, $appProp);
-	}
 	
 	/**
 	 * We need to check data on the entire entity
@@ -4617,35 +4798,6 @@ trait QModel_Methods
 	public static function GetItemSyncQuery()
 	{
 		return static::GetModelSyncEntity()." WHERE 1 ??Id?<AND[Id=?] LIMIT 1";
-	}
-	
-	/**
-	 * Gets a default for a item selector if none was specified
-	 * 
-	 * @return string
-	 */
-	public static function GetItemQuery($view_tag = null, $selector = null)
-	{
-		if ($view_tag && ($selector === null))
-		{
-			throw new \Exception('Deprecated situation, this should not happen!');
-			
-			/**
-			$app = \QApp::GetDataClass();
-			$selector = $app::GetFormEntity_Final($view_tag);
-			if (is_string($selector))
-				$selector = qParseEntity($selector);
-			// join it with static::GetModelEntity()
-			$selector = qJoinSelectors($selector, static::GetModelEntity());
-			if (is_array($selector))
-				$selector = qImplodeEntity($selector);
-			*/
-		}
-		return (($selector !== null) ? (is_array($selector) ? qImplodeEntity($selector) : $selector) : static::GetModelEntity())." WHERE 1 "
-				. " ??Id?<AND[Id=?] "
-				. " ??Owner?<AND[Owner.Id=?] "
-				. " ??CreatedBy?<AND[CreatedBy.Id=?] "
-		. " LIMIT 1";
 	}
 	
 	/**

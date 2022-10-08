@@ -19,7 +19,6 @@ class QCodeStorage
 	 */
 	protected static $_Types_Cache;
 
-
 	// const ParamsRegExp = "/(^.*?(?=(?:\\n\\s*(?:validator|filter)\\:)|\$))|(?:(?:^|\\n)\\s*(?:((?:filter)|(?:validator))\\:)\\s*(.*?)(?=(?:\\n\\s*(?:validator|filter)\\:)|\$))/ius";
 	const ParamsRegExp = "/(.*?)(?:(?:\\n\\s*(?:(validator|filter))\\:)|\$)/ius";
 	
@@ -566,7 +565,7 @@ class QCodeStorage
 			$patch_php_code->findFirst(".QPHPTokenClass")->mergeWithClass($render_code->findFirst(".QPHPTokenClass"), true);
 
 			// echo "<textarea>{$patch_php_code}</textarea>";
-			// die();
+			// q_die();
 			
 			QCodeSync::syncCompiledCode($model_type->path, $patch_php_code);
 			

@@ -1,6 +1,5 @@
 <?php
 
-
 /**
  * @class.name QStorageTableColumn
  * @class.abstract true

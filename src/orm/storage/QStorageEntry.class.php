@@ -1,6 +1,5 @@
 <?php
 
-
 /**
  * @class.name QStorageEntry
  * @class.abstract true

@@ -588,7 +588,9 @@ class QCodeSync
 					{
 						foreach ($js_paths ?: [] as $js_path)
 						{
-							$frame_js_path = "/".ltrim(substr($js_path, $doc_root_len), "/");
+							#$frame_js_path = "/" . ltrim(substr($js_path, $doc_root_len), "/");
+							#echo $js_path . " | " . \QApp::GetWebPath($js_path) . "<br/>";
+							$frame_js_path = \QApp::GetWebPath($js_path);
 
 							// autoload_js.php
 							if (file_exists($js_path))
@@ -627,7 +629,8 @@ class QCodeSync
 					foreach ($css_paths ?: [] as $css_path)
 					{
 						// autoload_css.php
-						$frame_css_path = "/".ltrim(substr($css_path, $doc_root_len), "/");
+						#$frame_css_path = "/".ltrim(substr($css_path, $doc_root_len), "/");
+						$frame_css_path = \QApp::GetWebPath($css_path);
 						if (file_exists($css_path))
 						{
 							if (!$_Q_FRAME_CSS_LOAD_ARRAY[$css_class])
@@ -842,7 +845,7 @@ class QCodeSync
 			qArrayToCodeFile($classParents, "Q_CLASS_PARENTS_SAVE", $temp_folder."classes_parents.php");
 
 			// js_paths.js
-			file_put_contents($temp_folder."js_paths.js", 
+			filePutContentsIfChanged($temp_folder . "js_paths.js", 
 					"window.\$_Q_FRAME_JS_PATHS = ".json_encode($_Q_FRAME_JS_PATHS, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE).";\n".
 					"window.\$_Q_FRAME_CSS_PATHS = ".json_encode($_Q_FRAME_CSS_PATHS, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE).";\n");
 
@@ -855,7 +858,9 @@ class QCodeSync
 			}
 
 			// model_type.js : rethink it
-			file_put_contents($temp_folder."model_type.js", "window.\$_Q_FRAME_JS_CLASS_PARENTS = ".json_encode($new_Q_FRAME_JS_QModel_Types, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE).";\n");
+			filePutContentsIfChanged($temp_folder."model_type.js", 
+					"window.\$_Q_FRAME_JS_CLASS_PARENTS = ".json_encode($new_Q_FRAME_JS_QModel_Types,
+								JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE).";\n");
 
 			qArrayToCodeFile($_Q_FRAME_PHP_JS_ARRAY, "_Q_FRAME_PHP_JS_ARRAY", $temp_folder."php_js.php");
 
@@ -873,7 +878,7 @@ class QCodeSync
 			self::$Instance = null;
 			
 			
-			if ($this->_resolve_after)
+			if (false && $this->_resolve_after)
 			{
 				if (($ra_security = $this->_resolve_after['security']))
 				{
@@ -1217,6 +1222,17 @@ class QCodeSync
 	 */
 	public static function filePutContentsIfChanged($filename, $data, $create_dir = false)
 	{
+		# based on a static flag, only put contents if inside the running path
+		if (\QAutoload::$RunSyncOnlyInRunningFolder)
+		{
+			$runtime_folder = \QAutoload::GetRuntimeFolder();
+			$inside_runtime = (substr($filename, 0, strlen($runtime_folder)) === $runtime_folder);
+			if (!$inside_runtime)
+			{
+				return file_exists($filename) ? filesize($filename) : false;
+			}
+		}
+		
 		$data = is_string($data) ? $data : (string)$data;
 		if (file_exists($filename) && (filesize($filename) === strlen($data)) && (file_get_contents($filename) === $data))
 			// we say that there is no change
@@ -1557,7 +1573,7 @@ class QCodeSync
 		if (($first_DOM_Element = $obj_parsed->findFirst(".QPHPTokenXmlElement")))
 		{
 			$q_merge_val = $first_DOM_Element->getAttribute("qMerge");
-			if (((!$q_merge_val) && ($sync_item->mode === "tpl")) || (strtolower($q_merge_val) === "false"))
+			if (((!$q_merge_val) && ($sync_item->mode === "tpl")) || ($q_merge_val && (strtolower($q_merge_val) === "false")))
 				return null;
 		}
 		
@@ -1651,7 +1667,7 @@ class QCodeSync
 			
 			if ($render_code->jsFunc)
 			{
-				$js_path = substr($element->getTemplatePath(""), 0, -4).".gen.js";
+				$js_path = substr($element->getTemplatePath(""), 0, -3)."js";
 				$contents = file_exists($js_path) ? file_get_contents($js_path) : "";
 				foreach ($render_code->jsFunc as $func_tag => $func_code)
 				{
@@ -1723,6 +1739,25 @@ class QCodeSync
 			$extends = $element->parentClass ?: "\\QWebControl";
 			
 			$rc_setup_methods = $render_code->setup_methods;
+
+			if ($render_code->requires_wrapping)
+			{
+				foreach ($render_code->requires_wrapping as $_wrap_class => $wrap_meths)
+				{
+					if ($element->namespace)
+					{
+						list($wp_parent_class, $wp_dyn_class_name) = explode("#", $_wrap_class);
+						$wrap_class = $wp_parent_class."#{$wp_dyn_class_name}#".$element->namespace;
+						unset($render_code->requires_wrapping[$_wrap_class]);
+						$render_code->requires_wrapping[$wrap_class] = $wrap_meths;
+					}
+					else
+						$wrap_class = $_wrap_class;
+
+					foreach ($wrap_meths as $wrap_mth => $wrap_mth_data)
+						$this->requires_method_wrapping[$wrap_class][$wrap_mth] = $wrap_mth_data;
+				}
+			}
 
 			$includeJsClass_extra = "";
 
@@ -3008,7 +3043,7 @@ class QCodeSync
 						$v_alert = str_replace($_to_replace, $_to_replace_with, $v_alert);
 						$v_info = str_replace($_to_replace, $_to_replace_with, $v_info);
 
-						$alert .= "<span class=\"qc-validation-alert\" data-tag=\"{$validator_tag}\">{$v_alert}</span>";
+						$alert .= (($alert_pos > 0) ? "<br/>" : "") . "<span class=\"qc-validation-alert\" data-tag=\"{$validator_tag}\">{$v_alert}</span>";
 						$alert_pos++;
 					}
 

@@ -91,6 +91,38 @@ function str_pad (input, pad_length, pad_string, pad_type) {
   return input;
 }
 
+function stripslashes (str) {
+  //       discuss at: https://locutus.io/php/stripslashes/
+  //      original by: Kevin van Zonneveld (https://kvz.io)
+  //      improved by: Ates Goral (https://magnetiq.com)
+  //      improved by: marrtins
+  //      improved by: rezna
+  //         fixed by: Mick@el
+  //      bugfixed by: Onno Marsman (https://twitter.com/onnomarsman)
+  //      bugfixed by: Brett Zamir (https://brett-zamir.me)
+  //         input by: Rick Waldron
+  //         input by: Brant Messenger (https://www.brantmessenger.com/)
+  // reimplemented by: Brett Zamir (https://brett-zamir.me)
+  //        example 1: stripslashes('Kevin\'s code')
+  //        returns 1: "Kevin's code"
+  //        example 2: stripslashes('Kevin\\\'s code')
+  //        returns 2: "Kevin\'s code"
+
+  return (str + '')
+    .replace(/\\(.?)/g, function (s, n1) {
+      switch (n1) {
+        case '\\':
+          return '\\'
+        case '0':
+          return '\u0000'
+        case '':
+          return ''
+        default:
+          return n1
+      }
+    })
+}
+
 function number_format(number, decimals, dec_point, thousands_sep) {
   //  discuss at: http://phpjs.org/functions/number_format/
   // original by: Jonas Raoni Soares Silva (http://www.jsfromhell.com)
@@ -146,7 +178,7 @@ function number_format(number, decimals, dec_point, thousands_sep) {
     .replace(/[^0-9+\-Ee.]/g, '');
   var n = !isFinite(+number) ? 0 : +number,
     prec = !isFinite(+decimals) ? 0 : Math.abs(decimals),
-    sep = (typeof thousands_sep === 'undefined') ? '' : thousands_sep,
+    sep = (typeof thousands_sep === 'undefined') ? ',' : thousands_sep,
     dec = (typeof dec_point === 'undefined') ? '.' : dec_point,
     s = '',
     toFixedFix = function(n, prec) {
@@ -934,4 +966,319 @@ function parse_str(str, array) {
       lastObj[key] = value;
     }
   }
+}
+
+window.FILTER_VALIDATE_INT = 257;
+window.FILTER_VALIDATE_BOOLEAN = 258;
+window.FILTER_VALIDATE_FLOAT = 259;
+window.FILTER_VALIDATE_REGEXP = 272;
+window.FILTER_VALIDATE_URL = 273;
+window.FILTER_VALIDATE_EMAIL = 274;
+window.FILTER_VALIDATE_IP = 275;
+
+window.FILTER_SANITIZE_STRING = 513;
+window.FILTER_SANITIZE_STRIPPED = 513;
+window.FILTER_SANITIZE_ENCODED = 514;
+window.FILTER_SANITIZE_SPECIAL_CHARS = 515;
+window.FILTER_UNSAFE_RAW = 516;
+window.FILTER_DEFAULT = 516;
+window.FILTER_SANITIZE_EMAIL = 517;
+window.FILTER_SANITIZE_URL = 518;
+window.FILTER_SANITIZE_NUMBER_INT = 519;
+window.FILTER_SANITIZE_NUMBER_FLOAT = 520;
+window.FILTER_SANITIZE_MAGIC_QUOTES = 521;
+// TODO = doesn't exist on my server. Add constant value
+window.FILTER_SANITIZE_FULL_SPECIAL_CHARS = -1;
+window.FILTER_CALLBACK = 1024;
+
+
+window.FILTER_FLAG_ALLOW_OCTAL = 1;
+window.FILTER_FLAG_ALLOW_HEX = 2;
+window.FILTER_FLAG_STRIP_LOW = 4;
+window.FILTER_FLAG_STRIP_HIGH = 8;
+window.FILTER_FLAG_ENCODE_LOW = 16;
+window.FILTER_FLAG_ENCODE_HIGH = 32;
+window.FILTER_FLAG_ENCODE_AMP = 64;
+window.FILTER_FLAG_NO_ENCODE_QUOTES = 128;
+window.FILTER_FLAG_ALLOW_FRACTION = 4096;
+window.FILTER_FLAG_ALLOW_THOUSAND = 8192;
+window.FILTER_FLAG_ALLOW_SCIENTIFIC = 16384;
+window.FILTER_FLAG_PATH_REQUIRED = 262144;
+window.FILTER_FLAG_QUERY_REQUIRED = 524288;
+window.FILTER_FLAG_IPV4 = 1048576;
+window.FILTER_FLAG_IPV6 = 2097152;
+window.FILTER_FLAG_NO_RES_RANGE = 4194304;
+window.FILTER_FLAG_NO_PRIV_RANGE = 8388608;
+window.FILTER_NULL_ON_FAILURE = 134217728;
+
+function filter_var(input, filter, options) {
+    // http://kevin.vanzonneveld.net
+    // +   original by: Brett Zamir (http://brett-zamir.me)
+    // +   improved by: Rafa?&#x201A; Kukawski (http://kukawski.pl)
+    // -    depends on: addslashes
+    // -    depends on: htmlspecialchars
+    // -    depends on: strip_tags
+    // *     example 1: filter_var('true', 'FILTER_VALIDATE_BOOLEAN');
+    // *     returns 1: true
+
+    function is(val, type) {
+        if (val == null) {
+            return type === "null";
+        }
+        
+        if (type === "primitive") {
+            return val !== Object(val);
+        }
+
+        var actual = typeof val;
+
+        if (actual === "object") {
+            return {
+                "[object Array]": "array",
+                "[object RegExp]": "regex"
+            } [Object.prototype.toString.call(val)] || "object";
+        }
+
+        if (actual === "number") {
+            if (isNaN(val)) {
+                return type === "nan";
+            }
+
+            if (!isFinite(val)) {
+                return "inf";
+            }
+        }
+
+        return type === actual;
+    }
+
+    function str2regex(str) {}
+
+    function isPrimitive(val) {
+        return val !== Object(val);
+    }
+
+   
+	if ((filter === null) || (filter === undefined))
+        filter = FILTER_DEFAULT;
+
+    var flags = options ? options : 0;
+
+    var opts = {};
+
+    if (is(options, "object")) {
+        opts = options.options || {};
+    }
+
+    // it looks like the FILTER_NULL_ON_FAILURE is used across all filters, not only FILTER_VALIDATE_BOOLEAN
+    // thus the failure var
+    var failure = (flags & FILTER_NULL_ON_FAILURE) ? null: false;
+
+    if (!is(filter, "number")) {
+        // no numeric filter, return
+        return failure;
+    }
+
+    // Shortcut for non-primitive values. All are failures
+    if (!isPrimitive(input)) {
+        return failure;
+    }
+
+    // if input is string, trim whitespace TODO: make a dependency on trim()?
+    var data = is(input, "string") ? input.replace(/(^\s+)|(\s+$)/g, '') : input;
+
+    switch (filter) {
+    case FILTER_VALIDATE_BOOLEAN:
+        return /^(?:1|true|yes|on)$/i.test(data) || (/^(?:0|false|no|off)$/i.test(data) ? false: failure);
+
+    case FILTER_VALIDATE_INT:
+        var numValue = +data;
+
+        if (!/^(?:0|[+\-]?[1-9]\d*)$/.test(data)) {
+            if ((flags & FILTER_FLAG_ALLOW_HEX) && /^0x[\da-f]+$/i.test(data)) {
+                numValue = parseInt(data, 16);
+            } else if ((flags & FILTER_FLAG_ALLOW_OCTAL) && /^0[0-7]+$/.test(data)) {
+                numValue = parseInt(data, 8);
+            } else {
+                return failure;
+            }
+        }
+
+        var minValue = is(opts.min_range, "number") ? opts.min_range: -Infinity;
+        var maxValue = is(opts.max_range, "number") ? opts.max_range: Infinity;
+
+        if (!is(numValue, "number") || numValue % 1 || numValue < minValue || numValue > maxValue) {
+            return failure;
+        }
+
+        return numValue;
+	case FILTER_VALIDATE_EMAIL :
+	{
+		return /^\b[A-Z0-9._%-]+@[A-Z0-9.-]+\.[A-Z]{2,4}\b$/i.test(data);
+	}
+	case FILTER_VALIDATE_URL :
+	{
+		return /^(http(s)?:\/\/)?(www\.)?[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$/.test(data);
+	}
+		
+    case FILTER_VALIDATE_REGEXP:
+        if (is(options.regexp, "regex")) {
+            // FIXME: we are passing pre-processed input data (trimmed data).
+            // check whether PHP also passess trimmed input
+            var matches = options.regexp(data)
+            return matches ? matches[0] : failure;
+        }
+        // TODO: support passing regexes as strings "#regex#is"
+    case FILTER_VALIDATE_IP:
+        var ipv4 = /^(25[0-5]|2[0-4]\d|[01]?\d?\d)\.(25[0-5]|2[0-4]\d|[01]?\d?\d)\.(25[0-5]|2[0-4]\d|[01]?\d?\d)\.(25[0-5]|2[0-4]\d|[01]?\d?\d)$/
+        var ipv4privrange = /^(?:0?10|172\.0?(?:1[6-9]|2\d|3[01])|192\.168)\./;
+        var ipv4resrange = /^(?:0?0?0\.|127\.0?0?0\.0?0?0\.0?0?1|128\.0?0?0\.|169\.254\.|191\.255\.|192\.0?0?0\.0?0?2\.|25[0-5]\.|2[34]\d\.|22[4-9]\.)/;
+        // IPv6 regex taken from here: http://forums.intermapper.com/viewtopic.php?t=452
+        var ipv6 = /^((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))(%.+)?$/;
+
+        var mode = (FILTER_FLAG_IPV4 | FILTER_FLAG_IPV6);
+
+        if (flags !== 0) {
+            mode &= flags;
+        }
+
+        if (mode & FILTER_FLAG_IPV4) {
+            var ip = ipv4.test(input);
+
+            if (ip) {
+                if ((flags & FILTER_FLAG_NO_PRIV_RANGE) && privrange.test(data)) {
+                    return failure;
+                }
+
+                if ((flags & FILTER_FLAG_NO_RES_RANGE) && resrange.test(data)) {
+                    return failure;
+                }
+
+                return input;
+            }
+        }
+
+        if (mode & FILTER_FLAG_IPV6) {
+            var ip = ipv6.test(input);
+
+            if (ip) {
+                // TODO: check ipv6 ranges
+                return input;
+            }
+        }
+
+        return failure;
+
+    case FILTER_CALLBACK:
+        var fn = opts;
+
+        if (is(fn, "string")) {
+            fn = this.window[fn];
+        }
+
+        if (is(fn, "function")) {
+            return fn(input);
+        }
+
+        return failure;
+
+    case FILTER_SANITIZE_NUMBER_INT:
+        return ("" + input).replace(/[^\d+\-]/g, "");
+
+    case FILTER_SANITIZE_NUMBER_FLOAT:
+        return ('' + input).replace(/[^\deE.,+\-]/g, '').replace(/[eE.,]/g,
+        function(m) {
+            return {
+                '.': (filter & FILTER_FLAG_ALLOW_FRACTION) ? '.': '',
+                ',': (filter & FILTER_FLAG_ALLOW_THOUSAND) ? ',': '',
+                'e': (filter & FILTER_FLAG_ALLOW_SCIENTIFIC) ? 'e': '',
+                'E': (filter & FILTER_FLAG_ALLOW_SCIENTIFIC) ? 'e': ''
+            } [m];
+        });
+
+        /*case FILTER_SANITIZE_MAGIC_QUOTES:
+            return this.addslashes(input); // ('' + input).replace(/[\\"']/g, '\\$&').replace(/\u0000/g, '\\0')*/
+
+    case FILTER_SANITIZE_URL:
+        return ("" + data).replace(/[^a-zA-Z\d$\-_.+!*'(),{}|\\\^~\[\]`<>#%";\/?:@&=]/g, '');
+
+    case FILTER_SANITIZE_EMAIL:
+        return ("" + data).replace(/[^a-zA-Z\d!#$%&'*+\-\/=?\^_`{|}~@.\[\]]/g, '');
+            
+    case FILTER_DEFAULT:
+        // is alias of FILTER_UNSAFE_RAW
+        // fall-through
+    case FILTER_UNSAFE_RAW:
+        data = input + "";
+
+        if (flags & FILTER_FLAG_ENCODE_AMP) {
+            data = data.replace(/&/g, "&#38");
+        }
+
+        if ((FILTER_FLAG_ENCODE_LOW |
+        FILTER_FLAG_STRIP_LOW |
+        FILTER_FLAG_ENCODE_HIGH |
+        FILTER_FLAG_STRIP_HIGH) &
+        flags) {
+
+            data = data.replace(/[\s\S]/g,
+            function(c) {
+                var charCode = c.charCodeAt(0);
+
+                if (charCode < 32) {
+                    return (flags & FILTER_FLAG_STRIP_LOW) ? "":
+                    (flags & FILTER_FLAG_ENCODE_LOW) ? "&#" + charCode: c;
+                } else if (charCode > 127) {
+                    return (flags & FILTER_FLAG_STRIP_HIGH) ? "": (flags & FILTER_FLAG_ENCODE_HIGH) ? "&#" + charCode: c;
+                }
+
+                return c;
+            });
+        }
+
+        return data;
+    default:
+        return false;
+    }
+
+    return false;
+}
+
+
+function in_array (needle, haystack, argStrict) { // eslint-disable-line camelcase
+  //  discuss at: http://locutus.io/php/in_array/
+  // original by: Kevin van Zonneveld (http://kvz.io)
+  // improved by: vlado houba
+  // improved by: Jonas Sciangula Street (Joni2Back)
+  //    input by: Billy
+  // bugfixed by: Brett Zamir (http://brett-zamir.me)
+  //   example 1: in_array('van', ['Kevin', 'van', 'Zonneveld'])
+  //   returns 1: true
+  //   example 2: in_array('vlado', {0: 'Kevin', vlado: 'van', 1: 'Zonneveld'})
+  //   returns 2: false
+  //   example 3: in_array(1, ['1', '2', '3'])
+  //   example 3: in_array(1, ['1', '2', '3'], false)
+  //   returns 3: true
+  //   returns 3: true
+  //   example 4: in_array(1, ['1', '2', '3'], true)
+  //   returns 4: false
+  var key = ''
+  var strict = !!argStrict
+  // we prevent the double check (strict && arr[key] === ndl) || (!strict && arr[key] === ndl)
+  // in just one for, in order to improve the performance
+  // deciding wich type of comparation will do before walk array
+  if (strict) {
+    for (key in haystack) {
+      if (haystack[key] === needle) {
+        return true
+      }
+    }
+  } else {
+    for (key in haystack) {
+      if (haystack[key] == needle) { // eslint-disable-line eqeqeq
+        return true
+      }
+    }
+  }
+  return false
 }

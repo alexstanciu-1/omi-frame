@@ -745,8 +745,13 @@ final class QQueryAnalyzer
 			$data = &$data[$p];
 		$data["_binds"][] = [$zone, $bind_path];
 	}
+	
+	public static function GetSearchInfo_New($analyze_result)
+	{
+		return static::GetSearchInfo($analyze_result, "QINS_");
+	}
 
-	public static function GetSearchInfo($analyze_result)
+	public static function GetSearchInfo($analyze_result, $qprop_prefix = "QINSEARCH_")
 	{
 		$binds = null;
 		if ((!$analyze_result) || (!($binds = $analyze_result["__binds__"])))
@@ -756,15 +761,15 @@ final class QQueryAnalyzer
 
 		foreach ($binds as $k => $data)
 		{
-			if (substr($k, 0, strlen("QINSEARCH_")) !== "QINSEARCH_")
+			if (substr($k, 0, strlen($qprop_prefix)) !== $qprop_prefix)
 				continue;
 
-			$k = substr($k, strlen("QINSEARCH_"));
+			$k = substr($k, strlen($qprop_prefix));
 			
 			// check that we are in the right place
 			if ((!($data)) || (!($inf = $data["__d__"])) || (!($inf["zone"] === "WHERE")) || (!($inf["conditional"])))
 				continue;
-			
+
 			$params = [];
 			$p_pos = 0;
 			foreach ($data as $pk => $p_data)

@@ -58,6 +58,13 @@ class QFileLock
 			return false;
 	}
 	
+	public static function Lock_File($file_path = null, $max_wait = 10)
+	{
+		$lock = new static;
+		$got_lock = $lock->lock($file_path, $max_wait);
+		return $got_lock ? $lock : false;
+	}
+	
 	/**
 	 * Tries to aqqire a lock
 	 * $max_wait WILL NOT WORK UNDER WINDOWS

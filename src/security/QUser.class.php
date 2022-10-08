@@ -10,8 +10,7 @@
  * @class.name QUser
  */
 abstract class QUser_frame_ extends QModel 
-{
-	
+{	
 	/**
 	 * @var integer
 	 */
@@ -316,7 +315,7 @@ abstract class QUser_frame_ extends QModel
 	
 	public static function SecurityCheckUser($rights, $attach_on = null, $user = null)
 	{
-		return $user ? $user->securityCheck($rights, $attach_on) : self::GetCurrent()->securityCheck($rights, $attach_on);
+		return $user ? $user->securityCheck($rights, $attach_on) : self::GetCurrentUser()->securityCheck($rights, $attach_on);
 	}
 	
 	public function memberOf($group)

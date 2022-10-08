@@ -11,6 +11,7 @@
  */
 final class QAutoload
 {
+	public static $RunSyncOnlyInRunningFolder = false;
 	/**
 	 * Enables or disables the Dev/Debug Panel.
 	 * Please see [[mods/dev-panel]] for more details.
@@ -176,6 +177,10 @@ final class QAutoload
 	
 	public static $HasChanges;
 
+	protected static $_Debug_Mode = null;
+	
+	protected static $_Debug_Data = [];
+	
 	/**
 	 * Adds a folder to the list of folders that are scaned for classes
 	 * 
@@ -514,7 +519,7 @@ final class QAutoload
 	/**
 	 * Makes sure we have included the script with the autoload data
 	 */
-	private static function EnsureAutoloadWasIncluded($class_name = null)
+	public static function EnsureAutoloadWasIncluded($class_name = null)
 	{
 		if (!self::$AutoloadIncluded)
 		{
@@ -804,7 +809,11 @@ final class QAutoload
 			if ($skip_on_ajax && (isset($HTTP_X_REQUESTED_WITH) && (strtolower($HTTP_X_REQUESTED_WITH) === 'xmlhttprequest')))
 				return;
 
-			$lock_path = QAutoload::GetRuntimeFolder()."temp/codemonitor.txt";
+			$lock_path_dir = QAutoload::GetRuntimeFolder()."temp/";
+			if (!is_dir($lock_path_dir))
+				qmkdir($lock_path_dir);
+			
+			$lock_path = $lock_path_dir."codemonitor.txt";
 			if (!file_exists($lock_path))
 			{
 				$lock_f = fopen($lock_path, "wt");
@@ -1028,6 +1037,13 @@ final class QAutoload
 										}
 										$unset_elements[$rf_wf][$rem_file] = null;
 									}
+									//just skip js's that were generated
+									#else if (preg_match('/(.+)\.gen\.min\.js/', $rem_file) || preg_match('/(.+)\.gen_(.+)\.min.js/', $rem_file) ||
+									#	preg_match('/(.+)\.gen\.min\.css/', $rem_file) || preg_match('/(.+)\.gen_(.+)\.min.css/', $rem_file))
+									else if ((substr($rem_file, -8, 8) === ".min.css") || (substr($rem_file, -7, 7) === ".min.js"))
+									{
+										$unset_elements[$rf_wf][$rem_file] = null;
+									}
 								}
 							}
 							
@@ -1045,9 +1061,15 @@ final class QAutoload
 							}
 						}
 						
-						if (($full_resync || $removed_files) && (!$intial_full_resync))
-						{
-							if ($removed_files)
+						$removed_files_count = 0;
+						foreach ($removed_files ?: [] as $removed_files_i)
+							$removed_files_count += count($removed_files_i);
+						if (!$removed_files_count)
+							$removed_files = [];
+						
+						if (($full_resync || $removed_files_count) && (!$intial_full_resync))
+						{	
+							if ($removed_files_count > 0)
 							{
 								if (((!defined('Q_RUN_CODE_NEW_AS_TRAITS')) || (!Q_RUN_CODE_NEW_AS_TRAITS))
 										&& ((!defined('Q_RUN_CODE_UPGRADE_TO_TRAIT') || (!Q_RUN_CODE_UPGRADE_TO_TRAIT))))
@@ -1062,11 +1084,11 @@ final class QAutoload
 							}
 						}
 						
-						if ($full_resync || $removed_files)
+						if ($full_resync || $removed_files_count)
 						{
 							// 10 mins max
-							if (ini_get('max_execution_time') < (60 * 10))
-								set_time_limit(60 * 10);
+							if (ini_get('max_execution_time') < (60 * 20))
+								set_time_limit(60 * 20);
 						}
 						else // not full sync
 						{
@@ -1575,7 +1597,7 @@ final class QAutoload
 			header('WWW-Authenticate: Digest realm="'.$realm.
 				   '",qop="auth",nonce="'.uniqid().'",opaque="'.md5($realm).'"');
 
-			die('401 Unauthorized to '.$realm);
+			q_die('401 Unauthorized to '.$realm);
 		}
 		if ($authentications === null)
 			$authentications = self::$DevelopmentModeAuthentications;
@@ -1592,7 +1614,7 @@ final class QAutoload
 				header('WWW-Authenticate: Digest realm="'.$realm.
 					   '",qop="auth",nonce="'.uniqid().'",opaque="'.md5($realm).'"');
 
-				die('401 Unauthorized to '.$realm);
+				q_die('401 Unauthorized to '.$realm);
 			}
 		}
 			
@@ -1624,7 +1646,7 @@ final class QAutoload
 				header('WWW-Authenticate: Digest realm="'.$realm.
 					   '",qop="auth",nonce="'.uniqid().'",opaque="'.md5($realm).'"');
 
-				die('401 Unauthorized to '.$realm);
+				q_die('401 Unauthorized to '.$realm);
 			}
 		}
 		else if ((!($data = $http_digest_parse($_SERVER['PHP_AUTH_DIGEST']))) || (!isset($authentications[$data['username']])))
@@ -1638,7 +1660,7 @@ final class QAutoload
 				header('HTTP/1.1 401 Unauthorized');
 				header('WWW-Authenticate: Digest realm="'.$realm.
 					   '",qop="auth",nonce="'.uniqid().'",opaque="'.md5($realm).'"');
-				die('Wrong Credentials!');
+				q_die('Wrong Credentials!');
 			}
 		}
 		else
@@ -1659,7 +1681,7 @@ final class QAutoload
 					header('HTTP/1.1 401 Unauthorized');
 					header('WWW-Authenticate: Digest realm="'.$realm.
 						   '",qop="auth",nonce="'.uniqid().'",opaque="'.md5($realm).'"');
-					die('Wrong Credentials!');
+					q_die('Wrong Credentials!');
 				}
 			}
 			else if ($test_only)
@@ -1858,4 +1880,42 @@ final class QAutoload
 	{
 		return static::$WatchFoldersTag_To_Layer;
 	}
+	
+	public static function In_Debug_Mode()
+	{
+		return static::GetDevelopmentMode() || (defined('Dev_Ip') && (Dev_Ip === $_SERVER['REMOTE_ADDR']));
+	}
+		
+	public static function Debug_Data($key)
+	{
+		if (static::$_Debug_Mode === null)
+			static::$_Debug_Mode = static::In_Debug_Mode();
+		if (!static::$_Debug_Mode)
+			return;
+
+		$n_args = func_num_args();
+		if ($n_args === 1)
+			static::$_Debug_Data[] = $key;
+		else if ($n_args === 2)
+			static::$_Debug_Data[$key] = func_get_arg(1);
+		else
+			static::$_Debug_Data[$key] = array_slice(func_get_args(), 1);
+	}
+	
+	public static function Debug_Get_Data()
+	{
+		return static::$_Debug_Data;
+	}
+	
+	/*
+	public static function Debug_Mode_Enable()
+	{
+		static::$_Debug_Mode = true;
+	}
+	
+	public static function Debug_Mode_Disable()
+	{
+		static::$_Debug_Mode = false;
+	}
+	*/
 }

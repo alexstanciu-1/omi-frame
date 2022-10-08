@@ -644,6 +644,126 @@ class QPHPTokenXmlElement extends QPHPToken
 		return $class_name."_".($tag ?: $name); //."_".$class;
 	}
 	
+	protected function transformQCtrl(QGeneratePatchInfo $gen_info)
+	{
+		// <qCtrl qCtrl="QWebDropDown" id="testDD" init="self::static" name="testDD">
+		// <init><?php
+		// <render>
+		
+		// var_dump("transformQCtrl");
+		
+		// 1. build init function
+		$name = $this->getAttribute("name");
+		$phpname = $this->getAttribute("phpname") ?: $name;
+		$class = $this->getAttribute("qCtrl");
+		$tag = $this->getAttribute("tag");
+		// $init = $this->findChildWithTag("init");
+		
+		$dyn_class_name = $this->getDynamicClassName($gen_info->class_name);
+		
+		// $this->dynamicClassName = $dyn_class_name;
+		
+		$in_tpl_code = $this->children(".QPHPTokenCode");
+		
+		// var_dump($in_tpl_code);
+		
+		if ($in_tpl_code && is_array($in_tpl_code))
+			$in_tpl_code = $in_tpl_code[0];
+		
+		$phpname_short = (($pn_pos = strpos($phpname, "{")) !== false) ? substr($phpname, 0, $pn_pos) : $phpname;
+		$phpname = ((strpos($phpname, "{") !== false) || (strpos($phpname, "\$") !== false)) ? "{\"".$phpname."\"}" : $phpname;
+
+		if ($phpname_short === $phpname)
+			$replacement = "\${$phpname_short} = new {$dyn_class_name}();\n";
+		else
+			$replacement = "\${$phpname_short} = \${$phpname} = new {$dyn_class_name}();\n";
+
+		if ($in_tpl_code)
+		{
+			$replacement .= $this->toString($in_tpl_code->inner());
+		}
+		else
+		{
+			$replacement .= "\$this->addControl(\${$phpname});\n".
+							"\${$phpname}->init();\n".	
+							"\${$phpname}->render();\n";
+		}
+		
+		// $class_doc = 
+		// $this->getRoot()->findPHPClass()->append($init_func);
+		$root = $this->getRoot();
+		
+		$path_to_gen = substr($gen_info->path, 0, -3)."php";
+		// var_dump($gen_info);
+			
+		$methods = $this->children(".QPHPTokenXmlElement");
+		foreach ($methods as $meth)
+		{
+			// skip: <script type="text/javascript" jsFunc>
+			if ((strtolower($meth->tag) === "script") && 
+					(($meth->attrs["jsFunc"] !== null) || $meth->getAttribute("type")))
+				continue;
+			
+			//if (($meth->tag === "init") || ($meth->tag === "render"))
+			//	continue;
+			$elems = $meth->inner();
+			
+			$meth_body = "?>".$this->toString($elems)."<?php";
+			
+			// cleanup: ? > < ?php
+			//			? > < ?
+			//			? > < ?=
+			if (substr($meth_body, 0, strlen("?><?php")) === "?><?php")
+				$meth_body = substr($meth_body, strlen("?><?php"));
+			
+			if (substr($meth_body, -strlen("?><?php"), strlen("?><?php")) === "?><?php")
+				$meth_body = substr($meth_body, 0, -strlen("?><?php"));
+			
+			$meth_name = $meth->tag;//."_".$class."_".$name;
+	
+			$arguments = $meth->getAttribute("args") ?: ($meth->getAttribute("qArgs") ?: $meth->getAttribute("q-args"));
+			$arguments = $arguments ? trim($arguments) : "";
+			
+			// var_dump($meth_body);
+			
+			// var_dump($arguments);
+			
+			// $dyn_class_name = $dyn_class_name;
+			
+			/**
+	 * Generated {$meth->tag} for qCtrl:{$class}, name: {$meth_name}
+	 *
+	 */
+			// TO DO: apply arguments
+			
+			$root->requires_wrapping[$class."#".$dyn_class_name][$meth_name] = array($meth->tag, $tag ?: $name, $class, $gen_info->class_name, $path_to_gen,
+"public function {$meth_name}({$arguments})
+	{
+		".($arguments ? 
+		"if ((!func_num_args()) && \$this && \$this->_rf_args && (\$_rf_args = \$this->_rf_args[\"".qaddslashes($meth_name)."\"]))
+			list(".QCodeSync::GetVarsFromArgs($arguments).") = \$_rf_args;
+		"
+		: "")."{$meth_body}
+	}
+", $arguments);
+		
+			if (!$this->wrapping_data)
+				$this->wrapping_data = ["class" => $class, "dyn_class_name" => $dyn_class_name, "methods" => []];
+		
+			$this->wrapping_data["methods"][$meth_name] = [$meth->tag, $tag ?: $name, $class, $gen_info->class_name, $path_to_gen];
+
+		}
+		
+		$this->replaceWith("<?php ".$replacement." ?>");
+		
+		// $sp = $this->parent;
+			
+		// var_dump("transformQCtrl", $sp."");
+		// echo "<pre>";
+		// debug_print_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+		// echo "</pre>";
+	}
+	
 	protected function transform_new_qctrl(QGeneratePatchInfo $gen_info = null)
 	{
 		// set_time_limit(10);
@@ -2189,12 +2309,85 @@ class {$class}
 			parent::cleanupTemplate();
 	}
 	
-	public function toString(bool $formated = false, $final = false, $data = null)
+	public function toString($formated = false, $final = false, $data = null)
 	{
-		if ($final && (($lc_tag = strtolower($this->tag)) === "virtual"))
-			return static::To_String($this->inner(), $final, $data);
-		else
-			return parent::toString($formated, $final, $data);
+		if ($final && is_bool($formated))
+		{
+			$lc_tag = strtolower($this->tag);
+			
+			$after = $before = null;
+			
+			if ($this->attrs["q-var"])
+			{
+				$q_rel_var = $data ? $data["q-rel-var"] : null;
+				$q_var = $this->getAttribute("q-var");
+				$php_var = $data["q-rel-var"] = $this->extractQVarForCode($q_var, $q_rel_var);
+				
+				// we should now inprint data based on the bind
+				switch ($lc_tag)
+				{
+					case "input":
+					{
+						if (!$this->attrs["value"])
+							$this->setAttribute("value", "\"<?= {$php_var} ?>\"", false);
+						break;
+					}
+					// case "select": // <option value="value2" selected>Value 2</option>
+					case "textarea":
+					{
+						if ($this->innerIsEmpty())
+							$this->inner("<?= {$php_var} ?>");
+						break;
+					}
+					default:
+					{
+						/*if (!$this->attrs["q-val"])
+							$this->setAttribute("q-val", "\"<?= {$php_var} ?>\"", false);*/
+						if ($this->innerIsEmpty())
+							$this->inner("<?= {$php_var} ?>");
+						break;
+					}
+				}
+			}
+			if ($this->attrs["q-each"])
+			{
+				$q_rel_var = $data ? $data["q-rel-var"] : null;
+				
+				$var_q_each = $this->getAttribute("q-each");
+				$var_patt = '/[\w\$\\\\\.\(\)\[\]]+|\bin\b|\bas\b/us';
+				// var_dump($var_patt);
+				$matches = null;
+				$ok = preg_match_all($var_patt, $var_q_each, $matches);
+				if (!$ok)
+					// throw new Exception("Parse error in q-each: ".$var_q_each);
+					return null;
+				list($p_1, $p_2, $p_3) = $matches[0];
+				if (!($p_1 && $p_2 && $p_3))
+					// throw new Exception("Parse error in q-each: ".$var_q_each);
+					return null;
+				$each_collection = $this->extractQVarForCode( ($p_2 === "as") ? $p_1 : $p_3, $q_rel_var);
+				$each_item = $this->extractQVarForCode( ($p_2 === "as") ? $p_3 : $p_1, $q_rel_var);
+				
+				$data["q-rel-var"] = $each_item;
+				
+				// var q_each_parts = q_each.match(/[\w\$\\\.\(\)\[\]]+|\bin\b|\bas\b/g);
+				//var_dump($each_collection, $each_item);
+				$before = "<!-- OMI-MARK: <div q-each={$this->attrs["q-each"]}></div> -->\n".
+							"<?php if ({$each_collection}) { foreach ({$each_collection} as {$each_item}) { ?>\n";
+				$after = $this->attrs["q-start"] ? "" : "\n<?php } } ?>\n";
+			}
+			if ($this->attrs["q-end"])
+			{
+				$before = "";
+				$after = "\n<?php } } ?>\n";
+			}
+
+			if ($after || $before)
+				return $before.parent::toString(($lc_tag === "virtual") ? $this->inner() : $formated, $final, $data).$after;
+			else
+				return parent::toString(($lc_tag === "virtual") ? $this->inner() : $formated, $final, $data);
+		}
+		return parent::toString($formated, $final, $data);
 	}
 	
 	public function generateUrlControllerIncludesForLoad($includes_to_load)

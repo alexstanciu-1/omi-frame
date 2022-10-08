@@ -437,7 +437,7 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 	
 	// WORK IN PROGRESS ======================================================================================
 	
-	public function syncTable(QSqlTable $table)
+	public function syncTable(QSqlTable $table, bool $do_auto_structure_sync = false)
 	{
 		// echo "Sync:: ".$table->name."<br/>\n";
 		/*
@@ -453,32 +453,36 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 		$changed = false;
 		
 		$database = $table->parent ? $table->parent->name : null;
-		
+
 		$table_exists = false;
-		
+
 		$table_name = $table->name;
-		
+
+		$use_cluster_alter_queries = \QApp::GetUseClusterAlterQueries();
+
 		if ($table->getTransformState() === null)
 			$command = "CREATE";
 		else if ($table->getTransformState() == self::TransformDelete)
 		{
-			$command = "DROP TABLE ".($database ? $this->escapeName($database)."." : "") . $this->escapeName($table_name).";";
+			$command = "DROP TABLE ".($database ? $this->escapeName($database). "." : "") . $this->escapeName($table_name).";";
 			echo $command."\n";
 			return $command;
 		}
 		else
 		{
+			#$command = ($use_cluster_alter_queries ? "SET SESSION alter_algorithm='INSTANT'; " : "") . "ALTER";
 			$command = "ALTER";
 			$table_exists = true;
 		}
-		
+
 		$query = "{$command} TABLE " . ($database ? $this->escapeName($database)."." : "") . $this->escapeName($table_name) . " ".($table_exists ? "" : "(")."\n";
-		
+
 		$pos = 0;
 		$fields = $table->columns;
 		
 		$add_comma = false;
-		
+
+		$cluster_queries_data = [];
 		foreach ($fields as $field)
 		{
 			$changed_props = ($field->getTransformState() === null) ? $field->get() : $field->getChangedProperties();
@@ -493,21 +497,32 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 
 			if ($table_exists)
 			{
+				$field_esc_name = $this->escapeName($field->name);
+				$field_model_string = $this->getFieldModelString($field, true);
 				if ($field->getTransformState() === null)
+				{
 					// new field
-					$query .= "ADD ".$this->escapeName($field->name)." ".$this->getFieldModelString($field, true);
+					if ($use_cluster_alter_queries)
+						$cluster_queries_data["add_columns"][$field->name] = [$field, $field_model_string];
+					$query .= "ADD " . $field_esc_name." ".$field_model_string;
+				}
 				else
+				{
 					// old field
-					$query .= "CHANGE ".$this->escapeName($field->name)." ".$this->escapeName($field->name)." ".$this->getFieldModelString($field, true);
+					if ($use_cluster_alter_queries)
+						$cluster_queries_data["alter_columns"][$field->name] = [$field, $field_model_string];
+					$query .= "CHANGE " . $field_esc_name . " " . $field_esc_name . " " . $field_model_string;					
+				}
 			}
 			else
+			{
 				$query .= $this->escapeName($field->name)." ".$this->getFieldModelString($field);
-			
-			$add_comma = true;
+			}
 
+			$add_comma = true;
 			$pos++;
 		}
-		
+
 		if ($table->indexes)
 		{
 			$pos = 0;
@@ -539,30 +554,41 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 				else if ($index->type === QSqlTableIndex::IndexUnique)
 					$index_type_str = "UNIQUE";
 
-				if ($add_comma || ($pos > 0))
-					$query .= ",\n";
+				if (($add_comma || ($pos > 0)))
+					$query .= ",\n";			
+
 				if ($table_exists)
 				{
 					if ($index->getTransformState() !== null)
+					{
+						if ($use_cluster_alter_queries)
+							$cluster_queries_data["indexes"]["drop"][$index->name] = [$index_type_str];
 						$query .= "DROP INDEX {$this->escapeName($index->name)},\n";
+					}
+					if ($use_cluster_alter_queries)
+						$cluster_queries_data["indexes"]["add"][$index->name] = [$index_type_str, $keys];
 					$query .= "ADD {$index_type_str} {$this->escapeName($index->name)} (".implode(",", $keys).")";
 				}
 				else
+				{
 					$query .= " {$index_type_str} {$this->escapeName($index->name)} (".implode(",", $keys).")";
+				}
 
 				$pos++;
 				$add_comma = true;
 			}
 		}
-		
+
 		// TO DO: Foreign keys !
 		$closed = false;
 		if ((!$table_exists) || $table->wasChanged("engine"))
 		{
 			$changed = true;
-			if (!$closed)
+			if ((!$closed))
 				$query .= " ".($add_comma ? ($table_exists ? ",\n" : ")\n") : "");
 			$closed = true;
+			if ($use_cluster_alter_queries && $table_exists)
+				$cluster_queries_data["engine"] = $table->engine;
 			$query .= " ENGINE = {$table->engine}";
 		}
 
@@ -572,6 +598,8 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 			if (!$closed)
 				$query .= " ".($add_comma ? ($table_exists ? ",\n" : ")\n") : "");
 			$closed = true;
+			if ($use_cluster_alter_queries && $table_exists)
+				$cluster_queries_data["charset"] = $table->charset;
 			$query .= " CHARACTER SET {$table->charset}";
 		}
 		if ((!$table_exists) || $table->wasChanged("collation"))
@@ -580,24 +608,169 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 			if (!$closed)
 				$query .= " ".($add_comma ? ($table_exists ? ",\n" : ")\n") : "");
 			$closed = true;
+			if ($use_cluster_alter_queries && $table_exists)
+				$cluster_queries_data["collation"] = $table->collation;
 			$query .= " COLLATE {$table->collation}";
 		}
-			
+
 		if ((!$table_exists) || $table->wasChanged("comment"))
 		{
 			$changed = true;
 			if (!$closed)
 				$query .= " ".($add_comma ? ($table_exists ? ",\n" : ")\n") : "");
 			$closed = true;
+			if ($use_cluster_alter_queries && $table_exists)
+				$cluster_queries_data["comment"] = $table->comment;
 			$query .= " COMMENT = '{$this->escapeString($table->comment)}'";
 		}
 
 		$query .= ";";
+
 		// $this->debug($query);
 		// $this->query($query);
 		
 		if ($changed)
-			echo $query."\n\n";
+		{
+			// if the table is new - leave it to be created
+			if ($use_cluster_alter_queries && $table_exists)
+			{
+				$add_cols_q = "";
+				$update_cols_q = "";
+				$drop_updated_cols_q = "";
+				$rename_cols_q = "";				
+				$indexes_q = "";
+				$change_table_q = "";
+				
+				$table_full_name = ($database ? $this->escapeName($database)."." : "") . $this->escapeName($table_name);
+
+				$hasAddColumns = false;
+				if ($cluster_queries_data['add_columns'])
+				{
+					$add_cols_q = "SET SESSION alter_algorithm='INSTANT'; {$command} TABLE " . $table_full_name  . "\n";
+					$pos = 0;
+					foreach ($cluster_queries_data['add_columns'] ?: [] as $col_name => $coll_data)
+					{
+						list($field, $field_model_string) = $coll_data;
+						$field_esc_name = $this->escapeName($col_name);
+						if (($pos > 0))
+							$add_cols_q .= ",\n";
+						$add_cols_q .= "ADD " . $field_esc_name." ".$field_model_string;
+						$hasAddColumns = true;
+						$pos++;
+					}
+				}
+
+				if ($cluster_queries_data['alter_columns'])
+				{
+					if (strlen($add_cols_q) === 0)
+					{
+						$add_cols_q = "SET SESSION alter_algorithm='INSTANT'; {$command} TABLE " . $table_full_name . "\n";
+					}
+					$drop_updated_cols_q =  $rename_cols_q = "SET SESSION alter_algorithm='INSTANT'; {$command} TABLE " . $table_full_name . "\n";
+					$pos = 0;
+					foreach ($cluster_queries_data['alter_columns'] ?: [] as $col_name => $coll_data)
+					{
+						list($field, $field_model_string) = $coll_data;
+						$field_esc_new_name = $this->escapeName("_tmp_" . $col_name . "_");
+						$field_esc_name = $this->escapeName($col_name);
+						$update_cols_q .= "UPDATE " . ($database ? $this->escapeName($database)."." : "") . $this->escapeName($table_name) . " SET " . 
+							$field_esc_new_name . "=" . $field_esc_name . ";\n";
+						if (($pos > 0) || $hasAddColumns)
+							$add_cols_q .= ",\n";
+						if (($pos > 0))
+						{
+							$drop_updated_cols_q .= ",\n";
+							$rename_cols_q .= ",\n";
+						}
+						$drop_updated_cols_q .= "DROP COLUMN " . $field_esc_name;
+						$add_cols_q .= "ADD " . $field_esc_new_name . " ". $field_model_string;
+						$rename_cols_q .= "CHANGE " . $field_esc_new_name . " " . $field_esc_name . " " . $field_model_string;
+						$pos++;
+					}
+				}
+				
+				// if we do auto structure sync don't add indexes
+				if ($cluster_queries_data['indexes'] && (!$do_auto_structure_sync))
+				{
+					$indexes_q = "{$command} TABLE " . $table_full_name . "\n";
+					$indx_pos = 0;
+					foreach ($cluster_queries_data['indexes']["drop"] ?: [] as $indx_name => $indx_data)
+					{
+						if (($indx_pos > 0))
+							$indexes_q .= ",\n";
+						$indexes_q .= "DROP INDEX {$this->escapeName($indx_name)}\n";
+						$indx_pos++;
+					}
+					foreach ($cluster_queries_data['indexes']["add"] ?: [] as $indx_name => $indx_data)
+					{
+						list($index_type_str, $keys) = $indx_data;
+						if (($indx_pos > 0))
+							$indexes_q .= ",\n";
+						$indexes_q .= "ADD {$index_type_str} {$this->escapeName($indx_name)} (".implode(",", $keys).")";
+						$indx_pos++;
+					}
+				}
+
+				if (strlen($add_cols_q))
+					$add_cols_q .= ";\n";
+
+				if (strlen($drop_updated_cols_q))
+					$drop_updated_cols_q .= ";\n";
+
+				if (strlen($rename_cols_q))
+					$rename_cols_q .= ";\n";
+
+				if (strlen($indexes_q))
+					$indexes_q .= ", ALGORITHM=NOCOPY, LOCK=NONE;\n";
+
+				$change_table_q = "";
+				if ($cluster_queries_data["engine"] || $cluster_queries_data["charset"] || $cluster_queries_data["charset"] || $cluster_queries_data["comment"])
+				{
+					if ($cluster_queries_data["engine"])
+						$change_table_q .= " ENGINE = {$table->engine}";
+					if ($cluster_queries_data["charset"])
+						$change_table_q .= " CHARACTER SET {$table->charset}";
+					if ($cluster_queries_data["collation"])
+						$change_table_q .= " COLLATE {$table->collation}";
+
+					/*
+					if ($cluster_queries_data["comment"])
+						$change_table_q .= " COMMENT = '{$this->escapeString($table->comment)}'";
+					*/
+
+					if (strlen(trim($change_table_q)) > 0)
+						$change_table_q = $command ." TABLE " . $table_full_name  . "\n" . $change_table_q;
+				}
+
+				echo "----------------------------------------------------------------------------------\n"
+					. "--{$table_full_name}\n"
+					. "----------------------------------------------------------------------------------\n"
+					. (strlen(trim($add_cols_q, "\n")) ? trim($add_cols_q, "\n") . "\n\n" : "")
+					. (strlen(trim($update_cols_q, "\n")) ? trim($update_cols_q, "\n") . "\n\n" : "")
+					. (strlen(trim($drop_updated_cols_q, "\n")) ? trim($drop_updated_cols_q, "\n") . "\n\n" : "")
+					. (strlen(trim($rename_cols_q, "\n")) ? trim($rename_cols_q, "\n") . "\n\n" : "")
+					. (strlen(trim($indexes_q, "\n")) ? trim($indexes_q, "\n") . "\n\n" : "")
+					. (strlen(trim($change_table_q, "\n")) ? trim($change_table_q, "\n") . "\n\n" : "");
+
+
+				unset($add_cols_q);
+				unset($update_cols_q);
+				unset($drop_updated_cols_q);
+				unset($rename_cols_q);
+				unset($indexes_q);
+				unset($change_table_q);
+			}
+			else
+			{
+				$table_full_name = ($database ? $this->escapeName($database)."." : "") . $this->escapeName($table_name);
+				/*
+				echo "----------------------------------------------------------------------------------\n"
+					. "--{$table_full_name}\n"
+					. "----------------------------------------------------------------------------------\n" . $query . "\n\n";
+				*/
+				echo $query . "\n\n";
+			}
+		}
 		unset($query);
 		
 		return;
@@ -1066,16 +1239,16 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 	 * 
 	 * @return string
 	 */
-	public function getTypeNameInStorageById($type_id)
+	public function getTypeNameInStorageById($type_id, $check_in_existing = false)
 	{
 		if ($type_id < Q_FRAME_MIN_ID_TYPE)
 			return QModel::GetScalarNameById($type_id);
 		
 		if (!$this->_typeIdsIncluded)
 			$this->ensureTypeIdsWasIncluded();
-		
+
 		$type_name = $this->_typeIdsFlip[$type_id];
-		if (!$type_name)
+		if ((!$type_name) && (!$check_in_existing))
 		{
 			// refresh cache
 			$this->ensureTypeIdsWasIncluded(true);
@@ -1263,6 +1436,24 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 	public static function ApiQuery($storage_model, $from, $from_type, $selector = null, $parameters = null, 
 			$only_first = false, $id = null, $skip_security = true, $sql_filter = null)
 	{
+		if (Q_IS_TFUSE && ($selector === null))
+		{
+			// we need to sanitize the selector
+			if ($from_type)
+			{
+				$only_first = ($id !== null);
+
+				if (is_array($from_type))
+					// @todo - accept all types
+					$from_type = reset($from_type);
+
+				$selector = $only_first ? $from_type::GetModelEntity() : $from_type::GetListingEntity();
+			}
+
+			// sanitize selector
+			$selector = q_SanitizeSelector($from, $selector);
+		}
+		
 		$view_tag = null;
 		if (is_array($from) && (count($from) === 2))
 			list($from, $view_tag) = $from;
@@ -1345,6 +1536,105 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 			$called_class::ApiQuery_out_();
 		
 		return ($only_first && (qis_array($return_data))) ? ($return_data ? $return_data[0] : null) : $return_data;
+	}
+	
+	/**
+	 * 
+	 * Overwritten for calling before and after save
+	 * 
+	 * @param QIModel|array $data
+	 * @param integer $state
+	 * @param string $from
+	 * @return mixed
+	 * @throws Exception
+	 */
+	public static function ApiSave($storage_model, $from, $from_type, $data, $state = null, $selector = null, $initialDestination = null)
+	{
+		$model = new $storage_model();
+		$model->setId(1); // @todo : we need to do it this way atm !!!
+		$model->$from = $data;
+		
+		$selector = $from_type ? [$from => static::GetSaveSelector($from, $from_type, $data, $state, $selector, $initialDestination)] : $from;
+		
+		if ($model->$from instanceof QModelArray)
+			$model->$from->setModelProperty($from, $model);
+
+		$use_states = QApi::SecureStates($model, $from, $state, $selector);
+		
+		# @TODO - secure based on security
+		{
+			$c_user = \Omi\User::GetCurrentUser();
+			$prop_security_cfg = QModel_Security::Get_Security_App_Props_Config($from);
+			if (isset($prop_security_cfg['enforcements']))
+			{
+				$enfc_cfg = $prop_security_cfg['enforcements'];
+				if ($enfc_cfg === '#deny')
+					throw new \Exception('Access denied by rule');
+				
+				$enforcements = QModel_Security::Get_Security_App_Props_Config('@enforcements');
+				$from_enforcements = isset($enforcements[$enfc_cfg]) ? $enforcements[$enfc_cfg] : null;
+				foreach ($from_enforcements ?: [] as $exec_enforcement)
+				{
+					$action_func = QModel_Security::Get_Security_App_Props_Config('@actions')[$exec_enforcement['action']];
+					if (!$action_func)
+						throw new \Exception('Missing action function for: '.$exec_enforcement['condition']);
+					/*
+					$condition_func = null;
+					if (isset($exec_enforcement['condition']))
+					{
+						$condition_func = QModel_Security::Get_Security_App_Props_Config('@conditions')[$exec_enforcement['condition']];
+						if (!$condition_func)
+							throw new \Exception('Missing function for condition: '.$exec_enforcement['condition']);
+					}
+					else
+						$condition = true;
+					*/
+					$action_func($c_user, $data, $from);
+				}
+			}
+		}
+
+		\QApi::$DataToProcess = $model;
+		
+		$return_data = $model->save($selector, null, $use_states, true, true, true, false);
+		
+		\QApi::$DataToProcess = null;
+
+		// @todo : secure output
+		return $return_data;
+	}
+	
+	function raw_query_exec($q, $debugTime = false)
+	{
+		if ($debugTime)
+			$t1 = microtime(true);
+		$res = $this->connection->query($q);
+		if ($res === false)
+		{
+			#echo "<div style='color: red;'>EXEC QUERY FAILED: {$q} - {$this->connection->error}</div>";
+			throw new \Exception("q_err: " . $this->connection->error);
+		}
+		if ($debugTime)
+			echo "raw_query_exec TOOK : " . (microtime(true) - $t1) . " seconds<br/>";
+		return $res;
+	}
+
+	function raw_query_results($q, $debugTime = false)
+	{
+		$res = $this->raw_query_exec($q, $debugTime);
+		if ($debugTime)
+			$t1 = microtime(true);
+		$results = [];
+		if ($res !== false)
+		{
+			while (($r = $res->fetch_assoc()))
+			{
+				$results[] = $r;
+			}
+		}
+		if ($debugTime)
+			echo "raw_query_results TOOK : " . (microtime(true) - $t1) . " seconds and found: " . count($results) . " items<br/>";
+		return $results;
 	}
 	
 	/**
@@ -1456,71 +1746,6 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 		}
 	
 		return $selector;
-	}
-	/**
-	 * 
-	 * Overwritten for calling before and after save
-	 * 
-	 * @param QIModel|array $data
-	 * @param integer $state
-	 * @param string $from
-	 * @return mixed
-	 * @throws Exception
-	 */
-	public static function ApiSave($storage_model, $from, $from_type, $data, $state = null, $selector = null, $initialDestination = null)
-	{
-		$model = new $storage_model();
-		$model->setId(1); // @todo : we need to do it this way atm !!!
-		$model->$from = $data;
-		
-		$selector = $from_type ? [$from => static::GetSaveSelector($from, $from_type, $data, $state, $selector, $initialDestination)] : $from;
-		
-		if ($model->$from instanceof QModelArray)
-			$model->$from->setModelProperty($from, $model);
-
-		$use_states = QApi::SecureStates($model, $from, $state, $selector);
-		
-		# @TODO - secure based on security
-		{
-			$c_user = \Omi\User::GetCurrentUser();
-			$prop_security_cfg = QModel_Security::Get_Security_App_Props_Config($from);
-			if (isset($prop_security_cfg['enforcements']))
-			{
-				$enfc_cfg = $prop_security_cfg['enforcements'];
-				if ($enfc_cfg === '#deny')
-					throw new \Exception('Access denied by rule');
-				
-				$enforcements = QModel_Security::Get_Security_App_Props_Config('@enforcements');
-				$from_enforcements = isset($enforcements[$enfc_cfg]) ? $enforcements[$enfc_cfg] : null;
-				foreach ($from_enforcements ?: [] as $exec_enforcement)
-				{
-					$action_func = QModel_Security::Get_Security_App_Props_Config('@actions')[$exec_enforcement['action']];
-					if (!$action_func)
-						throw new \Exception('Missing action function for: '.$exec_enforcement['condition']);
-					/*
-					$condition_func = null;
-					if (isset($exec_enforcement['condition']))
-					{
-						$condition_func = QModel_Security::Get_Security_App_Props_Config('@conditions')[$exec_enforcement['condition']];
-						if (!$condition_func)
-							throw new \Exception('Missing function for condition: '.$exec_enforcement['condition']);
-					}
-					else
-						$condition = true;
-					*/
-					$action_func($c_user, $data, $from);
-				}
-			}
-		}
-
-		\QApi::$DataToProcess = $model;
-		
-		$return_data = $model->save($selector, null, $use_states, true, true, true, false);
-		
-		\QApi::$DataToProcess = null;
-
-		// @todo : secure output
-		return $return_data;
 	}
 
 	/**

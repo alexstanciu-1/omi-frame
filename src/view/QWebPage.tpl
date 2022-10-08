@@ -11,7 +11,6 @@
 		<script type="text/javascript" src="<?= Q_FRAME_REL; ?>view/js/phpjs.js"></script>
 		<script type="text/javascript" src="<?= Q_FRAME_REL; ?>view/js/jquery-2.1.4.min.js"></script>
 		<script type="text/javascript" src="<?= Q_FRAME_REL; ?>view/js/functions.js"></script>
-		<script type="text/javascript" src="<?= \QAutoload::GetTempWebPath("model_type.js"); ?>"></script>
 		<script type="text/javascript" src="<?= Q_FRAME_REL; ?>base/QObject.js"></script>
 		<script type="text/javascript" src="<?= Q_FRAME_REL; ?>view/js/mvvm.js"></script>
 

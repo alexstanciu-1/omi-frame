@@ -42,6 +42,14 @@ class QSqlParserQuery
 	
 	protected static $SettersDefined = [];
 	
+	protected static $QueriesOnPageId = null;
+	
+	protected static $ProfilingData = null;
+
+	public static $QForceProfiling = false;
+
+	public static $QForceDeepProfiling = false;
+	
 	/**
 	 *
 	 * @var array[]
@@ -423,43 +431,17 @@ class QSqlParserQuery
 		 * http://bugs.mysql.com/bug.php?id=18454
 		 */
 		// define("MYSQL_USE_SQL_CALC_FOUND_ROWS", true);
-		$exe_q = $this->toSQL(defined("MYSQL_USE_SQL_CALC_FOUND_ROWS") ? MYSQL_USE_SQL_CALC_FOUND_ROWS : true);
-
-		if ($_GET['deeeebug'] && \QAutoload::GetDevelopmentMode())
-		{
-			echo "<hr/>";
-			/*
-			if (defined('dev_ip') && ($_SERVER['REMOTE_ADDR'] === dev_ip) && (strpos($exe_q, 'Nuvia_Sites') !== false))
-			{
-				qvar_dump($exe_q);
-			}
-			*/
-			echo "<pre>{$exe_q}</pre>";
-		}
+		$exe_q = $this->toSQL(defined("MYSQL_USE_SQL_CALC_FOUND_ROWS") ? MYSQL_USE_SQL_CALC_FOUND_ROWS : false);		
 		
 		$root_q = $this->getRootQuery();
-		
-		\QTrace::Begin_Trace([], [$exe_q], ["query", "sql"]);
-		try
-		{
-			$t1 = microtime(true);
-			$result = $conn->query($exe_q);
+		$t1 = microtime(true);
+		$result = $conn->query($exe_q);
 			
-			# qvar_dumpk($exe_q);
-			if (static::$_DebugOn)
-				qvar_dumpk($exe_q);
-			$t2 = microtime(true);
-		}
-		finally
-		{
-			\QTrace::End_Trace([], [$result ? true : false, $t2 - $t1], ["query", "sql"]);
-		}
-		
-		if ($_GET['deeeebug'] && \QAutoload::GetDevelopmentMode())
-		{
-			qvar_dumpk($t2 - $t1);
-		}
-		
+		# qvar_dumpk($exe_q);
+		if (static::$_DebugOn)
+			qvar_dumpk($exe_q);
+		$t2 = microtime(true);
+	
 		if (($t2 - $t1) >= 30) # slow query log
 		{
 			if (!is_dir('temp/slow_query/'))
@@ -629,7 +611,8 @@ class QSqlParserQuery
 								{
 									if (!(is_object($coll_arr)))
 									{
-										var_dump($coll_arr, $coll_parent);
+										if (\QAutoload::GetDevelopmentMode())
+											qvar_dumpk($coll_arr, $coll_parent);
 										throw new Exception("Failed");
 									}
 									
@@ -746,8 +729,16 @@ class QSqlParserQuery
 									if (($prop_val !== null) && ((!$populate_only) || (!$object->_wst[$prop_name])))
 									{
 										if (static::$SettersDefined[$object_class][$prop_name] ?? (static::$SettersDefined[$object_class][$prop_name] = method_exists($object, "set{$prop_name}")))
+										{
+											if ($p_type_name === "int")
+												$prop_val = (int)$prop_val;
+											else if ($p_type_name === "float")
+												$prop_val = (float)$prop_val;
+											else if ($p_type_name === "double")
+												$prop_val = (double)$prop_val;
 											// setGid($value, $check = true, $null_on_fail = false)
 											$object->{"set{$prop_name}"}($prop_val, true, false);
+										}
 										else
 											$object->{$prop_name} = $prop_val;
 									}
@@ -824,11 +815,6 @@ class QSqlParserQuery
 						throw new Exception($conn->error);
 					}
 					
-					if ($_GET['deeeebug'] && \QAutoload::GetDevelopmentMode())
-					{
-						qvar_dumpk($this->_count_q);
-					}
-
 					$found_rows = $calc_res->fetch_assoc();
 					$collection_arr->setQueryCount((int)$found_rows["FOUND_ROWS"]);
 				}

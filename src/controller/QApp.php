@@ -61,6 +61,10 @@ class QApp extends QAppModule
 	/**
 	 * @var boolean
 	 */
+	protected static $UseClusterAlterQueries = false;
+	/**
+	 * @var boolean
+	 */
 	protected static $HasStorageChanges = false;
 	protected static $CallbacksAfterResponse = [];
 	protected static $CallbacksAfterResponseLast = [];
@@ -75,8 +79,16 @@ class QApp extends QAppModule
 	public static $DemoMode = false;
 
 	public static $_PATH_TO_HREF = [];
-	
+
 	protected static $QWebRequest_HandleShutdown_Registered = false;
+
+	public static $StartTime = null;
+
+	public static $RunWithoutCallbacks = false;
+	
+	public static $PerformanceData = [];
+
+	public static $InCallbackExecution = false;
 
 	/**
 	 * This is a static class do not create instances for it
@@ -93,10 +105,8 @@ class QApp extends QAppModule
 	 */
 	public static function Run($controllers = null)
 	{
-		# \QSecurity_Check::Audit_Request();
-		
-		$request_uri = $_SERVER["REQUEST_URI"];
-		
+		$request_uri = \QWebRequest::$REQUEST_URI ?: (\QWebRequest::$REQUEST_URI = $_SERVER["REQUEST_URI"]);
+
 		$_return = null;
 		
 		$dev_mode = QAutoload::GetDevelopmentMode();
@@ -111,17 +121,55 @@ class QApp extends QAppModule
 		});
 		static::$QWebRequest_HandleShutdown_Registered = true;
 		
-		ob_start();
-		
+		$tst = static::$StartTime = microtime(true);
+
+		$q_performance = "";
+		if ($_GET['q_show_performance'])
+		{
+			$mem_usage = memory_get_usage();
+			$mem_limit = q_get_memory_limit();
+			$q_performance .= 'Performance check on: <strong>' 
+				. ((strlen(trim($_GET["__or__"] . "")) > 0) ? $_GET["__or__"] : "Homepage")
+				. "Max execution time: <strong>" . ini_get('max_execution_time') . "</strong> seconds<br/>"
+				. '</strong><br/><br/>Initial memory: <strong>' 
+				. round($mem_usage / 1024 / 1024) . 'MB</strong><br>Memory limit: <strong>' 
+				. round($mem_limit / 1024 / 1024) . 'MB</strong><br>';
+		}
+
 		if ($dev_mode && 
 				((($sub_url = substr($request_uri, strlen(Q_APP_REL), strlen("~dev/"))) === "~dev/") || ($sub_url === "~dev")))
 		{
 			// QAutoload::IsDevelopmentAuthenticated();
+			define('_dbg_request_id_', null);
 			self::$UrlController = new QDevModePage();
 			$_return = QWebRequest::Process(get_called_class(), self::$UrlController);
 		}
 		else if ($controllers)
 		{
+			if (\QAutoload::GetDevelopmentMode())
+			{
+				header('X-Frame-Options: SAMEORIGIN');
+				# qvar_dump($_COOKIE['_dbg_request_id_']);
+				if (isset($_GET['_dbg_request_id_']))
+				{
+					define('_dbg_request_id_', $_GET['_dbg_request_id_']);
+					setcookie('_dbg_request_id_', $_GET['_dbg_request_id_']);
+				}
+				else if (isset($_COOKIE['_dbg_request_id_']))
+				{
+					define('_dbg_request_id_', $_COOKIE['_dbg_request_id_']);
+				}
+				else
+					define('_dbg_request_id_', null);
+				
+				if (_dbg_request_id_ && (! (\QWebRequest::IsAjaxRequest() || \QWebRequest::IsFastAjax())))
+				{
+					# qvar_dump(_dbg_request_id_);
+				}
+			}
+			else
+				define('_dbg_request_id_', null);
+			
 			$one_controller = (!is_array($controllers)) ? $controllers : ((!next($controllers)) ? reset($controllers) : null);
 		
 			if ($one_controller)
@@ -158,11 +206,39 @@ class QApp extends QAppModule
 		}
 		else
 		{
-			// @todo - implement controller on index.url.php
+			// @todo - implement controller on index.url.php 
 		}
 
-		// execute callbacks after response
-		static::ExecuteCallbacks();
+		$runWithoutCallbacks = (static::$RunWithoutCallbacks || $_GET["q_run_without_callbacks"]);
+		$execWithCallbacks = $_GET["q_exec_with_callbacks"]; 
+		if ($_GET['q_show_performance'] && ($runWithoutCallbacks || (!$execWithCallbacks)))
+		{
+			$mem_usage = memory_get_usage();
+			#$limit_perc = $mem_usage * 100 / $mem_limit;
+			echo "<div class='qb-dump-panel-show-on'>{$q_performance}Execution time: <strong>" . (round(microtime(true) - $tst, 2) . "</strong> seconds") . "<br/>"
+				. "Memory used: <strong>" . (round($mem_usage / 1024 / 1024) . "MB") . "</strong><br/><hr/>" 
+				//. "Memory used (percentage): <strong>" .  round($limit_perc, 2) . "%</strong><br/>"
+				. ((!empty(static::$PerformanceData)) ? implode("<br/>", static::$PerformanceData) : "")
+			. "</div>";
+		}
+
+		if (!$runWithoutCallbacks)
+		{
+			// execute callbacks after response
+			static::ExecuteCallbacks();
+		}
+
+		if ($_GET['q_show_performance'] && ((!$runWithoutCallbacks) && $execWithCallbacks))
+		{
+			$mem_usage = memory_get_usage();
+			#$limit_perc = $mem_usage * 100 / $mem_limit;
+			echo "<div class='qb-dump-panel-show-on'>{$q_performance}Execution time: <strong>" . (round(microtime(true) - $tst, 2) . "</strong> seconds") . "<br/>"
+				. "Max execution time: <strong>" . ini_get('max_execution_time') . "</strong> seconds<br/>"
+				. "Memory used: <strong>" . (round($mem_usage / 1024 / 1024) . "MB") . "</strong><br/><hr/>" 
+				//. "Memory used (percentage): <strong>" .  round($limit_perc, 2) . "%</strong><br/>"
+				. ((!empty(static::$PerformanceData)) ? implode("<br/>", static::$PerformanceData) : "")
+			. "</div>";
+		}
 
 		return $_return;
 	}
@@ -171,37 +247,91 @@ class QApp extends QAppModule
 	 */
 	public static function ExecuteCallbacks()
 	{
+		q_remote_log_sub_entry([
+			[
+				'Timestamp_ms' => (string)microtime(true),
+				'Tags' => ["tag" => "ExecuteCallbacks"],
+				'Traces' => (new \Exception())->getTraceAsString(),
+				'Data' => ['CallbacksAfterResponse' => count(static::$CallbacksAfterResponse), 'CallbacksAfterResponseLast' => count(static::$CallbacksAfterResponseLast)],
+			]]);
+		
 		$had_callbacks = false;
 		if (static::$CallbacksAfterResponse || static::$CallbacksAfterResponseLast)
 		{
-			$had_callbacks = true;
-			// option 1 ... return & continue (maybe best)
-			ignore_user_abort(true);
-			set_time_limit(300);
-			if(session_id())
-				session_write_close();
-			ob_end_flush();
-			ob_flush();
-			flush();
-			if (function_exists("fastcgi_finish_request"))
-				fastcgi_finish_request();
+			if (!($_GET["q_exec_with_callbacks"]))
+			{
+				$had_callbacks = true;
+				// option 1 ... return & continue (maybe best)
+				ignore_user_abort(true);
+				set_time_limit(60 * 5);
+				if(session_id())
+					session_write_close();
+				ob_end_flush();
+				ob_flush();
+				flush();
+				if (function_exists("fastcgi_finish_request"))
+					fastcgi_finish_request();
+
+			}
 		}
-		
+
+		static::$InCallbackExecution = true;
+
 		while (static::$CallbacksAfterResponse)
 		{
 			list($after_callback, $after_callback_params) = reset(static::$CallbacksAfterResponse);
 			call_user_func_array($after_callback, $after_callback_params);
 			array_splice(static::$CallbacksAfterResponse, key(static::$CallbacksAfterResponse), 1);
 		}
-			
+		
+		// exec them in reverse order
+		if (static::$CallbacksAfterResponseLast && is_array(static::$CallbacksAfterResponseLast))
+		{
+			rsort(static::$CallbacksAfterResponseLast);
+		}
+
 		while (static::$CallbacksAfterResponseLast)
 		{
 			list($after_callback, $after_callback_params) = reset(static::$CallbacksAfterResponseLast);
 			call_user_func_array($after_callback, $after_callback_params);
 			array_splice(static::$CallbacksAfterResponseLast, key(static::$CallbacksAfterResponseLast), 1);
 		}
+		
+		q_remote_log_end('end-of-callbacks');
+		
+		static::$InCallbackExecution = false;
 	}
-	
+
+	public static function ClosureDump(\Closure $c) 
+	{
+		$str = 'function (';
+		$r = new \ReflectionFunction($c);
+		$params = array();
+		foreach($r->getParameters() as $p) {
+			$s = '';
+			if($p->isArray()) {
+				$s .= 'array ';
+			} else if($p->getClass()) {
+				$s .= $p->getClass()->name . ' ';
+			}
+			if($p->isPassedByReference()){
+				$s .= '&';
+			}
+			$s .= '$' . $p->name;
+			if($p->isOptional()) {
+				$s .= ' = ' . var_export($p->getDefaultValue(), TRUE);
+			}
+			$params []= $s;
+		}
+		$str .= implode(', ', $params);
+		$str .= '){' . PHP_EOL;
+		$lines = file($r->getFileName());
+		for($l = $r->getStartLine(); $l < $r->getEndLine(); $l++) {
+			$str .= $lines[$l];
+		}
+		return $str;
+	}
+
 	/**
 	 * Gets the running controller
 	 * 
@@ -309,20 +439,17 @@ class QApp extends QAppModule
 	{
 		self::$DataClass = $class;
 		
-		/*if (\QAutoload::GetDevelopmentMode() && file_exists('resync_model.txt'))
-		{
-			$auto_sync_db_structure = true;
-			$force_sync = true;
-			unlink('resync_model.txt');
-		}
-		*/
+		$sql_statements = "";
+
 		if ($force_sync || (self::$HasStorageChanges && QAutoload::GetDevelopmentMode()))
 		{
 			ob_start();
+			$do_auto_structure_sync = ($auto_sync_db_structure || (($auto_sync_db_structure === null) && self::$AutoSyncDbStructure));
 			// enable this to resync your DB structure
-			$sql_statements = \QSqlModelInfoType::ResyncDataStructure();
+			$sql_statements = \QSqlModelInfoType::ResyncDataStructure(null, $do_auto_structure_sync);
+
 			$dump = ob_get_clean();
-			
+
 			if (strlen(trim($sql_statements)) > 0)
 			{
 				$statements_dir = QAutoload::GetRuntimeFolder()."_sql/";
@@ -334,29 +461,34 @@ class QApp extends QAppModule
 				file_put_contents($statements_dir.$sql_file, $sql_statements);
 				file_put_contents($statements_dir.$sql_file.".info.html", $dump);
 				
-				if ($auto_sync_db_structure || (($auto_sync_db_structure === null) && self::$AutoSyncDbStructure))
+				if ($do_auto_structure_sync)
 				{
 					$storage = self::GetStorage();
+					
 					if (($res = $storage->connection->multi_query($sql_statements)) === false)
 					{
-						var_dump($sql_statements);
+						qvar_dump($sql_statements);
 						throw new Exception($storage->connection->error);
 					}
-					// we need to wait for all the queries to finish
-					while (($r = $storage->connection->next_result()))
-					{
-						# 
-					}
 					
-					if (($r === false) && ($storage->connection->errno > 0))
+					// we need to wait for all the queries to finish
+					do
 					{
-						throw new \Exception("[{$storage->connection->errno}] ".$storage->connection->error);
+						$ret_code = $storage->connection->next_result();
+						if ((!$ret_code) && $storage->connection->error)
+						{
+							qvar_dump('$ret_code', $ret_code);
+							throw new Exception($storage->connection->error);
+						}
 					}
+					while ($ret_code);
 				}
 			}
 		}
 		
 		\QSecurity::InitSecurity();
+		
+		return $sql_statements;
 	}
 	
 	/**
@@ -440,6 +572,27 @@ class QApp extends QAppModule
 	{
 		return self::$AutoSyncDbStructure;
 	}
+	
+	/**
+	 * Enables or disables auto sync of the DB structure
+	 * 
+	 * @param boolean $value
+	 */
+	public static function UseClusterAlterQueries($value = true)
+	{
+		// if ($value && (!QAutoload::GetDevelopmentMode()))
+		//  throw new Exception("AutoSyncDbStructure only works in development mode. See QAutoload::EnableDevelopmentMode.");
+		self::$UseClusterAlterQueries = $value;
+	}
+   
+	/**
+	 * 
+	 * @return boolean
+	 */
+	public static function GetUseClusterAlterQueries()
+	{
+		return self::$UseClusterAlterQueries;
+	}
  
 	/**
 	 * 
@@ -478,39 +631,49 @@ class QApp extends QAppModule
 	{
 		static::$CallbacksAfterResponseLast[] = [$callback, $params];
 	}
-	
+
+	public static function GetMultiCallUniqid()
+	{
+		return static::$MultiCallUniqid;
+	}
+
 	public static function MultiResponseExec($callback, $params, $first = true)
 	{
 		$request_multi_id = \QWebRequest::GetMultiRequestId();
-		
 		// \QApp::Log($request_multi_id ? "we enter REQU" : "we enter CACHE");
-		
 		if ($request_multi_id)
 			list(static::$MultiCallUniqid, static::$MultiCallResponseIndex) = explode("-", $request_multi_id);
 		else if (!static::$MultiCallUniqid)
 			static::$MultiCallUniqid = uniqid("", true);
-		
+
 		$multi_folder = "temp/multi-request/";
 		if (!is_dir($multi_folder))
 			qmkdir($multi_folder);
-		\QApp::Log([$request_multi_id, $first, static::$MultiCallElements, static::$MultiCallUniqid, static::$MultiCallIndex, static::$MultiCallResponseIndex]);
-		
+		#\QApp::Log([$request_multi_id, $first, static::$MultiCallElements, static::$MultiCallUniqid, static::$MultiCallIndex, static::$MultiCallResponseIndex]);
+
 		if ($request_multi_id)
 		{
 			$rf_file_name = $multi_folder.$request_multi_id.".php";
 			$pending_file_name = $multi_folder.$request_multi_id.".pending.php";
 
-			\QApp::Log(["multi req: ", $pending_file_name, file_exists($pending_file_name)]);
-			
+			#\QApp::Log(["multi req: ", $pending_file_name, file_exists($pending_file_name)]);
+
 			if (!file_exists($pending_file_name))
 			{
 				// no request
-				\QApp::Log("we exit responder | NO REQ");
+				#\QApp::Log("we exit responder | NO REQ");
 				return [];
 			}
-			
+
+			// get multi
+			if (\QWebRequest::GetMultiRequestNoWait() && !file_exists($rf_file_name))
+			{
+				#\QApp::Log("we exit responder | NO RESP AND WE DON'T WAIT");
+				return ["__no_response__" => true];
+			}
+
 			$wait_step_in_ms = 50;
-			set_time_limit(300);
+			set_time_limit(60 * 5);
 			
 			$max_wait = 120 / ($wait_step_in_ms / 1000); // wait up to 120 sec 
 			while (($max_wait--) && (!file_exists($rf_file_name)))
@@ -521,7 +684,7 @@ class QApp extends QAppModule
 			{
 				// error, we failed to process result
 				unlink($pending_file_name);
-				\QApp::Log("we exit responder | NO CACHE");
+				#\QApp::Log("we exit responder | NO CACHE");
 				return [];
 			}
 			else
@@ -531,24 +694,29 @@ class QApp extends QAppModule
 				
 				// ensure it's ready
 				$lock = new \QFileLock($rf_file_name);
-				$lock->lock_do();
+				$lock->lock();
 				$lock->unlock();
-				
+
 				include($rf_file_name);
 				$result = $__TMP_MULTI_REQ;
-				unlink($rf_file_name);
-				unlink($pending_file_name);
+
+				#$isLive = (defined('IS_LIVE') && IS_LIVE);
+				#$onPreProd = (defined('ON_PREPRODUCTION') && ON_PREPRODUCTION);
+				#if (!((!$isLive) || $onPreProd))
+				{
+					unlink($rf_file_name);
+					unlink($pending_file_name);
+				}
 				// wait 20 ms
 				usleep(20000);
-				
+
 				// how do we know if we have more pending ???
 				$next_id = static::$MultiCallUniqid . "-" . (static::$MultiCallResponseIndex + 1);
-				\QApp::Log(["multi req phase 2: ", "elements: ".count($result), $next_id, $multi_folder.$next_id.".pending.php", file_exists($multi_folder.$next_id.".pending.php")]);
+				#\QApp::Log(["multi req phase 2: ", "elements: ".count($result), $next_id, $multi_folder.$next_id.".pending.php", file_exists($multi_folder.$next_id.".pending.php")]);
 				if (file_exists($multi_folder.$next_id.".pending.php"))
 					\QWebRequest::SetMultiResponseId($next_id);
-				
-				\QApp::Log("we exit responder | {$next_id} | DATA [".count($result)."] ");
-				
+				#\QApp::Log("we exit responder | {$next_id} | DATA [".count($result)."] ");
+
 				return $result ?: [];
 			}
 		}
@@ -582,6 +750,7 @@ class QApp extends QAppModule
 				file_put_contents($multi_folder.$next_id.".pending.php", "");
 				// \QApp::Log("we create: ".$multi_folder.$next_id.".pending.php");
 			}
+			
 			if (!$first)
 			{
 				// put the result in cache

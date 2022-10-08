@@ -101,33 +101,36 @@ class QSqlModelInfoType
 			$db->children = new QModelArray();
 		
 		$db->children->set($t_name, $db_table);
-		
+
+		$table_comment = ($for_collection && (!$one_to_many)) ? 
+			"Storage for collection: ".$this->parent->parent->type->class.".".$this->parent->property->name : 
+			"Storage for class: ".$this->type;
+
 		$db_table->set("charset", "utf8");
 		$db_table->set("collation", "utf8_unicode_ci");
-		$db_table->set("comment", ($for_collection && (!$one_to_many)) ? 
-									"Storage for collection: ".$this->parent->parent->type->class.".".$this->parent->property->name : 
-									"Storage for class: ".$this->type);
+		$db_table->set("comment", $table_comment);
 		$db_table->set("engine", "InnoDB");
+
 		$db_table->parent = $db;
-		
+
 		if (!$db_table->columns)
 			$db_table->set("columns", new QModelArray());
 		if (!$db_table->indexes)
 			$db_table->set("indexes", new QModelArray());
-		
+
 		// setup rowid & column id
 		$rowid_name = $for_collection ? $parent_prop->getCollectionTableRowId() : $this->type->getRowIdColumnName();
 		$rowid_col_obj = QSqlModelInfoProperty::SetupSqlColumn(QSqlTableIndex::IndexPrimary, $db_table, $rowid_name, QSqlTableColumn::TypeInt, null, null, null, null, null, true, false, true, "Id/RowId column role");
-		
+
 		if (!$for_collection)
 		{
 			// setup type column (only if required)
 			if ($root->_table_types && $root->_table_types[$orig_tname])
 			{
 				$typ_col_name = $this->type->getTypeColumnName();
-				
+
 				$root->_multitype[$orig_tname][$rowid_name] = $typ_col_name;
-				
+
 				QSqlModelInfoProperty::SetupSqlColumn(null, $db_table, $typ_col_name, QSqlTableColumn::TypeSmallint, null, null, null, null, null, true, true, false, "Type column for table entry role");
 			}
 			else if (!$root->_multitype[$orig_tname][$rowid_name])
@@ -412,7 +415,7 @@ class QSqlModelInfoType
 						if (is_array($pty))
 						{
 							var_dump($p_k, self::PossibleTypes($type )[$p_k]);
-							die("soon of a chese");
+							q_die("soon of a chese");
 						}
 						$child->type = $pty;
 						if ($parent)
@@ -516,21 +519,24 @@ class QSqlModelInfoType
 	}
 	
 	/**
+	 * If we do an auto structure sync - queries will be executed
 	 * Calls for a resync of the data structure
-	 * 
+	 * @param boolean $do_auto_structure_sync
+	 * @return type
+	 * @throws Exception
 	 */
-	public static function ResyncDataStructure($storage = null)
+	public static function ResyncDataStructure(\QIStorage $storage = null, bool $do_auto_structure_sync = false)
 	{
 		$storage = $storage ?: QApp::GetStorage();
-		# if (!$storage)
-		#	throw new Exception("Unable to find default storage");
+		if (!$storage)
+			throw new Exception("Unable to find storage");
 		$data_class = QApp::GetDataClass();
 		$Data = new $data_class;
 		if (!$Data)
 			throw new Exception("Unable to find startup data");
-		
+
 		$storage->ensureTypeIdsWasIncluded(true);
-		
+
 		// refresh the mapping
 
 		QSqlModelInfoType::RefreshTypeTableList();
@@ -552,7 +558,7 @@ class QSqlModelInfoType
 				foreach ($db->children as $table)
 				{
 					// echo $table->name."<br/>";
-					$storage->syncTable($table);
+					$storage->syncTable($table, $do_auto_structure_sync);
 				}
 			}
 		}

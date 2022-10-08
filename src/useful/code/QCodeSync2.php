@@ -1,4 +1,4 @@
-$<?php
+<?php
 
 /**
  * Generates and patches platform standards
@@ -229,6 +229,14 @@ class QCodeSync2
 						// if (!$this->full_sync)
 						$ru = $this->full_sync ? null : $_SERVER["REQUEST_URI"];
 						$rel_url = ((!$this->full_sync) && $ru && (substr($ru, 0, strlen(BASE_HREF)) === BASE_HREF)) ? substr($ru, strlen(BASE_HREF)) : null;
+                        
+						if (defined('Q_BACKEND_URL_PREFIX') && Q_BACKEND_URL_PREFIX)
+						{
+							if (substr($rel_url, 0, strlen(Q_BACKEND_URL_PREFIX)) === Q_BACKEND_URL_PREFIX)
+								$rel_url = substr($rel_url, strlen(Q_BACKEND_URL_PREFIX));
+							else
+								$rel_url = false;
+						}
 						
 						if (is_string($rel_url))
 						{

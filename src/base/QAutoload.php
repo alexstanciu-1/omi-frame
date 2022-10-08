@@ -795,6 +795,8 @@ final class QAutoload
 		}
 		else
 		{
+			clearstatcache();
+			
 			$HTTP_X_REQUESTED_WITH = filter_input(INPUT_SERVER, "HTTP_X_REQUESTED_WITH");
 
 			self::$LockAddWatchFolders = true;

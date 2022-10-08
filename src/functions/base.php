@@ -3429,9 +3429,7 @@ function q_parse_str_to_array(string $array_as_string = null, int $tokens_pos = 
 			}
 			default:
 			{
-				qvar_dumpk($tok);
-				die;
-				break;
+				throw new \Exception('Parse error.');
 			}
 		}
 		

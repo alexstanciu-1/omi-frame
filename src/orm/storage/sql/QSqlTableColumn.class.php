@@ -368,6 +368,7 @@ abstract class QSqlTableColumn_frame_ extends QStorageTableColumn
 			case static::TypeBlob:
 			case static::TypeLongBlob:
 			case static::TypeTimestamp:
+			case static::TypeTime:
 			{
 				return null;
 			}

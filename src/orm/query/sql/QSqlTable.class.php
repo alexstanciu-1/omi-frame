@@ -263,6 +263,7 @@ abstract class QSqlTable_frame_ extends QStorageTable
 				{
 					unset($obj->_tsx);
 					unset($obj->_ts);
+					unset($obj->_tsp);
 				}
 			}
 			
@@ -985,7 +986,6 @@ abstract class QSqlTable_frame_ extends QStorageTable
 				if ($do_delete)
 				{
 					// $q_str = "UPDATE {$sql_info["tab"]} SET {$sql_info["tab"]}.`Del__`=1 WHERE `{$sql_info["id_col"]}`=".$this->escapeScalar($model->getId(), $connection);
-					
 					if (!$model->getId())
 						throw new \Exception('Missing Id');
 					
@@ -1065,6 +1065,32 @@ abstract class QSqlTable_frame_ extends QStorageTable
 			}
 			
 			# $model->_ts = null;
+		}
+		
+		if ($is_collection)
+		{
+			# reset flags
+			# if (\QAutoload::GetDevelopmentMode())
+			{
+				# unset($model->_ts, $model->_tsp);
+				# cleanup _wst/_rowi
+				$wst_unset = [];
+				foreach ($model->_wst ?: [] as $_wst_k => $_wst_v)
+				{
+					if ($model[$_wst_k] === null)
+						$wst_unset[] = $_wst_k;
+				}
+				foreach ($wst_unset as $k_unset)
+					unset($model->_wst[$k_unset]);
+				$rowi_unset = [];
+				foreach ($model->_rowi ?: [] as $_rowi_k => $_rowi_v)
+				{
+					if ($model[$_rowi_k] === null)
+						$rowi_unset[] = $_rowi_k;
+				}
+				foreach ($rowi_unset as $k_unset)
+					unset($model->_rowi[$k_unset]);
+			}
 		}
 	}
 	

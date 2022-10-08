@@ -1749,6 +1749,7 @@ class QModelArray extends ArrayObject implements QIModelArray
 
 				list($_sk, $_si) = $_editm;
 					$syncItm->setTransformState(\QIModel::TransformDelete, $_sk);
+
 				if (!$_isScalar && !$_isM2m)
 					$_si->setTransformState(\QIModel::TransformDelete);
 			}

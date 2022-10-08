@@ -2652,23 +2652,44 @@ class QApi
 				CURLOPT_POSTFIELDS => $json_data,
 				CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
 			]);
-			
+						
 			$rc = curl_exec($curl);
 			
-			$log_file = 'temp/log_Trigger_Reverse_Api_'.date('Y-m-d H:i:s')." - ".uniqid().".log";
+			# $log_file = 'temp/log_Trigger_Reverse_Api_'.date('Y-m-d H:i:s')." - ".uniqid().".log";
 			
 			$request_headers = curl_getinfo($curl, CURLINFO_HEADER_OUT);
+			
+			$req = new \Omi\Request_Log();
+			$req->Date = date("Y-m-d H:i:s");
+			$req->Method = 'POST';
+			$req->IP_v4 = '127.0.0.1';
+			$req->Is_Ajax = true;
+			$req->Is_Fast_Call = false;
+
+			$req->Request_URI = $url;
+			# $req->Cookies = $_SERVER['HTTP_COOKIE'];
+			$req->User_Agent = 'API Trigger_Reverse_Api';
+
+			# $req->HTTP_GET = [];
+			$req->HTTP_POST = $json_data;
+			# $req->HTTP_FILES = 
 			
 			if ($rc === false)
 			{
 				$err_no = curl_errno($curl);
 				$err_str = curl_error($curl);
-				file_put_contents($log_file, "ERROR:\n{$err_no}\n{$err_str}\n\n{$request_headers}");
+				
+				$req->Traces = json_encode(['trace' => (new \Exception())->getTraceAsString(), "ERROR" => "{$err_no}\n{$err_str}", "REQ_HEADERS" => $request_headers], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_LINE_TERMINATORS | JSON_INVALID_UTF8_SUBSTITUTE);
+				
+				# file_put_contents($log_file, (new \Exception())->getTraceAsString()."\n\n". "ERROR:\n{$err_no}\n{$err_str}\n\n{$request_headers}");
 			}
 			else
 			{
-				file_put_contents($log_file, "REQUEST:\n{$url}\n\n{$request_headers}\n\n{$json_data}\n\n=================================================\nRESPONSE:\n{$rc}");
+				# file_put_contents($log_file, (new \Exception())->getTraceAsString()."\n\n". "REQUEST:\n{$url}\n\n{$request_headers}\n\n{$json_data}\n\n=================================================\nRESPONSE:\n{$rc}");
+				$req->Traces = json_encode(['trace' => (new \Exception())->getTraceAsString(), "RESPONSE" => $rc, "REQ_HEADERS" => $request_headers], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_LINE_TERMINATORS | JSON_INVALID_UTF8_SUBSTITUTE);
 			}
+						
+			$req->log();
 			
 			# if (\QAutoload::GetDevelopmentMode())
 			{

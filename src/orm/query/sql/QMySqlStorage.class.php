@@ -312,7 +312,7 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 		if ($end_type !== false)
 		{
 			$f_type = trim(substr($field_type, 0, $end_type));
-			$end_length = strpos($field_type, ")", $end_type + 1);
+			$end_length = strrpos($field_type, ")", $end_type + 1);
 			if ($end_length === false)
 				throw new Exception("Invalid or unknown format");
 				

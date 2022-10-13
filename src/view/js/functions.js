@@ -2143,14 +2143,24 @@ function qIncludeResourcesIfNotIncluded(css, js, user_func, user_func_param)
 		{
 			var href = css_doms[i].getAttribute("href");
 			if (href && href.length)
+			{
+				// make sure that we remove prevent caching property from resource
+				if (href.indexOf("?") > -1)
+					href = href.substr(0, href.indexOf("?"));
 				existing[href] = true;
+			}
 		}
 		var extra_css_doms = jQuery(".q-fake-css");
 		for (var i = 0; i < extra_css_doms.length; i++)
 		{
 			var href = extra_css_doms[i].dataset.src;
 			if (href && href.length)
+			{
+				// make sure that we remove prevent caching property from resource
+				if (href.indexOf("?") > -1)
+					href = href.substr(0, href.indexOf("?"));
 				existing[href] = true;
+			}
 		}
 		
 		for (var k in css)

@@ -60,7 +60,7 @@ trait QWebControl_Methods
 	public function execCallbacks($filter = null)
 	{
 		throw new \Exception('@deprecated');
-		# sreturn execQB($filter, $this);
+		# return execQB($filter, $this);
 	}
 
 	/**

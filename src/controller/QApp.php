@@ -122,54 +122,15 @@ class QApp extends QAppModule
 		static::$QWebRequest_HandleShutdown_Registered = true;
 		
 		$tst = static::$StartTime = microtime(true);
-
-		$q_performance = "";
-		if ($_GET['q_show_performance'])
-		{
-			$mem_usage = memory_get_usage();
-			$mem_limit = q_get_memory_limit();
-			$q_performance .= 'Performance check on: <strong>' 
-				. ((strlen(trim($_GET["__or__"] . "")) > 0) ? $_GET["__or__"] : "Homepage")
-				. "Max execution time: <strong>" . ini_get('max_execution_time') . "</strong> seconds<br/>"
-				. '</strong><br/><br/>Initial memory: <strong>' 
-				. round($mem_usage / 1024 / 1024) . 'MB</strong><br>Memory limit: <strong>' 
-				. round($mem_limit / 1024 / 1024) . 'MB</strong><br>';
-		}
-
 		if ($dev_mode && 
 				((($sub_url = substr($request_uri, strlen(Q_APP_REL), strlen("~dev/"))) === "~dev/") || ($sub_url === "~dev")))
 		{
 			// QAutoload::IsDevelopmentAuthenticated();
-			define('_dbg_request_id_', null);
 			self::$UrlController = new QDevModePage();
 			$_return = QWebRequest::Process(get_called_class(), self::$UrlController);
 		}
 		else if ($controllers)
 		{
-			if (\QAutoload::GetDevelopmentMode())
-			{
-				header('X-Frame-Options: SAMEORIGIN');
-				# qvar_dump($_COOKIE['_dbg_request_id_']);
-				if (isset($_GET['_dbg_request_id_']))
-				{
-					define('_dbg_request_id_', $_GET['_dbg_request_id_']);
-					setcookie('_dbg_request_id_', $_GET['_dbg_request_id_']);
-				}
-				else if (isset($_COOKIE['_dbg_request_id_']))
-				{
-					define('_dbg_request_id_', $_COOKIE['_dbg_request_id_']);
-				}
-				else
-					define('_dbg_request_id_', null);
-				
-				if (_dbg_request_id_ && (! (\QWebRequest::IsAjaxRequest() || \QWebRequest::IsFastAjax())))
-				{
-					# qvar_dump(_dbg_request_id_);
-				}
-			}
-			else
-				define('_dbg_request_id_', null);
-			
 			$one_controller = (!is_array($controllers)) ? $controllers : ((!next($controllers)) ? reset($controllers) : null);
 		
 			if ($one_controller)
@@ -210,36 +171,12 @@ class QApp extends QAppModule
 		}
 
 		$runWithoutCallbacks = (static::$RunWithoutCallbacks || $_GET["q_run_without_callbacks"]);
-		$execWithCallbacks = $_GET["q_exec_with_callbacks"]; 
-		if ($_GET['q_show_performance'] && ($runWithoutCallbacks || (!$execWithCallbacks)))
-		{
-			$mem_usage = memory_get_usage();
-			#$limit_perc = $mem_usage * 100 / $mem_limit;
-			echo "<div class='qb-dump-panel-show-on'>{$q_performance}Execution time: <strong>" . (round(microtime(true) - $tst, 2) . "</strong> seconds") . "<br/>"
-				. "Memory used: <strong>" . (round($mem_usage / 1024 / 1024) . "MB") . "</strong><br/><hr/>" 
-				//. "Memory used (percentage): <strong>" .  round($limit_perc, 2) . "%</strong><br/>"
-				. ((!empty(static::$PerformanceData)) ? implode("<br/>", static::$PerformanceData) : "")
-			. "</div>";
-		}
 
 		if (!$runWithoutCallbacks)
 		{
 			// execute callbacks after response
 			static::ExecuteCallbacks();
 		}
-
-		if ($_GET['q_show_performance'] && ((!$runWithoutCallbacks) && $execWithCallbacks))
-		{
-			$mem_usage = memory_get_usage();
-			#$limit_perc = $mem_usage * 100 / $mem_limit;
-			echo "<div class='qb-dump-panel-show-on'>{$q_performance}Execution time: <strong>" . (round(microtime(true) - $tst, 2) . "</strong> seconds") . "<br/>"
-				. "Max execution time: <strong>" . ini_get('max_execution_time') . "</strong> seconds<br/>"
-				. "Memory used: <strong>" . (round($mem_usage / 1024 / 1024) . "MB") . "</strong><br/><hr/>" 
-				//. "Memory used (percentage): <strong>" .  round($limit_perc, 2) . "%</strong><br/>"
-				. ((!empty(static::$PerformanceData)) ? implode("<br/>", static::$PerformanceData) : "")
-			. "</div>";
-		}
-
 		return $_return;
 	}
 	/**

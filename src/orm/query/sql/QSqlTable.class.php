@@ -1084,7 +1084,7 @@ abstract class QSqlTable_frame_ extends QStorageTable
 			# reset flags
 			# if (\QAutoload::GetDevelopmentMode())
 			{
-				unset($model->_ts, $model->_tsp);
+				# unset($model->_ts, $model->_tsp);
 				# cleanup _wst/_rowi
 				$wst_unset = [];
 				foreach ($model->_wst ?: [] as $_wst_k => $_wst_v)
@@ -1431,7 +1431,6 @@ abstract class QSqlTable_frame_ extends QStorageTable
 	{
 		if ($model->_lk === 1)
 			return;
-
 		$model->_lk = 1;
 		
 		$selector_isarr = is_array($selector);

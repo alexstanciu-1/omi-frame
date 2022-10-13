@@ -2309,85 +2309,12 @@ class {$class}
 			parent::cleanupTemplate();
 	}
 	
-	public function toString($formated = false, $final = false, $data = null)
+	public function toString(bool $formated = false, $final = false, $data = null)
 	{
-		if ($final && is_bool($formated))
-		{
-			$lc_tag = strtolower($this->tag);
-			
-			$after = $before = null;
-			
-			if ($this->attrs["q-var"])
-			{
-				$q_rel_var = $data ? $data["q-rel-var"] : null;
-				$q_var = $this->getAttribute("q-var");
-				$php_var = $data["q-rel-var"] = $this->extractQVarForCode($q_var, $q_rel_var);
-				
-				// we should now inprint data based on the bind
-				switch ($lc_tag)
-				{
-					case "input":
-					{
-						if (!$this->attrs["value"])
-							$this->setAttribute("value", "\"<?= {$php_var} ?>\"", false);
-						break;
-					}
-					// case "select": // <option value="value2" selected>Value 2</option>
-					case "textarea":
-					{
-						if ($this->innerIsEmpty())
-							$this->inner("<?= {$php_var} ?>");
-						break;
-					}
-					default:
-					{
-						/*if (!$this->attrs["q-val"])
-							$this->setAttribute("q-val", "\"<?= {$php_var} ?>\"", false);*/
-						if ($this->innerIsEmpty())
-							$this->inner("<?= {$php_var} ?>");
-						break;
-					}
-				}
-			}
-			if ($this->attrs["q-each"])
-			{
-				$q_rel_var = $data ? $data["q-rel-var"] : null;
-				
-				$var_q_each = $this->getAttribute("q-each");
-				$var_patt = '/[\w\$\\\\\.\(\)\[\]]+|\bin\b|\bas\b/us';
-				// var_dump($var_patt);
-				$matches = null;
-				$ok = preg_match_all($var_patt, $var_q_each, $matches);
-				if (!$ok)
-					// throw new Exception("Parse error in q-each: ".$var_q_each);
-					return null;
-				list($p_1, $p_2, $p_3) = $matches[0];
-				if (!($p_1 && $p_2 && $p_3))
-					// throw new Exception("Parse error in q-each: ".$var_q_each);
-					return null;
-				$each_collection = $this->extractQVarForCode( ($p_2 === "as") ? $p_1 : $p_3, $q_rel_var);
-				$each_item = $this->extractQVarForCode( ($p_2 === "as") ? $p_3 : $p_1, $q_rel_var);
-				
-				$data["q-rel-var"] = $each_item;
-				
-				// var q_each_parts = q_each.match(/[\w\$\\\.\(\)\[\]]+|\bin\b|\bas\b/g);
-				//var_dump($each_collection, $each_item);
-				$before = "<!-- OMI-MARK: <div q-each={$this->attrs["q-each"]}></div> -->\n".
-							"<?php if ({$each_collection}) { foreach ({$each_collection} as {$each_item}) { ?>\n";
-				$after = $this->attrs["q-start"] ? "" : "\n<?php } } ?>\n";
-			}
-			if ($this->attrs["q-end"])
-			{
-				$before = "";
-				$after = "\n<?php } } ?>\n";
-			}
-
-			if ($after || $before)
-				return $before.parent::toString(($lc_tag === "virtual") ? $this->inner() : $formated, $final, $data).$after;
-			else
-				return parent::toString(($lc_tag === "virtual") ? $this->inner() : $formated, $final, $data);
-		}
-		return parent::toString($formated, $final, $data);
+		if ($final && (($lc_tag = strtolower($this->tag)) === "virtual"))
+			return static::To_String($this->inner(), $final, $data);
+		else
+			return parent::toString($formated, $final, $data);
 	}
 	
 	public function generateUrlControllerIncludesForLoad($includes_to_load)

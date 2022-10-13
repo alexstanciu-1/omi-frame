@@ -589,7 +589,6 @@ class QCodeSync
 						foreach ($js_paths ?: [] as $js_path)
 						{
 							#$frame_js_path = "/" . ltrim(substr($js_path, $doc_root_len), "/");
-							#echo $js_path . " | " . \QApp::GetWebPath($js_path) . "<br/>";
 							$frame_js_path = \QApp::GetWebPath($js_path);
 
 							// autoload_js.php
@@ -1667,7 +1666,7 @@ class QCodeSync
 			
 			if ($render_code->jsFunc)
 			{
-				$js_path = substr($element->getTemplatePath(""), 0, -3)."js";
+				$js_path = substr($element->getTemplatePath(""), 0, -4).".gen.js";
 				$contents = file_exists($js_path) ? file_get_contents($js_path) : "";
 				foreach ($render_code->jsFunc as $func_tag => $func_code)
 				{

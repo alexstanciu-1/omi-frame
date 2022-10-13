@@ -4215,15 +4215,14 @@ trait QModel_Methods
 	 */
 	public function transform($parameters = null, $containers = null, $recurse = true, QBacktrace $backtrace = null, $as_simulation = false, &$issues = null, &$root_issues = null, bool $trigger_provision = true, bool $trigger_events = true, bool $trigger_save = false, bool $trigger_import = false)
 	{
+		$is_root_call = ((!$backtrace) || ($backtrace === $backtrace->root));
 		if (Q_IS_TFUSE)
 		{
-			$is_root_call = ((!$backtrace) || ($backtrace === $backtrace->root));
 			if ($is_root_call && ($dataCls = \QApp::GetDataClass()) && $dataCls::$_USE_FILTER_BY_OWNERSHIP)
 				$this->setupSyncPropsInSelector($recurse);
 		}
 		else
 		{
-			$is_root_call = ((!$backtrace) || ($backtrace === $backtrace->root));
 			if ($is_root_call)
 				$this->setupSyncPropsInSelector($recurse);
 		}
@@ -4410,8 +4409,6 @@ trait QModel_Methods
 		// do on after save and after import - we need to do same things on entities after saving and after import - this is where we will do them
 		$this->afterProcess($selector, $transform_state, $is_starting_point, $appProp);
 	}
-	
-	
 	
 	/**
 	 * We need to check data on the entire entity

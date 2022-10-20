@@ -182,7 +182,7 @@ class QFirewall
 				$path = substr($uri, 0, $p);
 			$uniqid = uniqid();
 			$output = $_SERVER["REMOTE_ADDR"] . " - - [" . date("d/M/Y:H:i:s O") . "] \"{$_SERVER['REQUEST_METHOD']} {$path} {$_SERVER['SERVER_PROTOCOL']}\" " 
-				. ($_SERVER['REDIRECT_STATUS'] ? $_SERVER['REDIRECT_STATUS'] : 0) . " 880 \"{$_SERVER['HTTP_REFERER']}\" \"{$_SERVER['HTTP_USER_AGENT']}||{$uniqid}\"\n";
+				. ($_SERVER['REDIRECT_STATUS'] ?? 0) . " 880 \"".($_SERVER['HTTP_REFERER'] ?? '')."\" \"".($_SERVER['HTTP_USER_AGENT'] ?? '')."||{$uniqid}\"\n";
 
 			if ($doPhpApacheCustomLog)
 				file_put_contents($php_access_log_file, $output, FILE_APPEND);

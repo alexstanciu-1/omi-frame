@@ -235,7 +235,7 @@ abstract class QPHPToken
 			throw new \Exception('Boolean is not allowed. Possible accidental call of static instead of instance.');
 	}
 	
-	public function toString($formated = false, $final = false, $data = null)
+	public function toString(bool $formated = false, $final = false, $data = null)
 	{
 		$str = "";
 		if ($this->children)

@@ -699,7 +699,10 @@ class QCodeSync2
 							$class = $final_class_name;
 
 							if ($header_inf['is_patch'] && ($header_inf['class'] === $final_class_name))
+							{
+								qvar_dumpk('$header_inf', $header_inf);
 								throw new \Exception('Can not compile: `'.$layer.$file.'` because the name of class will conflict with the compiled class\'s name');
+							}
 
 							if ((!$file_namespace) && $header_inf['namespace'])
 								$file_namespace = $header_inf['namespace'];

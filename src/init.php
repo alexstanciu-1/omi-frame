@@ -105,7 +105,7 @@ mysqli_report(MYSQLI_REPORT_OFF);
  */
 QAutoload::AddWatchFolder(Q_FRAME_PATH, false, "frame", false, "frame");
 
-set_error_handler(array("QErrorHandler", "HandleError"), E_ALL & ~(E_NOTICE | E_USER_NOTICE | E_STRICT | E_DEPRECATED | E_WARNING | E_COMPILE_WARNING));
+set_error_handler(array("QErrorHandler", "HandleError"), E_ALL);
 set_exception_handler(array("QErrorHandler", "UncaughtExceptionHandler"));
 register_shutdown_function(array("QErrorHandler", "OnShutdown"));
 register_shutdown_function(function () {

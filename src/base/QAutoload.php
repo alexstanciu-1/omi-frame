@@ -236,13 +236,18 @@ final class QAutoload
 					$tag = basename($b_path);
 					$b_path = dirname($b_path);
 				}
-				while (($bt_path = self::$WatchFoldersByTag[$tag]) && ($bt_path !== $path));
+				while (($bt_path = (self::$WatchFoldersByTag[$tag] ?? null)) && ($bt_path !== $path));
 			}
 						
 			self::$WatchFoldersByTag[$tag] = $path;
 			
 			if ($tag_layer !== null)
+			{
+				$old_tag = self::$WatchFoldersTag_To_Layer[$tag] ?? null;
+				if (isset($old_tag) && ($old_tag !== $tag_layer))
+					throw new \Exception('We overwrite tag: '.$tag);
 				self::$WatchFoldersTag_To_Layer[$tag] = $tag_layer;
+			}
 			else
 				throw new \Exception("Layer tag must be defined.");
 		}
@@ -309,7 +314,7 @@ final class QAutoload
 	 */
 	public static function AutoloadClass($class_name)
 	{
-		if (($qp = self::$AutoloadArray[$class_name]))
+		if (($qp = (self::$AutoloadArray[$class_name] ?? null)))
 		{
 			if (is_string($qp))
 			{
@@ -701,8 +706,9 @@ final class QAutoload
 				if (is_dir($child))
 				{
 					$af = $avoid_folders ? $avoid_folders[$f] : null;
-					if (($af === true) || (($f[0] === "~") && ($path === "")))
+					if (($af === true) || (($f[0] === "~") /* && ($path === "") */ )) # changed so that any ~ will be excluded no matter how deep
 						continue;
+					
 					self::ScanForChanges($full_resync, $debug_mode, $rel."/", $af, $skip_on_ajax, $info, $files_state, $changed, $new, $root_folder);
 				}
 				else if (($f_0 = $f[0]) && ($f_0 !== strtolower($f_0)))

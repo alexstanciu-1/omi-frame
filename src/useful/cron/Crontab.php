@@ -27,7 +27,7 @@ class Crontab
 		
 		foreach ($chunks as $chunk)
 		{
-			if ($chunk{0} === "#")
+			if ($chunk[0] === "#")
 			{
 				if (($c_pos = strpos($chunk, static::$CommandIdentifier)) !== false)
 				{

@@ -2136,7 +2136,7 @@ function qDebugStackInner($args, $with_stack = false, $on_shutdown = false, stri
 	array_shift($stack);
 	
 	$stack_1 = end($stack);
-	$stack_1_file = $stack_1["file"];
+	$stack_1_file = $stack_1["file"] ?? null;
 	
 	// remove GetStack
 	// array_pop($stack);
@@ -5084,11 +5084,14 @@ function q_log_process_status()
 	
 	file_put_contents("../temp/php_pids/{$pid}.json", json_encode($data, JSON_UNESCAPED_LINE_TERMINATORS | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
 	
-	register_shutdown_function(function () use ($data, $pid) {
+	$cwd = getcwd();
+	
+	register_shutdown_function(function () use ($data, $pid, $cwd) {
 				# wrap it so it's executed last
-				register_shutdown_function(function () use ($data, $pid) {
+				register_shutdown_function(function () use ($data, $pid, $cwd) {
 					try
 					{
+						chdir($cwd);
 						$data['status'] = 'shutdown';
 						$data['finish_time'] = microtime(true);
 						$data['finish_date'] = DateTime::createFromFormat('U.u', microtime(true))->format("Y-m-d H:i:s.u");

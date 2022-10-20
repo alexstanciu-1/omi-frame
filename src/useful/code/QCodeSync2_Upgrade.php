@@ -13,9 +13,15 @@ trait QCodeSync2_Upgrade
 
 	public function run_upgrade(array $files, array $changed_or_added, array $removed_files, array $new_files)
 	{
+		unset($files['/home/alex/public_html/tf-develop/~includes/omi-frame/src/']);
+		unset($files['/home/alex/public_html/tf-develop/~includes/omi-mods/classes/']);
+		unset($files['/home/alex/public_html/tf-develop/~includes/omi-mods/integrations/']);
+		unset($files['/home/alex/public_html/tf-develop/~includes/omi-mods/gens/']);
+		unset($files['/home/alex/public_html/tf-develop/~instances/default/public_html/~backend_config/']);
+		
 		# one dir above to catch more situations
-		$this->upgrade_inside_dir = dirname( getcwd() )."/";
-		$this->upgrage_dir = dirname(getcwd())."/upgrade/";
+		$this->upgrade_inside_dir = "/home/alex/public_html/tf-develop/";
+		$this->upgrage_dir = dirname(getcwd())."/home/alex/public_html/upgrade/";
 		$this->upgrade_possible_parent_issues = [];
 		
 		$this->temp_code_dir = $this->upgrage_dir."temp/code/";
@@ -34,7 +40,7 @@ trait QCodeSync2_Upgrade
 			# copy ~backend_config
 			# copy .gitignore ... etc etc etc
 			$loop_over = $files;
-			$loop_over[dirname($runtime_folder)."/~backend_config/"] = 'full';
+			# $loop_over[dirname($runtime_folder)."/~backend_config/"] = 'full';
 			$loop_over[dirname($runtime_folder)."/"] = 'non-recursive';
 			if (defined('Q_RUN_CODE_UPGRADE_TO_TRAIT_EXTAR_DIRS') && Q_RUN_CODE_UPGRADE_TO_TRAIT_EXTAR_DIRS)
 			{
@@ -49,7 +55,7 @@ trait QCodeSync2_Upgrade
 			{
 				if (substr($layer, 0, strlen($this->upgrade_inside_dir)) !== $this->upgrade_inside_dir)
 					throw new \Exception('Code folder `'.$layer.'` is outside the upgrade directory `'.$this->upgrade_inside_dir.'`');
-
+			
 				if ($run_folder_mode === 'non-recursive')
 				{
 					foreach (scandir($layer) ?: [] as $sdir_item)
@@ -259,7 +265,20 @@ trait QCodeSync2_Upgrade
 					{
 						// do the `upgrade` then push it
 						// we need the layer name !!!
-						$prev_layer_class_name = $this->upgrade_class_file($class, $layer, $file, $watch_folders_tags[$layer], $toks_cache_methods, $prev_layer_class_name);
+						if (!is_string($watch_folders_tags[$layer]))
+						{
+							qvar_dumpk($watch_folders_tags, $layer);
+							throw new \Exception('stttop!');
+						}
+						
+						try
+						{
+							$prev_layer_class_name = $this->upgrade_class_file($class, $layer, $file, $watch_folders_tags[$layer], $toks_cache_methods, $prev_layer_class_name);
+						}
+						catch (\Exception $ex)
+						{
+							qvar_dumpk("UPGRADE EXCEPTION: " . $ex->getMessage());
+						}
 					}
 				}
 			}
@@ -554,6 +573,8 @@ trait QCodeSync2_Upgrade
 			$write_to_file_name = substr($file, 0, -4).".class.php";
 		else if ($full_ext === '.patch.php')
 			$write_to_file_name = substr($file, 0, -strlen($full_ext)).".class.php";
+		else if ($full_ext === '.class.php')
+			return false;
 		else
 		{
 			qvar_dumpk($file, $full_ext, $write_to_file_name);

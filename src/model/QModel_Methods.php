@@ -2676,7 +2676,7 @@ trait QModel_Methods
 	{
 		if (static::$Dims)
 			static::$Dims["lang"] = $lang;
-		static::$Language_Dim = $lang;
+		\QApp::$Language_Dim = $lang;
 	}
 	
 	public static function SetDefaultLanguage_Dim($lang)

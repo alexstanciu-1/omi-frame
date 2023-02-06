@@ -60,24 +60,37 @@ define("Q_FRAME_BPATH", dirname(__DIR__)."/");
 
 // fix the bug of having double slashes in SCRIPT_FILENAME or SCRIPT_NAME
 $_filenameDir = realpath(getcwd())."/";
-$_web_dir = realpath(substr($_SERVER["SCRIPT_FILENAME"], 0, -strlen($_SERVER["SCRIPT_NAME"])));
-if (!$_web_dir)
-	throw new \Exception('The running dir is outside the current dir. Not implemented atm.');
-$_scriptNameDir = substr($_filenameDir, strlen($_web_dir));
-
 # $_scriptNameDir = preg_replace("#(^|[^:])//+#", "\\1/", rtrim(dirname($_SERVER["SCRIPT_NAME"]), "/")."/");
 
 if (!defined("Q_RUNNING_PATH"))
 	define("Q_RUNNING_PATH", $_filenameDir);
 
 if (!defined("BASE_HREF"))
+{
+	$_web_dir = realpath(substr($_SERVER["SCRIPT_FILENAME"], 0, -strlen($_SERVER["SCRIPT_NAME"])));
+	if (!$_web_dir)
+		throw new \Exception('The running dir is outside the current dir. Not implemented atm.');
+
+	$_scriptNameDir = substr($_filenameDir, strlen($_web_dir));
 	define("BASE_HREF", $_scriptNameDir);
+}
 
-define("Q_FRAME_REL", substr(Q_FRAME_PATH, strlen(Q_RUNNING_PATH) - strlen(BASE_HREF)));
+if (defined('Q_CODE_DIR'))
+{
+	define("Q_FRAME_REL", substr(Q_FRAME_PATH, strlen(Q_CODE_DIR)));
 
-define("Q_FRAME_BREL", substr(Q_FRAME_BPATH, strlen(Q_RUNNING_PATH) - strlen(BASE_HREF)));
-define("Q_APP_REL", substr(Q_RUNNING_PATH, strlen(Q_RUNNING_PATH) - strlen(BASE_HREF)));
-define("Q_REQ_REL", substr($_SERVER["REQUEST_URI"], strlen(Q_APP_REL)));
+	define("Q_FRAME_BREL", substr(Q_FRAME_BPATH, strlen(Q_CODE_DIR)));
+	define("Q_APP_REL", BASE_HREF);
+	define("Q_REQ_REL", substr($_SERVER["REQUEST_URI"], strlen(Q_APP_REL)));
+}
+else
+{
+	define("Q_FRAME_REL", substr(Q_FRAME_PATH, strlen(Q_RUNNING_PATH) - strlen(BASE_HREF)));
+
+	define("Q_FRAME_BREL", substr(Q_FRAME_BPATH, strlen(Q_RUNNING_PATH) - strlen(BASE_HREF)));
+	define("Q_APP_REL", substr(Q_RUNNING_PATH, strlen(Q_RUNNING_PATH) - strlen(BASE_HREF)));
+	define("Q_REQ_REL", substr($_SERVER["REQUEST_URI"], strlen(Q_APP_REL)));
+}
 
 /**
  * First include QObject because QAutoload needs it
@@ -105,7 +118,7 @@ mysqli_report(MYSQLI_REPORT_OFF);
  */
 QAutoload::AddWatchFolder(Q_FRAME_PATH, false, "frame", false, "frame");
 
-set_error_handler(array("QErrorHandler", "HandleError"), E_ALL);
+set_error_handler(array("QErrorHandler", "HandleError"), E_ALL & ~(E_NOTICE | E_USER_NOTICE | E_STRICT | E_DEPRECATED | E_WARNING | E_COMPILE_WARNING));
 set_exception_handler(array("QErrorHandler", "UncaughtExceptionHandler"));
 register_shutdown_function(array("QErrorHandler", "OnShutdown"));
 register_shutdown_function(function () {

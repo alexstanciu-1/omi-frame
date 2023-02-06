@@ -987,7 +987,7 @@ final class QWebRequest
 	
 	public static function Get_Request_Id_For_Logs()
 	{
-		return $_GET['__Request_Id_Log'] ?: static::Get_Request_Id();
+		return $_GET['__Request_Id_Log'] ?? static::Get_Request_Id();
 	}
 	
 	public static function DebugDataFlush()

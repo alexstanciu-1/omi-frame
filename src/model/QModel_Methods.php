@@ -465,7 +465,7 @@ trait QModel_Methods
 	 */
 	public function wasSet($property)
 	{
-		return ($this->$property !== null) || $this->_wst[$property];
+		return ($property === null) ? false : (($this->$property !== null) || $this->_wst[$property]);
 		// return ($this->$property !== null) || isset($this->_ols[$property]) || ($this->_ols && array_key_exists($property, $this->_ols));
 	}
 	
@@ -2669,7 +2669,7 @@ trait QModel_Methods
 	
 	public static function GetLanguage_Dim()
 	{
-		return static::$Dims ? static::$Dims["lang"] : static::$Language_Dim;
+		return static::$Dims ? static::$Dims["lang"] : \QApp::$Language_Dim;
 	}
 	
 	public static function SetLanguage_Dim($lang)
@@ -2691,12 +2691,12 @@ trait QModel_Methods
 			}
 			static::$DimsDef["lang"] = $new_lang;
 		}
-		static::$DefaultLanguage_Dim = $lang;
+		\QApp::$DefaultLanguage_Dim = $lang;
 	}
 	
 	public static function GetDefaultLanguage_Dim()
 	{
-		return (static::$DimsDef && static::$DimsDef["lang"]) ? reset(static::$DimsDef["lang"]) : (static::$DefaultLanguage_Dim ?: static::$Language_Dim);
+		return (static::$DimsDef && static::$DimsDef["lang"]) ? reset(static::$DimsDef["lang"]) : (\QApp::$DefaultLanguage_Dim ?: static::$Language_Dim);
 	}
 	
 	/**

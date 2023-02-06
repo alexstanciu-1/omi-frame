@@ -17,24 +17,7 @@ class QModel implements QIModel, Iterator
 	 * @var int
 	 */
 	protected static $_IncrementedId = 1;
-	/**
-	 * The language
-	 *
-	 * @var string
-	 */
-	public static $Language_Dim = "en";
-	/**
-	 * The default language
-	 *
-	 * @var string
-	 */
-	public static $DefaultLanguage = "en";
-	/**
-	 * The default language
-	 *
-	 * @var string
-	 */
-	public static $DefaultLanguage_Dim = "en";
+	
 	/**
 	 * Dimentions definition
 	 *
@@ -116,15 +99,6 @@ class QModel implements QIModel, Iterator
 	 * @var integer
 	 */
 	protected $Id;
-	
-	/**
-	 * @storage.index
-	 * @storage.notnull
-	 * @storage.default 0
-	 * 
-	 * @var boolean
-	 */
-	protected $Del__ = 0;
 	
 	/**
 	 * HIDDEN PROPERTIES

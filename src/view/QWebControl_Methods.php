@@ -191,7 +191,7 @@ trait QWebControl_Methods
 
 		
 		static::AddCssLastResources();
-	
+		
 		if (self::$IncludeCss)
 		{
 			foreach (self::$IncludeCss as $css)

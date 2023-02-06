@@ -2883,10 +2883,10 @@ function _L($tag, $lang = null, $arg_1 = null, $arg_2 = null, $arg_3 = null, $ar
 		return _T($tag, $tag);
 	}
 	if ($lang === null)
-		$lang = QModel::GetLanguage_Dim();
+		$lang = QApp::GetLanguage_Dim();
 	$data = $dt[$lang];
 	if ($data === null)
-		$lang = QModel::GetDefaultLanguage_Dim();
+		$lang = QApp::GetDefaultLanguage_Dim();
 	$data = $dt[$lang];
 	if ($data === null)
 		return $tag;
@@ -5163,3 +5163,21 @@ function q_log_get_logs(string $rid)
 		return false;
 	}
 }
+
+function _TEXT($tag)
+{
+	return \Omi\Cms\Text::GetByTag($tag);
+}
+
+/*
+function q_insert(string $collection, array $records)
+{
+	$data = (\QApp::NewData())::FromArray($records);
+	qvar_dump($data);
+}
+
+function q_insert_one(string $collection, array $record)
+{
+	return q_insert($collection, [$record]);
+}
+*/

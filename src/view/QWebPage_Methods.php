@@ -14,7 +14,7 @@ trait QWebPage_Methods
 		$this->_ini = true;
 		
 		$modelJsPath = QAutoload::GetTempWebPath("model_type.js");
-		self::$IncludeJs[$modelJsPath] = $modelJsPath;
+		static::$IncludeJs[$modelJsPath] = $modelJsPath;
 		$this->includeJsClass("QModel");
 		$this->includeJsClass("QModelArray");
 		

@@ -18,6 +18,7 @@ class QModelArray extends ArrayObject implements QIModelArray
 	
 	public $_rowi;
 	public $_iro;
+	public $_old;
 	// public $_byid;
 	// public $_byid_r;
 	

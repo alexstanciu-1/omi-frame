@@ -1,6 +1,9 @@
 <?php
 
-class QApi
+/**
+ * @class.name QApi
+ */
+class QApi_frame_
 {
 	public static $DebugApi = false;
 	public static $DebugUidf = [];

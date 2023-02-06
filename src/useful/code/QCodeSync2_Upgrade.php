@@ -13,11 +13,14 @@ trait QCodeSync2_Upgrade
 
 	public function run_upgrade(array $files, array $changed_or_added, array $removed_files, array $new_files)
 	{
+		throw new \Exception('It needs a setup');
+		/*
 		unset($files['/home/alex/public_html/tf-develop/~includes/omi-frame/src/']);
 		unset($files['/home/alex/public_html/tf-develop/~includes/omi-mods/classes/']);
 		unset($files['/home/alex/public_html/tf-develop/~includes/omi-mods/integrations/']);
 		unset($files['/home/alex/public_html/tf-develop/~includes/omi-mods/gens/']);
 		unset($files['/home/alex/public_html/tf-develop/~instances/default/public_html/~backend_config/']);
+		*/
 		
 		# one dir above to catch more situations
 		$this->upgrade_inside_dir = "/home/alex/public_html/tf-develop/";

@@ -245,7 +245,7 @@ class QCodeSync2
 							$rel_url = $rc_ru ? $match_ru[1] : null;
 						}
 						
-						if ($this->full_sync || $rel_url)
+						if (($this->full_sync || $rel_url) && ((!defined('Q_DISABLE_BACKEND_GENERATE')) || (!Q_DISABLE_BACKEND_GENERATE)))
 						{
 							# @TODO - Is there a better solution here then to unlock autoload ? issue is that interface_exists is called
 							\QAutoload::UnlockAutoload();
@@ -596,9 +596,12 @@ class QCodeSync2
 							// this is to fix a bug for files like: 01-mvvm.js
 							continue;
 						}
+						
+						$last_8 = substr($file, -8, 8);
+						$last_7 = substr($file, -7, 7);
 
-						if (($is_php_ext && ((substr($file, -8, 8) === '.gen.php') || substr($file, -8, 8) === '.dyn.php')) || 
-							(($full_ext === '.min.js') || ($full_ext === '.min.css') || ($full_ext === '.gen.js') || ($full_ext === '.gen.css')))
+						if (($is_php_ext && (($last_8 === '.gen.php') || ($last_8 === '.dyn.php'))) || 
+							(($last_7 === '.min.js') || ($last_8 === '.min.css') || ($last_7 === '.gen.js') || ($last_8 === '.gen.css')))
 							// just skip!
 							continue;
 						
@@ -808,7 +811,9 @@ class QCodeSync2
 						throw new \Exception('Missing layer tag. '.$layer_path);
 					list ($full_class_name, $header_inf) = $this->get_info_by_layer_file($layer_tag, $file);
 					if (!($full_class_name && $header_inf))
-						throw new \Exception('Information about the removed file could not be found. Please do a full resync.');
+					{
+						throw new \Exception("Information about the removed file could not be found. Please do a full resync. layer={$layer_tag} | file=" . $file);
+					}
 
 					if (isset($this->changes_by_class[$full_class_name]['files'][$layer_tag][$header_inf['tag']]))
 					{
@@ -1931,37 +1936,49 @@ class QCodeSync2
 		
 		$js_paths = [];
 		$css_paths = [];
-		foreach ($this->info_by_class as $full_class_name => $info)
+		
+		if (!$this->model_only_run)
 		{
-			// $this->info_by_class[$full_class_name]['res'][$header_inf['res_type']][] = $header_inf;
-			foreach ($info['res'] ?: [] as $res_type => $info_res)
+			foreach ($this->info_by_class as $full_class_name => $info)
 			{
-				foreach ($info_res ?: [] as $info_res_item)
+				// $this->info_by_class[$full_class_name]['res'][$header_inf['res_type']][] = $header_inf;
+				foreach ($info['res'] ?: [] as $res_type => $info_res)
 				{
-					$server_path = $this->tags_to_watch_folders[$info_res_item['layer']].$info_res_item['file'];
-					$web_path = \QApp::GetWebPath($server_path);
-					if ($res_type === 'js')
+					foreach ($info_res ?: [] as $info_res_item)
 					{
-						$js_paths[$full_class_name][$web_path] = $web_path;
-						$autoload_js[$full_class_name][$server_path] = $server_path;
-					}
-					else if ($res_type === 'css')
-					{
-						$css_paths[$full_class_name][$web_path] = $web_path;
-						$autoload_css[$full_class_name][$server_path] = $server_path;
+						$server_path = $this->tags_to_watch_folders[$info_res_item['layer']].$info_res_item['file'];
+						try
+						{
+							$web_path = \QApp::GetWebPath($server_path);
+						}
+						catch (\Exception $ex)
+						{
+							# qvar_dumpk('$this->info_by_class', $this->info_by_class,);
+							throw $ex;
+						}
+						if ($res_type === 'js')
+						{
+							$js_paths[$full_class_name][$web_path] = $web_path;
+							$autoload_js[$full_class_name][$server_path] = $server_path;
+						}
+						else if ($res_type === 'css')
+						{
+							$css_paths[$full_class_name][$web_path] = $web_path;
+							$autoload_css[$full_class_name][$server_path] = $server_path;
+						}
 					}
 				}
 			}
+
+			file_put_contents($temp_folder."js_paths.js", 
+					"window.\$_Q_FRAME_JS_PATHS = ".json_encode($js_paths, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE).";\n".
+					"window.\$_Q_FRAME_CSS_PATHS = ".json_encode($css_paths, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE).";\n");
+
+			file_put_contents($temp_folder."autoload_js.php", "<?php\n\n\$_Q_FRAME_JS_LOAD_ARRAY = ".var_export($autoload_js, true).";\n");
+			opcache_invalidate($temp_folder."autoload_js.php", true); # do not force, maybe no change
+			file_put_contents($temp_folder."autoload_css.php", "<?php\n\n\$_Q_FRAME_CSS_LOAD_ARRAY = ".var_export($autoload_css, true).";\n");
+			opcache_invalidate($temp_folder."autoload_css.php", true); # do not force, maybe no change
 		}
-		
-		file_put_contents($temp_folder."js_paths.js", 
-				"window.\$_Q_FRAME_JS_PATHS = ".json_encode($js_paths, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE).";\n".
-				"window.\$_Q_FRAME_CSS_PATHS = ".json_encode($css_paths, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE).";\n");
-		
-		file_put_contents($temp_folder."autoload_js.php", "<?php\n\n\$_Q_FRAME_JS_LOAD_ARRAY = ".var_export($autoload_js, true).";\n");
-		opcache_invalidate($temp_folder."autoload_js.php", true); # do not force, maybe no change
-		file_put_contents($temp_folder."autoload_css.php", "<?php\n\n\$_Q_FRAME_CSS_LOAD_ARRAY = ".var_export($autoload_css, true).";\n");
-		opcache_invalidate($temp_folder."autoload_css.php", true); # do not force, maybe no change
 		
 		if ($this->model_only_run && $has_cache_changes)
 		{

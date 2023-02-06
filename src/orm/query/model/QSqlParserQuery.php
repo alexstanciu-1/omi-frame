@@ -247,8 +247,8 @@ class QSqlParserQuery
 				// hopefully this means that is main query
 				if (!$this->parent)
 				{
-					$q .= ($sel_only ? " " : ",")."`{$this->as}`.`Del__` AS `Del__`";
-					$sel_only = false;
+					# $q .= ($sel_only ? " " : ",")."`{$this->as}`.`Del__` AS `Del__`";
+					# $sel_only = false;
 				}
 
 				foreach ($this->cols as $as => $list)

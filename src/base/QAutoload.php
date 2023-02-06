@@ -13,6 +13,10 @@ final class QAutoload
 {
 	public static $RunSyncOnlyInRunningFolder = false;
 	/**
+	 * @var int
+	 */
+	protected static $Build_Version;
+	/**
 	 * Enables or disables the Dev/Debug Panel.
 	 * Please see [[mods/dev-panel]] for more details.
 	 *

@@ -694,7 +694,7 @@ class QApp extends QAppModule
 				
 				// ensure it's ready
 				$lock = new \QFileLock($rf_file_name);
-				$lock->lock();
+				$lock->lock_do();
 				$lock->unlock();
 
 				include($rf_file_name);

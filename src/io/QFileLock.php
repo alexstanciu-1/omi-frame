@@ -103,13 +103,15 @@ class QFileLock
 				
 				if ($this->locked)
 				{
-					// fix a fastCGI issue
+					# fix a fastCGI issue
 					ignore_user_abort(true);
-					// setup a callback
-					register_shutdown_function(array($this, "unlock"), getcwd());
+					# setup a callback
+					register_shutdown_function([$this, "unlock"], getcwd());
 					
 					return true;
 				}
+				else if (!$max_wait)
+					return false;
 				else if (!$is_WINDOWS)
 				{
 					// there is no point to wait on windows as it will block anyway
@@ -157,13 +159,13 @@ class QFileLock
 	 * @param integer $max_wait
 	 * @return \QFileLock
 	 */
-	public static function TryLock($file_path = null, $max_wait = 10)
+	public static function TryLock($file_path = null, $max_wait = 10, string $open_mode = 'a+')
 	{
 		$has_lock = false;
 		$lock = null;
 		try
 		{
-			$lock = new \QFileLock($file_path);
+			$lock = new \QFileLock($file_path, $open_mode);
 			$has_lock = $lock->lock_do(null, $max_wait);
 			
 			if ($has_lock)
@@ -227,5 +229,21 @@ class QFileLock
 		}
 		
 		return $ret;
+	}
+	
+	public function put_contents(string $content)
+	{
+		if (!($this->locked && $this->lock_handle))
+			return false;
+		if (!rewind($this->lock_handle))
+			return false;
+		$c_len = strlen($content);
+		if (fwrite($this->lock_handle, $content) !== $c_len)
+			return false;
+		if (!ftruncate($this->lock_handle, $c_len))
+			return false;
+		# $ret = fflush($this->lock_handle);
+		echo "pid: {$content}\n";
+		return fflush($this->lock_handle);
 	}
 }

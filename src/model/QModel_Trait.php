@@ -1545,6 +1545,10 @@ trait QModel_Trait
 										{
 											$save_path_fn = pathinfo($upload_info["name"], PATHINFO_FILENAME);
 											$save_path_ext = pathinfo($upload_info["name"], PATHINFO_EXTENSION);
+										
+											if (!q_allowed_upload_extension($save_path_ext))
+												throw new \Exception('Not allowed.');
+										
 											$index = 0;
 											// make sure we don't overwrite
 											while (file_exists($save_path = $save_dir.$save_path_fn.($index ? "-".$index : "").".".$save_path_ext))
@@ -2789,6 +2793,5 @@ trait QModel_Trait
 		"Users.Context" => true,
 		
 	];
-	
 }
 

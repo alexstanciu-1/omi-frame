@@ -1188,11 +1188,33 @@ function extractQbRequest($data, &$parent = null, $key = null, $f_name = null, $
 						throw new Exception("The @storage.filePath {$full_path} specified in ".$prop->parent->class.".".$prop->name." is missing");
 					$full_path = rtrim($full_path, "/\\")."/";
 					$fn = $params["name"];
+					
+					if (Q_IS_TFUSE)
+					{
+						$save_path = q_move_uploaded_file($f_tmp_name["_dom"], $full_path, $fn, ($chmod = $prop->storage["fileMode"]), $prop->storage["uniqid_gen"] ?: false);
+						$file_path = ($prop->storage["fileWithPath"]) ? $save_path : basename($save_path);
+					}
+					else
+					{
+						$pos = 1;
+						$ext = pathinfo($fn, PATHINFO_EXTENSION) ?: null;
+						$baseFn = pathinfo($fn, PATHINFO_FILENAME);
+					
+						if (!q_allowed_upload_extension($ext))
+							throw new \Exception('Not allowed.');
+					
+						// avoid overwrite
+						while (file_exists($full_path.$fn))
+							$fn = $baseFn."-".($pos++).($ext !== null ? ".".$ext : "");
+						move_uploaded_file($f_tmp_name["_dom"], $full_path.$fn);
+						if (($chmod = $prop->storage["fileMode"]))
+						{
+							chmod($full_path.$fn, octdec($chmod));
+						}
 
+						$file_path = ($prop->storage["fileWithPath"]) ? (rtrim($filePath, "/\\")."/".$fn) : $fn;
+					}
 				
-					$save_path = q_move_uploaded_file($f_tmp_name["_dom"], $full_path, $fn, ($chmod = $prop->storage["fileMode"]), $prop->storage["uniqid_gen"] ?: false);
-					$file_path = ($prop->storage["fileWithPath"]) ? $save_path : basename($save_path);
-
 					if (!$is_QFile)
 						return $file_path;
 				}
@@ -5169,15 +5191,14 @@ function _TEXT($tag)
 	return \Omi\Cms\Text::GetByTag($tag);
 }
 
-/*
-function q_insert(string $collection, array $records)
+function q_allowed_upload_extension(string $ext)
 {
-	$data = (\QApp::NewData())::FromArray($records);
-	qvar_dump($data);
+	$allowed_exts = [
+		'doc', 'docx', 'csv', 'xls', 'xlsx', 'xlsm', 'docm',
+		'pdf', 'txt', 'eml',
+		'png', 'jpg', 'jpeg', 'bmp', 'gif',
+	];
+	
+	return in_array(strtolower($ext), $allowed_exts);
 }
 
-function q_insert_one(string $collection, array $record)
-{
-	return q_insert($collection, [$record]);
-}
-*/

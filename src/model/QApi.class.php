@@ -162,7 +162,7 @@ class QApi_frame_
 		$q = static::__Query(($initialFrom !== $from) ? [$from, $initialFrom] : $from, $selector, $parameters, $only_first, $id);
 		
 		return $q;
-	}	
+	}
 	
 	/**
 	 * @api.enable
@@ -584,7 +584,6 @@ class QApi_frame_
 		$is_scalar = is_scalar($data_or_id);
 		$data = $is_scalar ? null : $data_or_id;
 		$id = $is_scalar ? $data_or_id : null;
-
 		return static::Save($from, $data, QIModel::TransformDelete, $selector, $id, false);
 	}
 	
@@ -631,7 +630,7 @@ class QApi_frame_
 		$binds["Id"] = $id;
 		return static::Query($from, $selector, null, true, $binds);
 	}
-		
+	
 	/**
 	 * @api.enable
 	 * 
@@ -1435,7 +1434,7 @@ class QApi_frame_
 			static::$_Caller_Company_In_Callee_Box = $_ccicb;
 
 			//  valid characters are a-z, A-Z, 0-9 and '-,'
-			$new_session_id = preg_replace("/[^a-zA-Z0-9\\-]/us", '-', uniqid("", true));
+			$new_session_id = "tmpsid".preg_replace("/[^a-zA-Z0-9\\-]/us", '-', uniqid("", true));
 			\Omi\User::Set_Temporary_Session($new_session_id);
 			# session_id($new_session_id);
 			# session_start();
@@ -1452,7 +1451,10 @@ class QApi_frame_
 			$remote_user = $possible_users ? $possible_users[0] : null;
 			
 			if (!$remote_user)
+			{
+				# @TODO - we should just create one !
 				throw new \Exception('Missing remote user. Owner['.$owner->getId().']: '.$owner->getModelCaption().'; Partner['.$partner->getId().']: '.$partner->getModelCaption());
+			}
 			
 			if (!$remote_user->Active) # ungly fix to restore user !
 			{
@@ -1474,7 +1476,7 @@ class QApi_frame_
 				# if (\QAutoload::GetDevelopmentMode())
 				# qvar_dump($login_res, $user_or_email, $password, $new_session_id);
 				if (\QAutoload::GetDevelopmentMode())
-					throw new \Exception('Login failed for: '.$user_or_email . " | " . var_export([$remote_user->Id, $login_res, $user_or_email, $password, $new_session_id], true));
+					throw new \Exception('Login failed for: '.$user_or_email . " | " . var_export([$remote_user->Id, $login_res, $user_or_email, $new_session_id], true));
 				else
 					throw new \Exception('Login failed for: '.$user_or_email);
 			}
@@ -1507,13 +1509,20 @@ class QApi_frame_
 		*/
 		finally
 		{
-			static::$_Caller_Company_In_Callee_Box = $saved_caller_owner;
-			
-			\Omi\User::Logout(null, null, false);
-			# session_write_close();
+			try
+			{
+				static::$_Caller_Company_In_Callee_Box = $saved_caller_owner;
+
+				\Omi\User::Logout(null, null, false);
+				\Omi\User::Logout(null, $new_session_id, false);
+				# session_write_close();
+			}
+			finally
+			{
+				\Omi\User::Remove_Session($new_session_id);
+			}
 			
 			\Omi\User::Set_Temporary_Session($saved_context['session_id']);
-			
 			# session_id($saved_context['session_id']);
 			# session_start();
 			// session_id($saved_context['session_id']);

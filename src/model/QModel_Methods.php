@@ -1850,7 +1850,7 @@ trait QModel_Methods
 		
 		return $str;
 	}
-		
+
 	/**
 	 * Transforms the object into a PHP array. 
 	 * The function avoids recursion

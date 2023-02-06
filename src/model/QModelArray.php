@@ -1103,7 +1103,7 @@ class QModelArray extends ArrayObject implements QIModelArray
 			if ($item instanceof QIModel)
 				$item->afterBeginTransaction($selector, $transform_state, $_bag, $is_starting_point, $appProp);
 		}
-	}		
+	}
 
 	/**
 	 * Outputs the content of the object into a JSON string. 

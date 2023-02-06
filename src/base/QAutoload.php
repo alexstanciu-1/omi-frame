@@ -13,6 +13,10 @@ final class QAutoload
 {
 	public static $RunSyncOnlyInRunningFolder = false;
 	/**
+	 * @var int
+	 */
+	protected static $Build_Version;
+	/**
 	 * Enables or disables the Dev/Debug Panel.
 	 * Please see [[mods/dev-panel]] for more details.
 	 *
@@ -236,13 +240,18 @@ final class QAutoload
 					$tag = basename($b_path);
 					$b_path = dirname($b_path);
 				}
-				while (($bt_path = self::$WatchFoldersByTag[$tag]) && ($bt_path !== $path));
+				while (($bt_path = (self::$WatchFoldersByTag[$tag] ?? null)) && ($bt_path !== $path));
 			}
 						
 			self::$WatchFoldersByTag[$tag] = $path;
 			
 			if ($tag_layer !== null)
+			{
+				$old_tag = self::$WatchFoldersTag_To_Layer[$tag] ?? null;
+				if (isset($old_tag) && ($old_tag !== $tag_layer))
+					throw new \Exception('We overwrite tag: '.$tag);
 				self::$WatchFoldersTag_To_Layer[$tag] = $tag_layer;
+			}
 			else
 				throw new \Exception("Layer tag must be defined.");
 		}
@@ -250,7 +259,10 @@ final class QAutoload
 		if ($set_as_runtime)
 		{
 			self::SetRuntimeFolder($path);
-			self::$MainFolderWebPath = "/".ltrim(substr($path, strlen($_SERVER["DOCUMENT_ROOT"])), "/");
+			if (defined('Q_CODE_DIR'))
+				self::$MainFolderWebPath = BASE_HREF . substr($path, strlen(Q_CODE_DIR)) ;
+			else
+				self::$MainFolderWebPath = "/".ltrim(substr($path, strlen($_SERVER["DOCUMENT_ROOT"])), "/");
 		}
 	}
 	
@@ -309,7 +321,7 @@ final class QAutoload
 	 */
 	public static function AutoloadClass($class_name)
 	{
-		if (($qp = self::$AutoloadArray[$class_name]))
+		if (($qp = (self::$AutoloadArray[$class_name] ?? null)))
 		{
 			if (is_string($qp))
 			{
@@ -701,23 +713,25 @@ final class QAutoload
 				if (is_dir($child))
 				{
 					$af = $avoid_folders ? $avoid_folders[$f] : null;
-					if (($af === true) || (($f[0] === "~") && ($path === "")))
+					if (($af === true) || (($f[0] === "~") /* && ($path === "") */ )) # changed so that any ~ will be excluded no matter how deep
 						continue;
+					
 					self::ScanForChanges($full_resync, $debug_mode, $rel."/", $af, $skip_on_ajax, $info, $files_state, $changed, $new, $root_folder);
 				}
 				else if (($f_0 = $f[0]) && ($f_0 !== strtolower($f_0)))
 				{
 					// && ((($p = strrpos($f, ".")) !== false) ? ((($ext = substr($f, $p + 1)) === "php") || ($ext === "tpl")) : false)
 					$mt = filemtime($child);
+					
 					// $ext = (($p = strrpos($f, ".")) !== false) ? substr($f, $p + 1) : null;
 					if (($ext === "php") || ($ext === "tpl") || ($ext === "css") || ($ext === "js"))
 					{
 						$info[$rel] = $mt;
-						
+																		
 						// if it's a generated file we don't care if it was modified or not
 						// for CSS / JS we only track their presence
 						if ((($ext === "php") || ($ext === "js") || ($ext === "css")) && 
-								($sub_ext = substr($f, - strlen($ext) - 5, 4)) && (($sub_ext === ".gen") || ($sub_ext === ".dyn")))
+								($sub_ext = substr($f, - strlen($ext) - 5, 4)) && (($sub_ext === ".gen") || ($sub_ext === ".dyn") || ($sub_ext === ".min")))
 						{
 							unset($files_state[$rel]);
 						}
@@ -975,6 +989,24 @@ final class QAutoload
 					self::IncludeClassesInFolder(Q_FRAME_PATH."useful/parsers/", true);
 					self::IncludeClassesInFolder(Q_FRAME_PATH."controller/", true);
 					// self::IncludeClassesInFolder(Q_FRAME_PATH."controller/", true);
+					
+					# we need to remove any mins
+					$files_state_to_unset = [];
+					foreach ($files_state ?: [] as $fs_lyr => $fs_files_list)
+					{
+						foreach ($fs_files_list ?: [] as $fs_file_rel => $fs_file_mtime)
+						{
+							if ((substr($fs_file_rel, -7) === '.min.js') || (substr($fs_file_rel, -8) === '.min.css') || (substr($fs_file_rel, -8) === '.gen.php') || (substr($fs_file_rel, -8) === '.gen.tpl'))
+								$files_state_to_unset[$fs_lyr][$fs_file_rel] = true;
+						}
+					}
+					foreach ($files_state_to_unset ?: [] as $fs_lyr => $fs_files_list)
+					{
+						foreach ($fs_files_list ?: [] as $fs_file_rel => $unset_action)
+							unset($files_state[$fs_lyr][$fs_file_rel]);
+						if (empty($files_state[$fs_lyr]))
+							unset($files_state[$fs_lyr]);
+					}
 					
 					// changed files : $changed
 					// removed files : $files_state
@@ -1272,6 +1304,14 @@ final class QAutoload
 	 */
 	public static function EnableDevelopmentMode($restriction = "default", $full_resync = false, $debug_mode = false)
 	{
+		if (defined('Q_DEV_MODE_ONLY_IF_USER_MATCH_INDEX_FILE_OWNER') && Q_DEV_MODE_ONLY_IF_USER_MATCH_INDEX_FILE_OWNER)
+		{
+			$c_unix_user = posix_geteuid();
+			$f_owner = fileowner($_SERVER['SCRIPT_FILENAME']);
+			if ($c_unix_user != $f_owner)
+				return false;
+		}
+		
 		// skip for AJAX
 		$HTTP_X_REQUESTED_WITH = filter_input(INPUT_SERVER, "HTTP_X_REQUESTED_WITH");
 		$ajax_mode = ((isset($HTTP_X_REQUESTED_WITH) && (strtolower($HTTP_X_REQUESTED_WITH) === 'xmlhttprequest')) || ($_POST["__qFastAjax__"] || $_GET["__qFastAjax__"]));

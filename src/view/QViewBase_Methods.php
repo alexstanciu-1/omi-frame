@@ -107,7 +107,7 @@ trait QViewBase_Methods
 			?> q-ctrl="<?= $jsCtrlToLoad ?>"<?php
 		
 		if ($this->is_dynamic_ctrl)
-			?> q-dyn-parent="<?= get_class($this->parent) ?>" q-dyn-inst="<?= $this->dynamic_name ?>"<?php
+			?> q-dyn-parent="<?= $this->parent ? get_class($this->parent) : '' ?>" q-dyn-inst="<?= $this->dynamic_name ?>"<?php
 
 		// close
 		?>><?php
@@ -192,6 +192,7 @@ trait QViewBase_Methods
 			foreach ($r_list ?: [] as $res_data)
 			{
 				$web_path = \QApp::GetWebPath($res_data['layer_path'].$res_data['file']);
+				
 				if ($r_type === 'js')
 					self::$IncludeJs[$web_path] = $web_path;
 				else if ($r_type === 'css')

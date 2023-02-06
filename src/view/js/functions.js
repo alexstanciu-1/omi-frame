@@ -746,7 +746,6 @@ function qbMakeCtrlRequest(url, req_method, ctrl, ctrl_id, meth_class, method_na
 										ddCtrl.inDropdownSearch = false;
 									}
 
-
 									jQuery(window).trigger("Q_Event_AjaxError", [ajax_params, jqXHR, textStatus, errorThrown]);
 									// alert("error");
 									printDump("" + textStatus + "<br/>\n" + errorThrown + "<br/>\n" + jqXHR.responseText);

@@ -1188,11 +1188,33 @@ function extractQbRequest($data, &$parent = null, $key = null, $f_name = null, $
 						throw new Exception("The @storage.filePath {$full_path} specified in ".$prop->parent->class.".".$prop->name." is missing");
 					$full_path = rtrim($full_path, "/\\")."/";
 					$fn = $params["name"];
+					
+					if (Q_IS_TFUSE)
+					{
+						$save_path = q_move_uploaded_file($f_tmp_name["_dom"], $full_path, $fn, ($chmod = $prop->storage["fileMode"]), $prop->storage["uniqid_gen"] ?: false);
+						$file_path = ($prop->storage["fileWithPath"]) ? $save_path : basename($save_path);
+					}
+					else
+					{
+						$pos = 1;
+						$ext = pathinfo($fn, PATHINFO_EXTENSION) ?: null;
+						$baseFn = pathinfo($fn, PATHINFO_FILENAME);
+					
+						if (!q_allowed_upload_extension($ext))
+							throw new \Exception('Not allowed.');
+					
+						// avoid overwrite
+						while (file_exists($full_path.$fn))
+							$fn = $baseFn."-".($pos++).($ext !== null ? ".".$ext : "");
+						move_uploaded_file($f_tmp_name["_dom"], $full_path.$fn);
+						if (($chmod = $prop->storage["fileMode"]))
+						{
+							chmod($full_path.$fn, octdec($chmod));
+						}
 
+						$file_path = ($prop->storage["fileWithPath"]) ? (rtrim($filePath, "/\\")."/".$fn) : $fn;
+					}
 				
-					$save_path = q_move_uploaded_file($f_tmp_name["_dom"], $full_path, $fn, ($chmod = $prop->storage["fileMode"]), $prop->storage["uniqid_gen"] ?: false);
-					$file_path = ($prop->storage["fileWithPath"]) ? $save_path : basename($save_path);
-
 					if (!$is_QFile)
 						return $file_path;
 				}
@@ -2136,7 +2158,7 @@ function qDebugStackInner($args, $with_stack = false, $on_shutdown = false, stri
 	array_shift($stack);
 	
 	$stack_1 = end($stack);
-	$stack_1_file = $stack_1["file"];
+	$stack_1_file = $stack_1["file"] ?? null;
 	
 	// remove GetStack
 	// array_pop($stack);
@@ -2883,10 +2905,10 @@ function _L($tag, $lang = null, $arg_1 = null, $arg_2 = null, $arg_3 = null, $ar
 		return _T($tag, $tag);
 	}
 	if ($lang === null)
-		$lang = QModel::GetLanguage_Dim();
+		$lang = QApp::GetLanguage_Dim();
 	$data = $dt[$lang];
 	if ($data === null)
-		$lang = QModel::GetDefaultLanguage_Dim();
+		$lang = QApp::GetDefaultLanguage_Dim();
 	$data = $dt[$lang];
 	if ($data === null)
 		return $tag;
@@ -5084,11 +5106,14 @@ function q_log_process_status()
 	
 	file_put_contents("../temp/php_pids/{$pid}.json", json_encode($data, JSON_UNESCAPED_LINE_TERMINATORS | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
 	
-	register_shutdown_function(function () use ($data, $pid) {
+	$cwd = getcwd();
+	
+	register_shutdown_function(function () use ($data, $pid, $cwd) {
 				# wrap it so it's executed last
-				register_shutdown_function(function () use ($data, $pid) {
+				register_shutdown_function(function () use ($data, $pid, $cwd) {
 					try
 					{
+						chdir($cwd);
 						$data['status'] = 'shutdown';
 						$data['finish_time'] = microtime(true);
 						$data['finish_date'] = DateTime::createFromFormat('U.u', microtime(true))->format("Y-m-d H:i:s.u");
@@ -5160,3 +5185,20 @@ function q_log_get_logs(string $rid)
 		return false;
 	}
 }
+
+function _TEXT($tag)
+{
+	return \Omi\Cms\Text::GetByTag($tag);
+}
+
+function q_allowed_upload_extension(string $ext)
+{
+	$allowed_exts = [
+		'doc', 'docx', 'csv', 'xls', 'xlsx', 'xlsm', 'docm',
+		'pdf', 'txt', 'eml',
+		'png', 'jpg', 'jpeg', 'bmp', 'gif',
+	];
+	
+	return in_array(strtolower($ext), $allowed_exts);
+}
+

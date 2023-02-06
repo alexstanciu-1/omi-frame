@@ -89,7 +89,26 @@ class QApp extends QAppModule
 	public static $PerformanceData = [];
 
 	public static $InCallbackExecution = false;
-
+	
+	/**
+	 * The language
+	 *
+	 * @var string
+	 */
+	public static $Language_Dim = "en";
+	/**
+	 * The default language
+	 *
+	 * @var string
+	 */
+	public static $DefaultLanguage = "en";
+	/**
+	 * The default language
+	 *
+	 * @var string
+	 */
+	public static $DefaultLanguage_Dim = "en";
+	
 	/**
 	 * This is a static class do not create instances for it
 	 */
@@ -398,6 +417,14 @@ class QApp extends QAppModule
 				file_put_contents($statements_dir.$sql_file, $sql_statements);
 				file_put_contents($statements_dir.$sql_file.".info.html", $dump);
 				
+				if (defined('Q_DEV_MODE_ONLY_IF_USER_MATCH_INDEX_FILE_OWNER') && Q_DEV_MODE_ONLY_IF_USER_MATCH_INDEX_FILE_OWNER)
+				{
+					$c_unix_user = posix_geteuid();
+					$f_owner = fileowner($_SERVER['SCRIPT_FILENAME']);
+					if ($c_unix_user != $f_owner) # not allowed
+						$do_auto_structure_sync = false;
+				}
+
 				if ($do_auto_structure_sync)
 				{
 					$storage = self::GetStorage();
@@ -457,17 +484,31 @@ class QApp extends QAppModule
 	public static function GetWebPath($full_path)
 	{
 		$m = null;
-		//qvardump($full_path, static::$_PATH_TO_HREF, implode("|", array_keys(static::$_PATH_TO_HREF)));
 		
-		if (is_array($full_path))
-			$full_path = reset($full_path);
-
-		if (!empty(static::$_PATH_TO_HREF) && preg_match("'".implode("|", array_keys(static::$_PATH_TO_HREF))."'", $full_path, $m) && 
-				$m[0] && static::$_PATH_TO_HREF[$m[0]])
+		if (defined('Q_CODE_DIR'))
 		{
-			return (preg_replace("'{$m[0]}'", static::$_PATH_TO_HREF[$m[0]], $full_path));
+			if (substr($full_path, 0, strlen(Q_CODE_DIR)) !== Q_CODE_DIR)
+			{
+				if (\QAutoload::GetDevelopmentMode())
+					qvar_dumpk($full_path);
+				throw new \Exception('Path outside app.');
+			}
+			return substr($full_path, strlen(Q_CODE_DIR));
+			# return substr($full_path, strlen(Q_RUNNING_PATH) - strlen(BASE_HREF));
 		}
-		return substr($full_path, strlen(Q_RUNNING_PATH) - strlen(BASE_HREF));
+		else
+		{
+			if (is_array($full_path))
+				$full_path = reset($full_path);
+
+			if (!empty(static::$_PATH_TO_HREF) && preg_match("'".implode("|", array_keys(static::$_PATH_TO_HREF))."'", $full_path, $m) && 
+					$m[0] && static::$_PATH_TO_HREF[$m[0]])
+			{
+				return (preg_replace("'{$m[0]}'", static::$_PATH_TO_HREF[$m[0]], $full_path));
+			}
+
+			return substr($full_path, strlen(Q_RUNNING_PATH) - strlen(BASE_HREF));
+		}
 	}
 	
 	/**
@@ -631,7 +672,7 @@ class QApp extends QAppModule
 				
 				// ensure it's ready
 				$lock = new \QFileLock($rf_file_name);
-				$lock->lock();
+				$lock->lock_do();
 				$lock->unlock();
 
 				include($rf_file_name);
@@ -866,5 +907,10 @@ class QApp extends QAppModule
 	public static function Before_API_Query($from, $selector = null, $parameters = null, $only_first = false, $id = null)
 	{
 		return [false, null];
+	}
+	
+	public static function GetDefaultLanguage()
+	{
+		return (\QModel::$DimsDef && \QModel::$DimsDef["lang"]) ? reset(\QModel::$DimsDef["lang"]) : (static::$DefaultLanguage ?: static::$Language);
 	}
 }

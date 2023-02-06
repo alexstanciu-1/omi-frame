@@ -312,7 +312,7 @@ class QPHPTokenXmlElement extends QPHPToken
 				$this->setAttribute("qCtrl", "\"<?= \$this->getQCtrl_Attr() ?>\"", false);
 				$this->setClass("QWebControl");
 				
-				$this->setAttribute("q-dyn-parent", "\"<?= get_class(\$this->parent) ?>\"", false);
+				$this->setAttribute("q-dyn-parent", "\"<?= \$this->parent ? get_class(\$this->parent) : '' ?>\"", false);
 				$this->setAttribute("q-dyn-inst", "\"<?= \$this->dynamic_name ?>\"", false);
 			}
 		

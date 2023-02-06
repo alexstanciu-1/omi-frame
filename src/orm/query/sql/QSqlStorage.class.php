@@ -102,7 +102,7 @@ abstract class QSqlStorage_frame_ extends QFolderStorage
 	 * @param string $default_db
 	 * @param integer $port
 	 */
-	public function __construct($name, $host, $user, $pass, $default_db, $port, $socket)
+	public function __construct($name, $host, $user, $pass, $default_db, $port, $socket = null)
 	{
 		parent::__construct($name);
 		

@@ -215,20 +215,20 @@ class QErrorHandler
 			$file = $common_path ? substr($t['file'], strlen($common_path)) : $t['file'];
 			ob_start();
 			$bag = [];
-			qDebugStackInner($t['args'], false, false, '', true, false);
+			qDebugStackInner($t['args'] ?? null, false, false, '', true, false);
 			$args = ob_get_clean();
 			
 			$stack_html .= "<tr>
-				<td>".htmlspecialchars($t['class'])."</td><td>".htmlspecialchars($t['type']).htmlspecialchars($t['function'])."</td><td>".
-						htmlspecialchars($t['line'])."</td><td>{$args}</td><td>".
-						htmlspecialchars($file)."</td>
+				<td>".htmlspecialchars($t['class'] ?? '')."</td><td>".htmlspecialchars($t['type'] ?? '').htmlspecialchars($t['function'] ?? '')."</td><td>".
+						htmlspecialchars($t['line'] ?? '')."</td><td>".($args ?? '')."</td><td>".
+						htmlspecialchars($file ?? '')."</td>
 			</tr>
 			";
 		}
 		
 		$stack_html .= "</table>\n";
 		
-		$data = array("Message" => "<b style='color: red;'>".$ex->getMessage()."</b>", "erruid" => $err_uid, 
+		$data = array("Message" => "<b style='color: red;'>".$ex->getMessage()."</b>", "erruid" => ($err_uid ?? null), 
 						"File" => $ex->getFile(), 
 					"Line" => $ex->getLine());
 		if ($trace)
@@ -281,10 +281,11 @@ class QErrorHandler
 		if ($backtrace_stack)
 		{
 			echo "<div><b>STACK:</b></div>";
-			qvar_dumpk($backtrace_stack);
+			echo static::GetExceptionToHtml($ex);
+			# qvar_dumpk($backtrace_stack);
 		}
 		echo "<div><b>REQUEST INFO:</b></div>";
-		qvar_dumpk(['$_SERVER' => $_SERVER, '$_GET' => $_GET, '$_POST' => $_POST, '$_SESSION' => $_SESSION, "SESSION_ID" => session_id()]);
+		qvar_dumpk(['$_SERVER' => $_SERVER ?? null, '$_GET' => $_GET ?? null, '$_POST' => $_POST ?? null, '$_SESSION' => $_SESSION ?? null, "SESSION_ID" => session_id()]);
 		if (class_exists('Omi\App'))
 		{
 			echo "<div><b>Omi\App :: Statics</b></div>";
@@ -402,6 +403,8 @@ class QErrorHandler
 	public static function Cleanup_On_End()
 	{
 		# @TODO - we need to close all transactions
+		if (Q_IS_TFUSE)
+			return;
 		
 		$storage = \QApp::GetStorage();
 		if (($storage instanceof \QSqlStorage) && ($storage->connection instanceof \mysqli))

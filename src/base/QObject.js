@@ -209,10 +209,7 @@ function QExtendClass_EnsureIsLoaded(loadClass, call_on_load, call_on_error)
 		}
 
 		js_doms = jQuery(".q-fake-js[data-src=\"" + $js_src + "\"], script[type=\"text/javascript\"][src=\"" + $js_src + "\"]");
-		//alert("test js: " + $js_src + " : "  + ((js_doms.length > 0) ? "already_loaded" : "not_loaded"));
-		//js_doms = jQuery("script[type=\"text/javascript\"][src=\"" + $js_src + "\"]");
-		
-		//alert("TRY TO LOAD [" +  $js_src + "] - " + ((js_doms.length > 0) ? "already loaded" : "not loaded"));
+
 		if (js_doms.length === 0)
 		{
 			to_be_loaded = true;
@@ -246,7 +243,7 @@ function QExtendClass_EnsureIsLoaded(loadClass, call_on_load, call_on_error)
 		if (href)
 		{
 			var css_doms = jQuery(".q-fake-css[data-src=\"" + href + "\"], link[type=\"text/css\"][href=\"" + href + "\"]");
-			//alert("test css: " + href + " : "  + ((css_doms.length > 0) ? "already_loaded" : "not_loaded"));
+
 			if (css_doms.length === 0)
 			{
 				var head_dom = document.head || document.getElementsByTagName('head')[0];

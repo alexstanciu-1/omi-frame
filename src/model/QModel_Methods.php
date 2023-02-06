@@ -465,7 +465,7 @@ trait QModel_Methods
 	 */
 	public function wasSet($property)
 	{
-		return ($this->$property !== null) || $this->_wst[$property];
+		return ($property === null) ? false : (($this->$property !== null) || $this->_wst[$property]);
 		// return ($this->$property !== null) || isset($this->_ols[$property]) || ($this->_ols && array_key_exists($property, $this->_ols));
 	}
 	
@@ -1850,7 +1850,7 @@ trait QModel_Methods
 		
 		return $str;
 	}
-		
+
 	/**
 	 * Transforms the object into a PHP array. 
 	 * The function avoids recursion
@@ -2669,7 +2669,7 @@ trait QModel_Methods
 	
 	public static function GetLanguage_Dim()
 	{
-		return static::$Dims ? static::$Dims["lang"] : static::$Language_Dim;
+		return static::$Dims ? static::$Dims["lang"] : \QApp::$Language_Dim;
 	}
 	
 	public static function SetLanguage_Dim($lang)
@@ -2691,12 +2691,12 @@ trait QModel_Methods
 			}
 			static::$DimsDef["lang"] = $new_lang;
 		}
-		static::$DefaultLanguage_Dim = $lang;
+		\QApp::$DefaultLanguage_Dim = $lang;
 	}
 	
 	public static function GetDefaultLanguage_Dim()
 	{
-		return (static::$DimsDef && static::$DimsDef["lang"]) ? reset(static::$DimsDef["lang"]) : (static::$DefaultLanguage_Dim ?: static::$Language_Dim);
+		return (static::$DimsDef && static::$DimsDef["lang"]) ? reset(static::$DimsDef["lang"]) : (\QApp::$DefaultLanguage_Dim ?: static::$Language_Dim);
 	}
 	
 	/**
@@ -4990,120 +4990,6 @@ trait QModel_Methods
 		}
 		return null;
 		
-	}
-
-	/**
-	 * @api.enable
-	 * 
-	 * @param QModel $obj
-	 */
-	public static function TrackData($obj, $before = false, $toAdd = false, $toRm = false, $toJson = null, $executed = 0)
-	{
-		//ob_start();
-		
-		$user = \Omi\User::GetCurrentUser();
-		if (!$user)
-			throw new \Exception("Used not logged in!");
-
-		if (!$toJson)
-		{
-			$objClone = $obj->getClone("Id");
-			$objClone->query($objClone::GetModelEntity());
-			$toJson = $objClone->toJSON();
-		}
-
-		//qvardump($objClone);
-
-		//qvardump($before, $toAdd, $toRm);
-
-		if ($before)
-		{
-			$data = [
-				"Action" => $toAdd ? \Omi\TrackInfo::Add : ($toRm ? \Omi\TrackInfo::Delete : \Omi\TrackInfo::Update),
-				"Class" => get_class($obj),
-				"Identifier" => $obj->getId(),
-				"DataBefore" => $toJson,
-				"By" => $user->toArray("Id"),
-				"Completed" => false
-			];
-
-			//if (!$toAdd)
-			//	$data["Instance"] = $obj->toArray("Id");
-
-			//qvardump("SAVE BEFORE  ::  ", $data);
-			\QApi::Merge("TrackInfo", $data);
-		}
-		else
-		{
-			$params = [
-				"By" => $user->getId(),
-				"Completed" => false,
-				"Class" => get_class($obj)
-			];
-
-			$toAdd ? ($params["Action"] = \Omi\TrackInfo::Add) : ($params["Identifier"] = $obj->getId());
-
-			//qvardump($params);
-
-			$trackInfos = \QApi::Query("TrackInfo", null, $params);
-			$trackData = $trackInfos ? $trackInfos[0] : null;
-
-			if ($trackData || ($executed > 9))
-			{
-				//qvardump($trackData->DataBefore);
-				$initalObjFromData = $trackData ? \QModel::FromJSON($trackData->DataBefore) : null;
-				$currentObjFromData = \QModel::FromJSON($toJson);
-
-				$diffs = $initalObjFromData::Compare($initalObjFromData, $currentObjFromData, ["MTime" => "MTime"]);
-				$changed = !empty($diffs);
-
-				// if we just edit the data then don't save it if no changes were made
-				if (!$toAdd && !$toRm && !$changed)
-				{
-					// if we don't have track data don't add it
-					if ($trackData)
-					{
-						$trackData->setTransformState(\QIModel::TransformDelete);
-						\QApi::Merge("TrackInfo", $trackData);
-					}
-				}
-				else
-				{
-					$data = [
-						"Action" => $toAdd ? \Omi\TrackInfo::Add : ($toRm ? \Omi\TrackInfo::Delete : \Omi\TrackInfo::Update),
-						"Class" => get_class($obj),
-						"Completed" => true,
-						"DataAfter" => $toJson,
-						"Date" => date("Y-m-d H:i:s"),
-						"Identifier" => $obj->getId(),
-						"Changed" => $changed,
-						"Changes" => json_encode($diffs)
-					];
-
-					//if ($toAdd)
-					//	$data["Instance"] = $obj->toArray("Id");
-
-					if ($trackData)
-						$data["Id"] = $trackData->getId();
-
-					//qvardump("SAVE AFTER  ::  ", $data);
-					\QApi::Merge("TrackInfo", $data);
-				}
-			}
-			else
-			{
-				//var_dump("not found call again!".$executed);
-				sleep(1);
-				$cls = get_class($obj);
-				//\QApi::ExecAsync($cls.'::TrackData', [$obj, $before, $toAdd, $toRm, $toJson, ++$executed]);
-			}
-		}
-
-		/*
-		$f = fopen("track_data.html", "a+");
-		fwrite($f, ob_get_clean() . "<hr/><hr/><hr/>");
-		fclose($f);
-		*/
 	}
 
 	protected static function TrackDataBeforeSave($model)

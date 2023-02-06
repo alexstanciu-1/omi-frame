@@ -118,7 +118,7 @@
 								$storage_model = QApp::GetDataClass();
 								$src_from_types = \QApi::DetermineFromTypes($storage_model, $property_refl->name, $is_collection, $property_reflection);
 								if (is_array($src_from_types))
-									$src_from_types = reset($src_from_types);
+									$src_from_types = q_reset($src_from_types);
 								$analyze_query = $src_from_types::GetListingQuery(null, $property_refl->name);
 								
 								// $analyze_query = ($property_refl && $analyze_start_type) ? 

@@ -110,8 +110,6 @@ class QModelQuery
 		}
 		finally
 		{
-			if ($do_log)
-				static::Q_NEW_LOG("q=q:", $query, $t0);
 		}
 	}
 	
@@ -172,37 +170,8 @@ class QModelQuery
 		}
 		finally
 		{
-			# static::Q_NEW_LOG("q=b:", $query, $t0);
 		}
 	}
-
-	public static function Q_NEW_LOG($type, $query, $t0)
-	{
-
-		return;
-
-		if (static::$NEW_DEBUG_FILE === null)
-		{
-			$domain = $_SERVER["SERVER_NAME"];
-			if (substr($domain, 0, 8) == "https://")
-				$domain = substr($domain, 8);
-			else if (substr($domain, 0, 7) == "http://")
-				$domain = substr($domain, 7);
-			if (substr($domain, 0, 4) == "www.")
-				$domain = substr($domain, 4);
-			static::$NEW_DEBUG_FILE = (($logs_dir = "/home/logs/" . trim(get_current_user()) . "/" . trim(preg_replace("/([^\\w])/uis", "_", $domain)) . "/" . date("Y_m_d") . "/")) . uniqid() . ".txt";
-			if (!is_dir($logs_dir))
-				qmkdir($logs_dir);
-
-			file_put_contents(static::$NEW_DEBUG_FILE, "url=req_uri:" . preg_replace("/(\\r?\\n)/uis", " | ", $_SERVER["REQUEST_URI"]) . "|qs:" . preg_replace("/(\\r?\\n)/uis", " | ", $_SERVER["QUERY_STRING"]) . "\n"
-				. "ip=" . $_SERVER["REMOTE_ADDR"] . "\n", FILE_APPEND);
-		}
-
-		$t1 = microtime(true);
-		file_put_contents(static::$NEW_DEBUG_FILE, $type . preg_replace("/(\\r?\\n)/uis", " | ", $query) . "\ns=" . json_encode(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)) . "\nt=start:" 
-			. date('Y-m-d-H:i:s.', $t0) . preg_replace("/^.*\./i","", $t0) . "|end:" 
-			. date('Y-m-d-H:i:s.', $t1) . preg_replace("/^.*\./i","", $t1) . "|elapsed:" . (($t1 - $t0)) . "\n", FILE_APPEND);
- 	}
 	
 	/**
 	 * 

@@ -547,7 +547,7 @@ final class QWebRequest
 			
 			if (static::$MultiResponseId)
 				self::$AjaxResponse["__MultiResponseId"] = static::$MultiResponseId;
-			self::$AjaxResponse[" _security_random_text_"] = static::GetSecurityCode();
+			self::$AjaxResponse["_security_random_text_"] = static::GetSecurityCode();
 			$refs = [];
 			if (\QAutoload::GetDevelopmentMode())
 				self::$AjaxResponse['__devmode__'] = true;

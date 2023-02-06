@@ -1025,12 +1025,16 @@ function execQB($filter = null, $instance = null)
 			]]);
 
 			$ex = null;
+			$output = null;
 			try
 			{
+				ob_start();
+
 				if ($m_type_meth->static)
 					$ret[$pos] = call_user_func_array(array($class, $method), is_array($params) ? $params : [$params]);
 				else
 					$ret[$pos] = call_user_func_array(array($instance, $method), is_array($params) ? $params : [$params]);
+					
 			}
 			catch (\Exception $ex)
 			{
@@ -1058,10 +1062,9 @@ function execQB($filter = null, $instance = null)
 						#'Data' => ['return'.(($pos > 0) ? "[{$pos}]" : '') => $ret[$pos]],
 					]]);
 				}
+				$output = ob_get_clean();
 			}
 			
-			$output = ob_get_clean();
-
 			if (!empty($output))
 			{				
 				if ($ret[$pos] === null)
@@ -3735,7 +3738,6 @@ function _T($uid, $defaultText)
 	return $ret_text;
 }
 
-
 function q_is_set_for_removal($item, $array = null)
 {
 	if (
@@ -4186,50 +4188,11 @@ function q_move_uploaded_file(string $tmp_name, string $save_dir, string $file_n
 
 	$rc = move_uploaded_file($tmp_name, $save_path);
 
-	/*
-	if ($rc)
-	{
-		#$key = "i@#$&*GFbi84@N2nz87";
-		#$cypherMethod = 'AES-256-CBC';
-		# encrypt
-		$iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length($cypherMethod));
-		$options = 0;
-		$encryptedData = openssl_encrypt(file_get_contents($temp_saved_in), $cypherMethod, $key, $options, $iv);
-		unlink($temp_saved_in);
-		if ($encryptedData === false)
-			return false;
-		file_put_contents($save_path, $encryptedData);
-
-		if ($upload_Mode)
-			chmod($save_path, octdec($upload_Mode));
-	}
-	*/
-
 	if ($rc && $upload_Mode)
 		chmod($save_path, octdec($upload_Mode));
 
 	return ($rc ? $save_path : false);
 
-	/*
-		$dataToEncrypt = 'Hello World';
-
-		$cypherMethod = 'AES-256-CBC';
-
-		$key = "i@#$&*GFbi84@N2nz87";
-
-		$t1 = microtime(true);
-		$iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length($cypherMethod));
-		$t_gen = microtime(true) - $t1;
-
-		$encryptedData = openssl_encrypt($dataToEncrypt, $cypherMethod, $key, $options=0, $iv);
-
-
-		# ============================================
-
-		$t1 = microtime(true);
-		$decryptedData = openssl_decrypt($encryptedData, $cypherMethod, $key, $options=0, $iv);
-		$t_decry = microtime(true) - $t1;
-	 */
 }
 
 function q_get_memory_limit()

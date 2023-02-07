@@ -9,7 +9,7 @@ namespace Omi\Util;
  * @author Mihaita
  * @class.name Email
  */
-abstract class Email_mods_util_ extends \QModel
+abstract class Email_omi_util_ extends \QModel
 {
 	public $from;
 	public $to;

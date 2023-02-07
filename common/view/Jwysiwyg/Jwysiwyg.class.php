@@ -9,7 +9,7 @@ namespace Omi\View;
  * @author Mihaita
  * @class.name Jwysiwyg
  */
-abstract class Jwysiwyg_mods_view_ extends \QWebControl
+abstract class Jwysiwyg_omi_view_ extends \QWebControl
 {
 	public static $AcceptedImagesExtensions = "/jpg|jpeg|png|gif|bmp/";
 	

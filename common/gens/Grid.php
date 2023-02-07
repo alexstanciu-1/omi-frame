@@ -3506,7 +3506,7 @@ class Grid implements IGenerator
 	 */
 	public static function SelectorHasProperties($selector)
 	{
-		$keys = array_keys($selector);
+		$keys = array_keys($selector ?? []);
 		// must be an array, must have at least one key, that is not Id
 		return is_array($selector) && (($first = reset($keys)) && (next($keys) || (strtolower($first) !== "id")));
 	}

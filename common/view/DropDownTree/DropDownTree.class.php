@@ -6,7 +6,7 @@ namespace Omi\View;
 /**
  * @class.name DropDownTree
  */
-abstract class DropDownTree_mods_view_ extends DropDown
+abstract class DropDownTree_omi_view_ extends DropDown
 {
 	
 

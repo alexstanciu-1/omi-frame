@@ -9,7 +9,7 @@ namespace Omi\View;
  * @author Mihaita
  * @class.name Birthdate
  */
-abstract class Birthdate_mods_view_ extends \QWebControl
+abstract class Birthdate_omi_view_ extends \QWebControl
 {
 	
 }

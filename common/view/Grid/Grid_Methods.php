@@ -101,7 +101,7 @@ trait Grid_Methods
 		$search_params = [];
 		foreach ($bind_param as $k => $v)
 		{
-			if ($k{0} == "_")
+			if ($k[0] == "_")
 				continue;
 
 			if (($__sprop = (($_scfg && $_scfg[$k]) ? $_scfg[$k] : null)))
@@ -532,7 +532,7 @@ trait Grid_Methods
 		$inner = ob_get_clean();
 		
 		$url = trim(qbArrayToUrl($grid->grid_params));
-		if ($url{0} === "&")
+		if ($url[0] === "&")
 			$url = substr($url, 1);
 		return [$inner, $grid->url() . ($url ? "?" : "") . $url, ($data && ($data->_show_more || (($qc = $data->getQueryCount()) && ($qc >= $item_k_max))))];
 	}
@@ -565,7 +565,7 @@ trait Grid_Methods
 		$grid->renderListInner($grid->settings, $data, $grid->grid_params);
 		$inner = ob_get_clean();
 		$url = trim(qbArrayToUrl($grid->grid_params));
-		if ($url{0} === "&")
+		if ($url[0] === "&")
 			$url = substr($url, 1);
 		return [$inner, $grid->url() . ($url ? "?" : "") . $url];
 		//return [$inner, $url];

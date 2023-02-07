@@ -6,7 +6,7 @@ namespace Omi\View;
 /**
  * @class.name Menu
  */
-abstract class Menu_mods_view_ extends \QWebControl
+abstract class Menu_omi_view_ extends \QWebControl
 {
 	public function isSelected($url)
 	{

@@ -6,7 +6,7 @@ namespace Omi\View;
 /**
  * @class.name Listing
  */
-abstract class Listing_mods_view_ extends \QWebControl
+abstract class Listing_omi_view_ extends \QWebControl
 {
 	
 	

@@ -10,7 +10,7 @@ namespace Omi\View;
  * @author Omi-Mihai
  * @class.name NotFound
  */
-abstract class NotFound_mods_view_ extends \QWebControl
+abstract class NotFound_omi_view_ extends \QWebControl
 {
 	
 }

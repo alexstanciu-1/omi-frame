@@ -284,13 +284,13 @@ class QCodeSync2
 
 									if (!$generator_classes_included)
 									{
-										if (file_exists(Omi_Mods_Path . 'gens/IGenerator.php'))
+										if (file_exists(Q_FRAME_BPATH . 'common/gens/IGenerator.php'))
 										{
 											# new way (may change)
-											require_once(Omi_Mods_Path . 'gens/IGenerator.php');
-											require_once(Omi_Mods_Path . 'gens/Grid_Config_.php');
-											require_once(Omi_Mods_Path . 'gens/GridTpls.php');
-											require_once(Omi_Mods_Path . 'gens/Grid.php');
+											require_once(Q_FRAME_BPATH . 'common/gens/IGenerator.php');
+											require_once(Q_FRAME_BPATH . 'common/gens/Grid_Config_.php');
+											require_once(Q_FRAME_BPATH . 'common/gens/GridTpls.php');
+											require_once(Q_FRAME_BPATH . 'common/gens/Grid.php');
 										}
 										else if (file_exists(Omi_Mods_Path.'generators/control/Grid/Grid.php'))
 										{

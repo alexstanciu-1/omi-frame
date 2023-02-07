@@ -1258,7 +1258,7 @@ trait QModel_Methods
 	 * 
 	 * @return string
 	 */
-	public function getModelCaption()
+	public function getModelCaption($view_tag = null)
 	{
 		return get_class($this)." #".(($id = $this->getId()) ? $id : "[new]");
 	}

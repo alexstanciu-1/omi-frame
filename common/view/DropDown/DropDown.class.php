@@ -6,7 +6,7 @@ namespace Omi\View;
 /**
  * @class.name DropDown
  */
-abstract class DropDown_mods_view_ extends \QWebControl
+abstract class DropDown_omi_view_ extends \QWebControl
 {
 	
 	

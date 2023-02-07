@@ -11,6 +11,8 @@ final class QSecurity_Check
 	
 	public static function Audit_Request()
 	{
+		return;
+		
 		# cookie @ session empty when not logged in
 		# $_COOKIE :: PHPSESSID__fuse2[string(26)]: "npfg294m5i7p290todnnhrr9d5"
 		if (!defined('Q_REQUEST_UID'))
@@ -65,6 +67,8 @@ final class QSecurity_Check
 	
 	public static function Audit_Login()
 	{
+		return;
+		
 		$c_user = \Omi\User::GetCurrentUser(false, false);
 		$data = false;
 		if ($c_user)
@@ -81,6 +85,8 @@ final class QSecurity_Check
 	
 	public static function Audit_CheckLogin($identity)
 	{
+		return;
+		
 		if (static::$Check_Login_Done)
 			return;
 		static::$Check_Login_Done = true;

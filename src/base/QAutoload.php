@@ -260,7 +260,9 @@ final class QAutoload
 		{
 			self::SetRuntimeFolder($path);
 			if (defined('Q_CODE_DIR'))
-				self::$MainFolderWebPath = BASE_HREF . substr($path, strlen(Q_CODE_DIR)) ;
+			{
+				self::$MainFolderWebPath = BASE_HREF . substr($path, strlen(Q_CODE_DIR));
+			}
 			else
 				self::$MainFolderWebPath = "/".ltrim(substr($path, strlen($_SERVER["DOCUMENT_ROOT"])), "/");
 		}
@@ -553,10 +555,20 @@ final class QAutoload
 	 */
 	public static function GetTempWebPath($for = null)
 	{
-		if ($for)
-			return substr(self::$RuntimeFolder."temp/".$for, strlen(Q_RUNNING_PATH));
+		if (defined('Q_CODE_DIR'))
+		{
+			if ($for)
+				return substr(self::$RuntimeFolder."temp/".$for, strlen(Q_CODE_DIR));
+			else
+				return substr(self::$RuntimeFolder."temp/", strlen(Q_CODE_DIR));
+		}
 		else
-			return substr(self::$RuntimeFolder."temp/", strlen(Q_RUNNING_PATH));
+		{
+			if ($for)
+				return substr(self::$RuntimeFolder."temp/".$for, strlen(Q_RUNNING_PATH));
+			else
+				return substr(self::$RuntimeFolder."temp/", strlen(Q_RUNNING_PATH));
+		}
 	}
 	
 	/**

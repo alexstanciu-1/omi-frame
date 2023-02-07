@@ -6,7 +6,7 @@ namespace Omi\View;
 /**
  * @class.name Form
  */
-abstract class Form_mods_view_ extends \QWebControl
+abstract class Form_omi_view_ extends \QWebControl
 {
 	
 }

@@ -9,7 +9,7 @@ namespace Omi\View;
  * @author Mihaita
  * @class.name RegistrationNumber
  */
-abstract class RegistrationNumber_mods_view_ extends \QWebControl
+abstract class RegistrationNumber_omi_view_ extends \QWebControl
 {
 	
 }

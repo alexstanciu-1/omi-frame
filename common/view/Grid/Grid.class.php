@@ -7,7 +7,7 @@ namespace Omi\View;
  * @class.name Grid
  * @class.abstract true
  */
-abstract class Grid_mods_view_ extends \QWebControl
+abstract class Grid_omi_view_ extends \QWebControl
 {
 	use Grid_Security, Grid_Methods;
 	

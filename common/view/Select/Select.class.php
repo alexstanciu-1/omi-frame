@@ -9,7 +9,7 @@ namespace Omi\View;
  * @author Mihaita
  * @class.name Select
  */
-abstract class Select_mods_view_ extends \QWebControl
+abstract class Select_omi_view_ extends \QWebControl
 {
 	
 	/**

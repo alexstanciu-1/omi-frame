@@ -1,0 +1,69 @@
+.qc-custom-dd {
+	display: inline-block;
+	background-color: #FFFFFF;
+	position: relative;
+	width: 100%;
+	border-bottom: 0.1rem solid #CCCCCC;
+	box-sizing: border-box;
+	cursor: pointer;
+	-webkit-user-select: none;  /* Chrome all / Safari all */
+	-moz-user-select: none;     /* Firefox all */
+	-ms-user-select: none;      /* IE 10+ */
+	user-select: none;          /* Likely future */  
+	transition: all .15s;
+}
+
+.qc-custom-dd .qc-custom-dd-pick {
+	padding: 0.4rem;
+}
+
+.qc-custom-dd .qc-custom-dd-pick:after {
+	position: absolute;
+	font-family: "FontAwesome";
+	content: "\f107";
+	right: 0;
+	top: 0;
+	margin-right: 0.8rem;
+	margin-top: 0.4rem;
+}
+
+.qc-custom-dd .qc-custom-dd-box {
+	position: absolute;
+	width: 100%;
+	-webkit-box-shadow: 0 0.2rem 0.5rem 0 rgba(0, 0, 0, 0.16), 0 0.2rem 1rem 0 rgba(0, 0, 0, 0.12);
+	-moz-box-shadow: 0 0.2rem 0.5rem 0 rgba(0, 0, 0, 0.16), 0 0.2rem 1rem 0 rgba(0, 0, 0, 0.12);
+	box-shadow: 0 0.2rem 0.5rem 0 rgba(0, 0, 0, 0.16), 0 0.2rem 1rem 0 rgba(0, 0, 0, 0.12);
+	z-index: 1000;
+	display: none;
+	box-sizing: border-box;
+	background-color: #FFFFFF;
+}
+
+.qc-custom-dd .qc-custom-dd-box .qc-custom-dd-search {
+	padding: 0.3rem;
+}
+
+.qc-custom-dd .qc-custom-dd-box .qc-custom-dd-search input {
+	padding: 0.3rem 0.4rem;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.qc-custom-dd .qc-custom-dd-box .qc-custom-dd-item {
+	padding: 0.5rem;
+	background-color: #FFFFFF;
+}
+
+.qc-custom-dd .qc-custom-dd-box .qc-custom-dd-item:hover {
+	background-color: #F2F2F2;
+}
+
+.qc-custom-dd .qc-custom-dd-box .qc-custom-dd-items {
+    overflow-y: scroll;
+    height:  20rem;
+}
+
+.qc-custom-dd .qc-custom-dd-box .qc-custom-dd-items .qc-custom-dd-items {
+	overflow: visible;
+	height: auto;
+}

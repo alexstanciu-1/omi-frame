@@ -1,0 +1,15 @@
+
+.qc-dd .qc-dd-box .qc-dd-item-disabled {
+	padding: 1rem;
+	background-color: #FFFFFF;
+	cursor: default;
+	color: lightgray;
+}
+
+
+.qc-dd-pick {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+

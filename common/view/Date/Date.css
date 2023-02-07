@@ -1,0 +1,25 @@
+/*
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+*/
+/* 
+    Created on : Jun 24, 2015, 9:55:03 AM
+    Author     : Mihaita
+*/
+
+.omi-datepickr-wrapper {
+	position: relative;
+}
+
+.omi-datepickr-wrapper .datepickr-show {
+	padding-right: 2.8rem;
+}
+
+.omi-datepickr-wrapper .datepickr-calendar-icon {
+	position: absolute;
+	font-size: 2rem;
+	top: 0.5rem;
+	right: 0.5rem;
+	
+}

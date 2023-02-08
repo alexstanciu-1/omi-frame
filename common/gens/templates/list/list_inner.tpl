@@ -31,7 +31,7 @@
 							{
 								list($label, $caption, $cssCls, $oby, $h_prop) = $headingData;
 								?>
-								<th xg-security-property='<?= $h_prop->name ?>' <?= $oby ? " data-order='{$oby}'" : "" ?> class="qc-heading<?= ($oby ? " js-order-by order{{\$bind_params[{$oby}] ? ' ' . strtolower(\$bind_params[{$oby}]) : ''}}" : "").$cssCls ?>" xg-property-label='<?= $label ?>'>
+								<th xg-security-property='<?= $h_prop->name ?>' <?= $oby ? " data-order='{$oby}'" : "" ?> class="qc-heading<?= ($oby ? " js-order-by order{{\$bind_params['{$oby}'] ? ' ' . strtolower(\$bind_params['{$oby}']) : ''}}" : "").$cssCls ?>" xg-property-label='<?= $label ?>'>
 									<strong>{{_L("<?= $caption ?>")}}</strong>
 								</th>
 								<?php

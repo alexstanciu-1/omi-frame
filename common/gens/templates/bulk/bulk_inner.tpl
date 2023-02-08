@@ -45,7 +45,7 @@
 								{
 									list($label, $caption, $cssCls, $oby, $h_prop, $_finfo, $h_search_data, $h_qsearch_data) = $headingData;
 									?>
-										<th xg-security="$grid_mode, $settings['model:property'], $vars_path" <?= (!$oby) ? 'style="padding-left: 0;"' : '' ?> xg-security-property='<?= $h_prop->name ?>' <?= $oby ? " data-order='{$oby}'" : "" ?> class="qc-heading<?= ($oby ? " js-order-by order{{\$bind_params[{$oby}] ? ' ' . strtolower(\$bind_params[{$oby}]) : ''}}" : "").$cssCls ?>" xg-property-label='<?= $label ?>'>
+										<th xg-security="$grid_mode, $settings['model:property'], $vars_path" <?= (!$oby) ? 'style="padding-left: 0;"' : '' ?> xg-security-property='<?= $h_prop->name ?>' <?= $oby ? " data-order='{$oby}'" : "" ?> class="qc-heading<?= ($oby ? " js-order-by order{{\$bind_params['{$oby}'] ? ' ' . strtolower(\$bind_params['{$oby}']) : ''}}" : "").$cssCls ?>" xg-property-label='<?= $label ?>'>
 											<?php
 												# if ($h_qsearch_data && $h_qsearch_data[1])
 												#	echo $h_qsearch_data[1];

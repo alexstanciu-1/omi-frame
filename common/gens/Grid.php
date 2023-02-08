@@ -35,8 +35,8 @@ class Grid implements IGenerator
 		
 		// get model info
 		$from			= $config["from"];
-		$from_info		= reset(\QApi::ParseSourceInfo($from));
-		$src_from		= reset($from_info);
+		$from_info		= q_reset(\QApi::ParseSourceInfo($from));
+		$src_from		= q_reset($from_info);
 		$storage_model	= (defined('Q_DATA_CLASS') && Q_DATA_CLASS) ? Q_DATA_CLASS : \QApp::GetDataClass();
 		$src_from_types = \QApi::DetermineFromTypes($storage_model, $src_from);
 		
@@ -91,7 +91,7 @@ class Grid implements IGenerator
 				{
 					foreach ($s_Place_Holders as $gen_mode => $ph_def_)
 					{
-						$ph_def = reset($ph_def_);
+						$ph_def = q_reset($ph_def_);
 
 						if (!$ph_def['@layout'])
 							$ph_def['@layout'] = "{{@".implode("}}\n{{@", $ph_def['@select'])."}}";
@@ -278,7 +278,7 @@ class Grid implements IGenerator
 						if (!$selected_props)
 							throw new \Exception('Missing properties!');
 						
-						$groups[reset($selected_props)] = 'after';
+						$groups[q_reset($selected_props)] = 'after';
 						$groups['@select'] = $selected_props;
 						$groups['@layout'] = $grp_layout;
 					
@@ -642,26 +642,26 @@ class Grid implements IGenerator
 		// get settings
 		$config["__settings__"] = 
 				static::ExtractExtraConfig($config["cfg"], "::", "@settings") ?: 
-				static::GetModelStorageData($src_from_types ? reset($src_from_types) : null, $view, "settings");
+				static::GetModelStorageData($src_from_types ? q_reset($src_from_types) : null, $view, "settings");
 		
 		// get tabs
 		$config["__tabs__"] = 
 				static::ExtractExtraConfig($config["cfg"], "::", "@tabs") ?: 
-				static::GetModelStorageData($src_from_types ? reset($src_from_types) : null, $view, "display.tabs");
+				static::GetModelStorageData($src_from_types ? q_reset($src_from_types) : null, $view, "display.tabs");
 		
 		// get sections
 		$config["__sections__"] = 
 				static::ExtractExtraConfig($config["cfg"], "::", "@sections") ?: 
-				static::GetModelStorageData($src_from_types ? reset($src_from_types) : null, $view, "display.sections");
+				static::GetModelStorageData($src_from_types ? q_reset($src_from_types) : null, $view, "display.sections");
 		
 		// get subsections
 		$config["__sub_sections__"] = 
 				static::ExtractExtraConfig($config["cfg"], "::", "@subSections") ?: 
-				static::GetModelStorageData($src_from_types ? reset($src_from_types) : null, $view, "display.sub_sections");
+				static::GetModelStorageData($src_from_types ? q_reset($src_from_types) : null, $view, "display.sub_sections");
 
 		$config["withSecurity"] = 
 				static::ExtractExtraConfig($config["cfg"], "::", "@withSecurity") ?: 
-				static::GetModelStorageData($src_from_types ? reset($src_from_types) : null, $view, "withSecurity");
+				static::GetModelStorageData($src_from_types ? q_reset($src_from_types) : null, $view, "withSecurity");
 
 		// get selector
 		$form_selector = static::Get_Form_Selector($config, $view, $storage_model);
@@ -694,7 +694,7 @@ class Grid implements IGenerator
 			$search_str = "";
 			if (!$analyze_query)
 			{
-				$analyze_start_type = reset($src_from_types);
+				$analyze_start_type = q_reset($src_from_types);
 				$analyze_query = $analyze_start_type::GetListingQuery();
 			}
 
@@ -941,7 +941,7 @@ class Grid implements IGenerator
 
 						$prop_cfg = $config;
 						$prop_cfg["property"] = $label;
-						$prop_cfg["parent_model"] = is_array($src_from_types) ? reset($src_from_types) : $src_from_types;
+						$prop_cfg["parent_model"] = is_array($src_from_types) ? q_reset($src_from_types) : $src_from_types;
 						$prop_path = ($path ? rtrim($path, ".") . "." : "") . $label;
 						
 						$_LIST_PROP_FLAGS = static::GetPropertyFlags($prop_cfg, $prop_path, true, false, true);
@@ -995,7 +995,7 @@ class Grid implements IGenerator
 				else
 					$bind_path = $data["bind_path"];
 
-				$input_name = is_array($bind_path) ? reset($bind_path) : $bind_path;
+				$input_name = is_array($bind_path) ? q_reset($bind_path) : $bind_path;
 				$bind_val_index = "[\"" . $input_name . "\"]";
 
 				// add order by field
@@ -1041,17 +1041,17 @@ class Grid implements IGenerator
 		
 		// check if type is array and reset
 		if (is_array($type))
-			$type = reset($type);
+			$type = q_reset($type);
 		
 		// check bind path to gen the input name
 		if (count($bind_path) > 1)
 		{
 			$bp = $bind_path;
 			array_shift($bp);
-			$input_name = reset($bind_path)."[".implode("][", $bp)."]";
+			$input_name = q_reset($bind_path)."[".implode("][", $bp)."]";
 		}
 		else
-			$input_name = reset($bind_path);
+			$input_name = q_reset($bind_path);
 
 		$bind_val_index = "";
 		foreach ($bind_path as $b)
@@ -1328,7 +1328,7 @@ class Grid implements IGenerator
 						$bind_path = $data["bind_path"];
 
 					if ($prop == $heading)
-						$heading_order = is_array($bind_path) ? reset($bind_path) : $bind_path;
+						$heading_order = is_array($bind_path) ? q_reset($bind_path) : $bind_path;
 				}
 			}
 
@@ -1569,7 +1569,7 @@ class Grid implements IGenerator
 		$selector_has_properties = static::SelectorHasProperties($selector);
 	
 		$propCaption = ($_PROP_FLAGS["display.caption"] ?:
-			\QModel::GetCaption($property, ($parent_model && is_array($parent_model)) ? reset($parent_model) : $parent_model, $property, $config["__view__"]));
+			\QModel::GetCaption($property, ($parent_model && is_array($parent_model)) ? q_reset($parent_model) : $parent_model, $property, $config["__view__"]));
 
 		$propIsMandatory = $_PROP_FLAGS["mandatory"];
 
@@ -2819,9 +2819,9 @@ class Grid implements IGenerator
 		if ($has_custom_layout)
 		{
 			$first_placeholder_was_set = false;
-			$tabsContents = [key($tabsContents) => reset($tabsContents)];
+			$tabsContents = [key($tabsContents) => q_reset($tabsContents)];
 			
-			$tabs = [key($tabs) => reset($tabs)];
+			$tabs = [key($tabs) => q_reset($tabs)];
 			
 			$tabs_count = count($tabsContents);
 			
@@ -2923,7 +2923,7 @@ class Grid implements IGenerator
 	{
 		$mode = $list_mode ? ($read_only ? "list" : "bulk") : ($read_only ? "view" : "form");
 
-		$model = is_array($config["parent_model"]) ? reset($config["parent_model"]) : $config["parent_model"];
+		$model = is_array($config["parent_model"]) ? q_reset($config["parent_model"]) : $config["parent_model"];
 		$prop = $config["property"];
 
 		// property identifier
@@ -3216,7 +3216,7 @@ class Grid implements IGenerator
 
 			$firstScalarType = static::$CachedData[$prop_idf]["__is_collection"] ?
 				$mixed_data["[]"] :
-				(is_array($mixed_data["\$"]) ? $mixed_data["\$"] : reset($mixed_data["\$"]));
+				(is_array($mixed_data["\$"]) ? $mixed_data["\$"] : q_reset($mixed_data["\$"]));
 
 			// only the type what we have on storage.type
 			$type = $mixed_data["storage"];
@@ -3464,7 +3464,7 @@ class Grid implements IGenerator
 
 	public static function IsScalarProperty($mixed_types)
 	{
-		$_ct = ($mixed_types["[]"] && (count($mixed_types["[]"]) === 1)) ? reset($mixed_types["[]"]) : null;
+		$_ct = ($mixed_types["[]"] && (count($mixed_types["[]"]) === 1)) ? q_reset($mixed_types["[]"]) : null;
 
 		try
 		{
@@ -3508,7 +3508,7 @@ class Grid implements IGenerator
 	{
 		$keys = array_keys($selector ?? []);
 		// must be an array, must have at least one key, that is not Id
-		return is_array($selector) && (($first = reset($keys)) && (next($keys) || (strtolower($first) !== "id")));
+		return is_array($selector) && (($first = q_reset($keys)) && (next($keys) || (strtolower($first) !== "id")));
 	}
 	
 	/**
@@ -3566,7 +3566,7 @@ class Grid implements IGenerator
 			$heading_rates = [];
 
 		if (is_array($model_name))
-			$model_name = reset($model_name);
+			$model_name = q_reset($model_name);
 
 		$headings_props = [];
 
@@ -3647,7 +3647,7 @@ class Grid implements IGenerator
 				$optionsPool = $pm::GetOptionsPool($property, $pm);
 				if ($optionsPool)
 				{
-					$app_prop = reset($optionsPool);
+					$app_prop = q_reset($optionsPool);
 					return $ty->properties[$app_prop];
 				}
 			}

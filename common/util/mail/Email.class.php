@@ -477,7 +477,7 @@ abstract class Email_omi_util_ extends \QModel
 						$in_partner = \QQuery("Partners.{* WHERE Id=?}", $current_owner->Gid)->Partners;
 						if (!$in_partner && $in_partner[0] && $in_partner[0]->Owner)
 							break;
-						$partner_id = reset($in_partner)->Owner->Id;
+						$partner_id = q_reset($in_partner)->Owner->Id;
 						if (defined('MAIL_SMTP_HOST') && defined('Omi\User::NFON_ID') && ($partner_id == \Omi\User::NFON_ID))
 						{
 							$mailSender = new \stdClass();
@@ -501,11 +501,11 @@ abstract class Email_omi_util_ extends \QModel
 						{
 							// $partner = \QQuery("Companies.{* WHERE Id=?}", $partner_id)->Companies;
 							$mailSender_list = \QQuery('MailsSenders.{* WHERE Owner.Id=?}', $partner_id)->MailsSenders;
-							if ($mailSender_list && reset($mailSender_list))
-								$mailSender = reset($mailSender_list);
+							if ($mailSender_list && q_reset($mailSender_list))
+								$mailSender = q_reset($mailSender_list);
 
 							$current_owner = \QQuery("Companies.{* WHERE Id=?}", $partner_id)->Companies;
-							$current_owner = $current_owner ? reset($current_owner) : null;
+							$current_owner = $current_owner ? q_reset($current_owner) : null;
 						}
 					}
 				}

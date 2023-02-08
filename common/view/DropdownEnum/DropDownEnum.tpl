@@ -6,7 +6,7 @@
 	<?php
 		if (is_array($multi))
 		{
-			$multi = reset($multi);
+			$multi = q_reset($multi);
 			$force_heading = true;
 		}
 	?>

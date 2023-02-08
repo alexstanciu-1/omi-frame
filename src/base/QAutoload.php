@@ -659,6 +659,22 @@ final class QAutoload
 		self::$RuntimeFolder = $path;
 	}
 	
+	public static function Get_Files_State()
+	{
+		$save_state_path = QAutoload::GetRuntimeFolder()."temp/files_state.php";
+		$has_file_state = false;
+		if (file_exists($save_state_path))
+		{
+			require($save_state_path);
+			$files_state = $Q_FILES_STATE_SAVE;
+			$has_file_state = true;
+		}
+		else
+			$files_state = [];
+		
+		return [$files_state, $has_file_state, $save_state_path];
+	}
+	
 	/**
 	 * Scans all folders that are in self::$WatchFolders
 	 * If there are changes, new files or edited files or removed files, a QCodeSync::resync will be triggered.
@@ -864,17 +880,9 @@ final class QAutoload
 					
 					self::$LockAutoload = true;
 
-					$save_state_path = QAutoload::GetRuntimeFolder()."temp/files_state.php";
-					$has_file_state = false;
-					if (file_exists($save_state_path))
+					list ($files_state, $has_file_state, $save_state_path) = static::Get_Files_State();
+					if (!$has_file_state)
 					{
-						require($save_state_path);
-						$files_state = $Q_FILES_STATE_SAVE;
-						$has_file_state = true;
-					}
-					else
-					{
-						$files_state = array();
 						$full_resync = true;
 						$full_resync_reason = 'missing files_state.php';
 					}

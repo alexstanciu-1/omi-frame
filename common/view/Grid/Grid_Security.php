@@ -37,15 +37,17 @@ trait Grid_Security
 	 */
 	public function init($recursive = true)
 	{
-        if (file_exists(Omi_Mods_Path . "generators/control/Grid/css/skin.css"))
-			$this->addCss(Omi_Mods_Path . "generators/control/Grid/css/skin.css");
+        if (file_exists(Q_FRAME_BPATH . "gens/control/Grid/css/skin.css"))
+			$this->addCss(\QApp::GetWebPath( Q_FRAME_BPATH . "gens/control/Grid/css/skin.css" ));
 		if (file_exists(QGEN_ConfigDirBase."/css/skin.css"))
-			$this->addCss(QGEN_ConfigDirBase."/css/skin.css");
+		{
+			$this->addCss(Q_APP_REL . QGEN_ConfigDirBase . "/css/skin.css");
+		}
 		
-		if (file_exists(Omi_Mods_Path."generators/control/Grid/css/trumbowyg/ui/trumbowyg.min.css"))
-			$this->addCss(Omi_Mods_Path."generators/control/Grid/css/trumbowyg/ui/trumbowyg.min.css");
-		if (file_exists(Omi_Mods_Path."generators/control/Grid/css/trumbowyg/trumbowyg.min.js"))
-			$this->addJs(Omi_Mods_Path."generators/control/Grid/css/trumbowyg/trumbowyg.min.js");
+		if (file_exists(Q_FRAME_BPATH."gens/control/Grid/css/trumbowyg/ui/trumbowyg.min.css"))
+			$this->addCss(\QApp::GetWebPath(Q_FRAME_BPATH."gens/control/Grid/css/trumbowyg/ui/trumbowyg.min.css"));
+		if (file_exists(Q_FRAME_BPATH."gens/control/Grid/css/trumbowyg/trumbowyg.min.js"))
+			$this->addJs(\QApp::GetWebPath(Q_FRAME_BPATH."gens/control/Grid/css/trumbowyg/trumbowyg.min.js"));
 		
 		return parent::init($recursive);
 	}
@@ -177,7 +179,7 @@ trait Grid_Security
 			$grid->prepareSubmit($data, $_FILES);
 			$ret = $grid->doSubmitData($grid->submitData, $grid->grid_mode, $grid->grid_id);
 			$from = $grid->from;
-			$model = $ret->{$from} ? reset($ret->{$from}) : null;
+			$model = $ret->{$from} ? q_reset($ret->{$from}) : null;
 			
 			$no_action = null;
 			$new_url = null;

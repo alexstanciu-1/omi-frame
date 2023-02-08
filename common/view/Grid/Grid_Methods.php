@@ -106,7 +106,7 @@ trait Grid_Methods
 
 			if (($__sprop = (($_scfg && $_scfg[$k]) ? $_scfg[$k] : null)))
 			{
-				$__sprop = reset($__sprop);
+				$__sprop = q_reset($__sprop);
 				if ((list($_prop, $qinsop) = $__sprop) && $_prop)
 				{
 					$k = $_prop;
@@ -266,7 +266,7 @@ trait Grid_Methods
 		$heading_rates = [];
 
 		if (is_array($model_name))
-			$model_name = reset($model_name);
+			$model_name = q_reset($model_name);
 
 		$headings_props = [];
 

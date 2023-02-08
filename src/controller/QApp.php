@@ -493,7 +493,7 @@ class QApp extends QAppModule
 					qvar_dumpk($full_path);
 				throw new \Exception('Path outside app.');
 			}
-						
+			
 			return substr($full_path, strlen(Q_CODE_DIR));
 			# return substr($full_path, strlen(Q_RUNNING_PATH) - strlen(BASE_HREF));
 		}

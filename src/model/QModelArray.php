@@ -576,7 +576,11 @@ class QModelArray extends ArrayObject implements QIModelArray
 				$next_bkt = $backtrace ? $backtrace->next($value) : null;
 				if (($value instanceof QIModelArray) && (!$value->getModelProperty()))
 					$value->setModelProperty($property);
-				$value->transform($parameters, null, $rec_child, $next_bkt, $as_simulation, ($issues[$property->name] = array()), $root_issues, $trigger_provision, $trigger_events);
+				
+				$next_issues = $issues[$property->name] = array();
+				
+				$value->transform($parameters, null, $rec_child, $next_bkt, $as_simulation, $next_issues, $root_issues, 
+						$trigger_provision, $trigger_events);
 			}
 		}
 

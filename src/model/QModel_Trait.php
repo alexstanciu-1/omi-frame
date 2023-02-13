@@ -1543,12 +1543,18 @@ trait QModel_Trait
 										}
 										else
 										{
+											list ($logged_in_user_id, $logged_in_user_owner, $current_context_id)  = \Omi\User::Quick_Check_Login();
+											if (!$logged_in_user_id)
+												throw new \Exception('You are not allowed to upload');
+
 											$save_path_fn = pathinfo($upload_info["name"], PATHINFO_FILENAME);
 											$save_path_ext = pathinfo($upload_info["name"], PATHINFO_EXTENSION);
 										
 											if (!q_allowed_upload_extension($save_path_ext))
 												throw new \Exception('Not allowed.');
-										
+											
+											$save_path_fn = $logged_in_user_id . "-" . ($current_context_id ?? $logged_in_user_owner) . "_" . sha1(uniqid("", true)) . "_secured";
+											
 											$index = 0;
 											// make sure we don't overwrite
 											while (file_exists($save_path = $save_dir.$save_path_fn.($index ? "-".$index : "").".".$save_path_ext))

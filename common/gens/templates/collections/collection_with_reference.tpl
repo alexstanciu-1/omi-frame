@@ -53,8 +53,8 @@
 				<tr>
 					<td colspan='100%' class='qc-coll-add-cell'>
 						<div class="input-group max-w-30">
-							<input class='qc-add-rows form-input' type='number' value='1' />
-							<button class='qc-collection-add btn btn-info btn-border' onclick='return false;' data-form-vars-path="{{$vars_path ?: ''}}" data-form-render="<?= $add_render ?>">
+							<input class='qc-add-rows form-input' style="display: none;" type='number' value='1' />
+							<button class='qc-collection-add btn btn-warning btn-border' onclick='return false;' data-form-vars-path="{{$vars_path ?: ''}}" data-form-render="<?= $add_render ?>">
 								{{_L('Add')}}
 							</button>
 						</div>

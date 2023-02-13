@@ -7,6 +7,8 @@
 					<th class='qc-order-handle-heading'>
 						<strong><i class="fa fa-th-large m-left-10"></i></strong>
 					</th>
+					<th class='qc-collection-chk qc-collection-chk-heading' style="display: none;">
+					</th>
 					<?php
 						if ($_headings_data && (count($_headings_data) > 0))
 						{
@@ -39,7 +41,7 @@
 					?>
 					<?php if (!$read_only) : ?>
 						<th class='qc-action-heading'>
-							<strong></strong>
+							linked<br/>edit <input type="checkbox" class="qc-collection-chk-toggle js-click" data-js-action="collection_chk_toggle" title="Enable Link Edit" />
 						</th>
 					<?php endif; ?>
 				</tr>
@@ -76,15 +78,15 @@
 					<tr>
 						<td colspan='100%' class='qc-coll-add-cell'>
 							<div class="input-group max-w-30">
-								<input class='qc-add-rows form-input' type="number" value="1" />
-								<button class='qc-collection-add btn btn-info btn-border' onclick='return false;' data-form-vars-path="{{$vars_path ?: ''}}" data-form-render="<?= $add_render ?>">
+								<input class='qc-add-rows form-input' style="display: none;" type="number" value="1" />
+								<button class='qc-collection-add btn btn-warning btn-border' onclick='return false;' data-form-vars-path="{{$vars_path ?: ''}}" data-form-render="<?= $add_render ?>">
 									{{_L('Add')}}
 								</button>
 							</div>
 						</td>
 					</tr>
 				</tbody>
-			<?php if (isset($_PROP_FLAGS['collection.hide.add']) && is_string($_PROP_FLAGS['collection.hide.add'])) { ?>
+				<?php if (isset($_PROP_FLAGS['collection.hide.add']) && is_string($_PROP_FLAGS['collection.hide.add'])) { ?>
 				@endif
 			<?php } ?>
 			<?php } endif; ?>

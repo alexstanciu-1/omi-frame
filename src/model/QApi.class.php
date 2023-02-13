@@ -39,7 +39,20 @@ class QApi_frame_
 			throw new Exception("Class `{$class_name}` was not found");
 		if (!method_exists($class_name, $method))
 			throw new Exception("Method `{$class_name}::{$method}` was not found");
-			
+		
+		if ((!Q_IS_TFUSE) && (!q_allowed_calls_without_login($class_name, $method)))
+		{
+			# only allowed to do if logged
+			list ($logged_in_user_id /*, $logged_in_user_owner*/ )  = \Omi\User::Quick_Check_Login(false);
+			if (!$logged_in_user_id)
+			{
+				if (\QAutoload::GetDevelopmentMode())
+					throw new \Exception('Not allowed. ' . $class_name . "::" . $method);
+				else
+					throw new \Exception('Not allowed.');
+			}
+		}
+		
 		$m_type = QModel::GetTypeByName($class_name);
 		if ($m_type)
 		{

@@ -205,15 +205,13 @@ abstract class QSqlTable_frame_ extends QStorageTable
 			
 			$m1 = memory_get_usage();
 			$t1 = microtime(true);
+			
 			if (($selector !== true) && defined('QQQQQ_TEST_NEW_TRANSFORM') && QQQQQ_TEST_NEW_TRANSFORM && \QAutoload::GetDevelopmentMode())
 			{
 				$this->recurseTransactionList_New($mysqli, $model_list, $transform_state, $selector);
-				
+
 				$t2 = microtime(true);
 				$m2 = memory_get_usage();
-
-				/*qvar_dumpk("mem: " . round(($m2 - $m1) / 1024),
-						"time: " . round(($t2 - $t1), 5), $mysqli->_stats);*/
 			}
 			else
 			{

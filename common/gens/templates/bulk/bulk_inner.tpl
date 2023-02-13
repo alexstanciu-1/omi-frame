@@ -112,7 +112,7 @@
 				@if (count($data) >= $this->rowsOnPage)
 				<div class='qc-collection-more-wrapper'>
 					<button onclick="javascript: void(0);" class='qc-collection-more btn btn-info btn-border btn-more' 
-							data-offset='{{$data ? count($data) : 0}}' 
+							data-offset='{{$data ? count($data ?? []) : 0}}' 
 							data-length='{{$this->rowsOnPage}}' 
 							data-from='{{$this->from}}'
 							data-selector='{{$this->getSelectorForMode($this->grid_mode)}}'

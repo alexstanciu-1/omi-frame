@@ -22,8 +22,14 @@ if (Q_IS_TFUSE)
 		\QFirewall::BlockIP();
 		\QFirewall::UpdateRequestsCount(defined('Q_FIREWALL_LOG_PATH') ? Q_FIREWALL_LOG_PATH : null);
 	}
+	if (!defined('Q_SECURE_TPLS'))
+		define('Q_SECURE_TPLS', false);
 }
-
+else
+{
+	if (!defined('Q_SECURE_TPLS'))
+		define('Q_SECURE_TPLS', true);
+}
 
 if (!defined("JSON_UNESCAPED_SLASHES"))
 	define("JSON_UNESCAPED_SLASHES", 64);

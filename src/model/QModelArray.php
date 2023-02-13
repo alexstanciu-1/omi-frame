@@ -2174,4 +2174,18 @@ class QModelArray extends ArrayObject implements QIModelArray
 				$item->afterBeginTransaction_trait($selector, $transform_state, $_bag, $parentProp, $parent);
 		}
 	}
+	
+	/*
+	public function &offsetGet(mixed $key): mixed
+	{
+		return (isset($this->_xss[$key]) && $this->_xss[$key] && \QModel::$XSS_SAFE) ? q_reverse_xss(parent::offsetGet($key)) : parent::offsetGet($key);
+	}
+	*/
+	
+	/*
+	public function offsetSet(mixed $key, mixed $value): void
+	{
+		$this[$key] = $value;
+	}
+	*/
 }

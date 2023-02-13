@@ -352,7 +352,7 @@ class QSqlModelInfoProperty
 		$ok = preg_match_all("/([a-zA-Z0-9]+)(?:\\((.*)\\))?/", $data_str, $matches);
 		if ($ok && $matches && $matches[1][0])
 		{
-			$type = $storage->decodeColumnType($matches[1][0]);
+			$type = $storage::DecodeColumnType($matches[1][0]);
 			
 			$val = null;
 			$len = null;

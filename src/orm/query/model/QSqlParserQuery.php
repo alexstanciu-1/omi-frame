@@ -475,19 +475,11 @@ class QSqlParserQuery
 			{
 				$_this_f_actions = $this->cleanup_F_Actions();
 		
+				$xss_sanitize = defined('Q_USE_XSS_QUERY_RESULT_PROTECTION') && Q_USE_XSS_QUERY_RESULT_PROTECTION;
+
 				while (($row = $result->fetch_assoc()))
 				{
-					// $row_index_tmp++;
-					// echo "Row: ".$row_index_tmp."<br/>";
-				
-					/*
-					if (!$headers)
-					{
-						$headers = true;
-						echo "<tr><th style='border: 1px solid black;'>".implode("</th><th style='border: 1px solid black;'>", array_keys($row))."</th></tr>\n";
-					}
-					echo "<tr><td style='border: 1px solid black;'>".implode("</td><td style='border: 1px solid black;'>", $row)."</td></tr>\n";	
-					 */			
+					
 
 					if (!$_this_f_actions)
 					{
@@ -668,10 +660,16 @@ class QSqlParserQuery
 														$coll_arr->_key = max($coll_arr->_key, (int)$carr_k + 1);
 												}
 											}
+											
+											if ($xss_sanitize && is_string($coll_val) && (!q_data_type_blob($coll_parent->getModelType()->properties[$prop_name])))
+											{
+												$coll_val = q_xss_encode($coll_val);
+											}
+											
 											$coll_parent->{"set{$prop_name}_Item_"}($coll_val, $coll_arr->_key++, $item_rowid, false);
 										}
 										else
-											$coll_arr->setWithRowId($item_rowid, $coll_val);
+											$coll_arr->setWithRowId($item_rowid, ($xss_sanitize && is_string($coll_val)) ? q_xss_encode($coll_val) : $coll_val);
 									}
 								}
 							}
@@ -726,6 +724,12 @@ class QSqlParserQuery
 								if ((($p_type_id === null) || (($prop_name === "Id") && $prop_opts["\$"])) && is_string($p_type_name))
 								{
 									$prop_val = $row[$prop_opts["\$"]];
+									
+									if ($xss_sanitize && is_string($prop_val) && (!q_data_type_blob($object->getModelType()->properties[$prop_name])))
+									{
+										$prop_val = q_xss_encode($prop_val);
+									}
+									
 									if (($prop_val !== null) && ((!$populate_only) || (!$object->_wst[$prop_name])))
 									{
 										if (static::$SettersDefined[$object_class][$prop_name] ?? (static::$SettersDefined[$object_class][$prop_name] = method_exists($object, "set{$prop_name}")))
@@ -736,11 +740,13 @@ class QSqlParserQuery
 												$prop_val = (float)$prop_val;
 											else if ($p_type_name === "double")
 												$prop_val = (double)$prop_val;
-											// setGid($value, $check = true, $null_on_fail = false)
+											
 											$object->{"set{$prop_name}"}($prop_val, true, false);
 										}
 										else
+										{
 											$object->{$prop_name} = $prop_val;
+										}
 									}
 									else if (defined('Q_FLAG_WAS_SET_FOR_NULLS') && Q_FLAG_WAS_SET_FOR_NULLS && ($prop_val === null) && array_key_exists($prop_opts["\$"], $row) &&
 													(static::$SettersDefined[$object_class][$prop_name] ?? (static::$SettersDefined[$object_class][$prop_name] = method_exists($object, "set{$prop_name}"))))
@@ -789,7 +795,9 @@ class QSqlParserQuery
 								{
 									$as_val = $row[$alias_opt];
 									if (($as_val !== null) && ((!$populate_only) || (!$object->_wst[$prop_name])))
-										$object->{$prop_name} = $as_val;
+									{
+										$object->{$prop_name} = ($xss_sanitize && is_string($as_val)) ? q_xss_encode($as_val) : $as_val;
+									}
 								}
 							}
 						}

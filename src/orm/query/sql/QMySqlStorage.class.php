@@ -204,7 +204,7 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 			// type / length / values / unsigned
 			list($f_type, $f_length, $f_values, $f_unsigned) = $this->parseFieldType($row["Type"]);
 			
-			$f_type = $this->decodeColumnType($f_type, $f_length);
+			$f_type = static::DecodeColumnType($f_type, $f_length);
 			if ($f_type == QSqlTableColumn::TypeBool)
 				$f_length = null;
 			else
@@ -1044,7 +1044,7 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 	 * @param string $type
 	 * @return integer
 	 */
-	public function decodeColumnType($type, $filed_length = null)
+	public static function DecodeColumnType($type, $filed_length = null)
 	{
 		$type = strtoupper(trim($type));
 		switch ($type)

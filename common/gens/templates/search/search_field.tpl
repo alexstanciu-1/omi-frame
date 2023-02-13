@@ -4,8 +4,7 @@
 		<label for="<?= $input_name ?>"></label>
 	</div>
 <?php
-	elseif ($_is_enum) : 
-		
+	elseif ($_is_enum) :
 		$_multi = ($operation === "IN");
 
 		if ($_multi)
@@ -25,7 +24,7 @@
 				$_enum_value = "";
 				foreach ($_enum_selected ?: [] as $itm)
 				{
-					$_enum_value .= ((strlen($_enum_value) > 0) ? ", " : "") . (($_enum_captions && $_enum_captions[$itm]) ? $_enum_captions[$itm] : $itm);
+					$_enum_value .= ((strlen($_enum_value) > 0) ? ", " : "") . (($_enum_captions && $_enum_captions[$itm]) ? _L($_enum_captions[$itm]) : $itm);
 				}
 			<?php else : ?>
 				$_enum_value = $bind_params<?= $bind_val_index ?> ? ($_enum_captions ? $_enum_captions[$bind_params<?= $bind_val_index ?>] : $bind_params<?= $bind_val_index ?>) : null;
@@ -51,8 +50,10 @@
 			$_enum_multi = <?= $_force_heading ? "[".($_multi ? "true" : "false")."]" : ($_multi ? "true" : "false") ?>;
 
 		@endcode
-
-		@include (\Omi\View\DropDownEnum, $_enum_vals, $_enum_captions, $_enum_selected, $_enum_value, $enum_dd_params, $enum_dd_props, $_enum_multi, "js-keepin-sync js-search-field", "js-search-field");
+		
+		
+		<!-- <div class="table-heading-caption">{{_L("<?= qaddslashes($propCaption) ?>")}}</div> -->
+		@include (\Omi\View\DropDownEnum, $_enum_vals, $_enum_captions, $_enum_selected, "<?= qaddslashes($propCaption) ?>", $enum_dd_params, $enum_dd_props, $_enum_multi, "js-keepin-sync js-search-field", "js-search-field");
 
 
 <?php elseif (isset($type) && ((strtolower($type[0]) !== $type[0]) || ($identifiers_path && (strtolower(end($identifiers_path)) === "id")))) : 
@@ -95,21 +96,21 @@
 elseif ($type == "boolean") : ?>
 	<div class='js-radio-grp css-radio-grp'>
 		<div class="qc-radio">
-			<input sync-identifier='<?= $input_name ?>-yes' class="js-search-field js-keepin-sync" type="radio" name="<?= $input_name ?>" id="<?=  ($qsearch ? 'qsf-' : '' ) . $input_name ?>-yes" value="1" {{(isset($bind_params<?= $bind_val_index ?>) && $bind_params<?= $bind_val_index ?> == 1) ? checked : ''}} />
-			<label for="<?= ($qsearch ? 'qsf-' : '' ) . $input_name ?>-yes"><?= _L('Yes') ?></label>
+			<input sync-identifier='<?= $input_name ?>-yes' class="js-search-field js-keepin-sync" type="radio" name="<?= $input_name ?>" id="<?=  ($qsearch ? 'qsf-' : '' ) . $input_name ?>-yes" value="1" {{(isset($bind_params<?= $bind_val_index ?>) && $bind_params<?= $bind_val_index ?> == 1) ? ' checked' : ''}} />
+			<label for="<?= ($qsearch ? 'qsf-' : '' ) . $input_name ?>-yes">{{_L('Yes')}}</label>
 		</div>
 		<div class="qc-radio">
-			<input sync-identifier='<?= $input_name ?>-no' class="js-search-field js-keepin-sync" type="radio" name="<?= $input_name ?>" id="<?= ($qsearch ? 'qsf-' : '' ) . $input_name ?>-no" value="0" {{(isset($bind_params<?= $bind_val_index ?>) && $bind_params<?= $bind_val_index ?> == 0) ? checked : ''}} />
-			<label for="<?= ($qsearch ? 'qsf-' : '' ) . $input_name ?>-no"><?= _L('No') ?></label>
+			<input sync-identifier='<?= $input_name ?>-no' class="js-search-field js-keepin-sync" type="radio" name="<?= $input_name ?>" id="<?= ($qsearch ? 'qsf-' : '' ) . $input_name ?>-no" value="0" {{(isset($bind_params<?= $bind_val_index ?>) && $bind_params<?= $bind_val_index ?> == 0) ? ' checked' : ''}} />
+			<label for="<?= ($qsearch ? 'qsf-' : '' ) . $input_name ?>-no">{{_L('No')}}</label>
 		</div>
 		<div class="qc-radio">
-			<input sync-identifier='<?= $input_name ?>-na' class="js-search-field js-keepin-sync" type="radio" name="<?= $input_name ?>" id="<?= ($qsearch ? 'qsf-' : '' ) . $input_name ?>-na" value="" {{!isset($bind_params<?= $bind_val_index ?>) ? checked : ''}} />
-			<label for="<?= ($qsearch ? 'qsf-' : '' ) . $input_name ?>-na"><?= _L('N/A') ?></label>
+			<input sync-identifier='<?= $input_name ?>-na' class="js-search-field js-keepin-sync" type="radio" name="<?= $input_name ?>" id="<?= ($qsearch ? 'qsf-' : '' ) . $input_name ?>-na" value="" {{!isset($bind_params<?= $bind_val_index ?>) ? ' checked' : ''}} />
+			<label for="<?= ($qsearch ? 'qsf-' : '' ) . $input_name ?>-na">{{_L('N/A')}}</label>
 		</div>
 	</div>
 <?php elseif (($type == "date") || ($type == "datetime")) : ?>
 		<div class="table-heading-search-field">
-			<input sync-identifier='<?= $input_name ?>' autocomplete="off" class="qc-input datepickr js-search-field js-keepin-sync" placeholder="<?= _L('Search by') ?> <?= _L($propCaption) ?>" type='text' name='<?= $input_name ?>' value='{{$bind_params<?= $bind_val_index ?>}}' />
+			<input sync-identifier='<?= $input_name ?>' autocomplete="off" class="qc-input datepickr js-search-field js-keepin-sync" placeholder="{{_L('Search by')}} {{_L('<?= $propCaption ?>')}}" type='text' name='<?= $input_name ?>' value='{{$bind_params<?= $bind_val_index ?>}}' />
 		</div>
 <?php else :
 		switch ($operation) :
@@ -121,7 +122,7 @@ elseif ($type == "boolean") : ?>
 			{
 				?>
 					<div class="table-heading-search-field">
-						<input sync-identifier='<?= $input_name ?>' autocomplete="off" class="qc-input js-search-field js-keepin-sync" placeholder="<?= _L('Search by') ?> <?= _L($propCaption) ?>" type='text' name='<?= $input_name ?>' value='{{$bind_params<?= $bind_val_index ?>}}' />
+						<input sync-identifier='<?= $input_name ?>' autocomplete="off" class="qc-input js-search-field js-keepin-sync" placeholder="{{_L('Search by')}} {{_L('<?= $propCaption ?>')}}" type='text' name='<?= $input_name ?>' value='{{$bind_params<?= $bind_val_index ?>}}' />
 					</div>
 				<?php
 				break;
@@ -130,7 +131,7 @@ elseif ($type == "boolean") : ?>
 			{					
 				?>
 					<div class="table-heading-search-field">
-						<input sync-identifier='<?= $input_name ?>' autocomplete="off" class="qc-input js-search-field js-keepin-sync" placeholder="<?= _L('Search by') ?> <?= _L($propCaption) ?>" name='<?= $input_name ?>' type='text' value='{{isset($bind_params<?= $bind_val_index ?>) ? str_replace("%", "", $bind_params<?= $bind_val_index ?>) : ""}}' />
+						<input sync-identifier='<?= $input_name ?>' autocomplete="off" class="qc-input js-search-field js-keepin-sync" placeholder="{{_L('<?= $propCaption ?>')}}" name='<?= $input_name ?>' type='text' value='{{isset($bind_params<?= $bind_val_index ?>) ? str_replace("%", "", $bind_params<?= $bind_val_index ?>) : ""}}' />
 					</div>
 				<?php
 				break;
@@ -139,7 +140,7 @@ elseif ($type == "boolean") : ?>
 			{
 				?>
 					<div class="table-heading-search-field">
-						<input sync-identifier='<?= $input_name ?>' autocomplete="off" class="qc-input js-search-field js-keepin-sync" placeholder="<?= _L('Search by') ?> <?= _L($propCaption) ?>" type='text' name='<?= $input_name ?>' value='{{$bind_params<?= $bind_val_index ?>}}' />
+						<input sync-identifier='<?= $input_name ?>' autocomplete="off" class="qc-input js-search-field js-keepin-sync" placeholder="{{_L('Search by')}} {{_L('<?= $propCaption ?>')}}" type='text' name='<?= $input_name ?>' value='{{$bind_params<?= $bind_val_index ?>}}' />
 					</div>
 				<?php
 				break;

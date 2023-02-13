@@ -699,6 +699,8 @@ final class QWebRequest
 	
 	public static function HandleShutdown(string $content)
 	{
+		$in_production = !\QAutoload::GetDevelopmentMode();
+		
 		$legcay_error_handling = \QApp::GetLegacyErrorHandling();
 		$uncaughtException = \QErrorHandler::GetUncaughtException();
 		
@@ -796,7 +798,7 @@ final class QWebRequest
 			{
 				// if (true) // || $legcay_error_handling)
 				{
-					\QErrorHandler::LogError($uncaughtException);
+					$err_uid = \QErrorHandler::LogError($uncaughtException);
 					
 					if (self::$FastAjax || self::IsAjaxRequest())
 					{
@@ -813,7 +815,7 @@ final class QWebRequest
 					{
 						if (!headers_sent())
 							header("HTTP/1.1 500 Internal Server Error");
-						echo $uncaughtException->getMessage();
+						echo "There was an error. Error ID: {$err_uid}";# $uncaughtException->getMessage();
 					}
 				}
 			}
@@ -938,7 +940,7 @@ final class QWebRequest
 			<div class="scroll-bar"></div>
 			<div class="right"><iframe id='iframe_dev' frameborder="0" scrolling="auto" allowfullscreen src="<?= Q_APP_REL.$append_url_dev ?>"></iframe></div>
 		</div>
-		<script type="text/javascript" src="<?= Q_FRAME_REL; ?>view/js/jquery-2.1.4.min.js"></script>
+		<script type="text/javascript" src="<?= Q_FRAME_REL; ?>view/js/jquery-3.6.3.min.js"></script>
 		<script type="text/javascript" src="<?= Q_FRAME_REL; ?>view/js/functions.js"></script>
 		<script type="text/javascript" src="<?= Q_FRAME_REL; ?>view/js/debug.js"></script>
 	</body>
@@ -961,7 +963,7 @@ final class QWebRequest
 	</head>
 	<body>
 		<script type="text/javascript" src="<?= Q_FRAME_REL; ?>view/js/phpjs.js"></script>
-		<script type="text/javascript" src="<?= Q_FRAME_REL; ?>view/js/jquery-2.1.4.min.js"></script>
+		<script type="text/javascript" src="<?= Q_FRAME_REL; ?>view/js/jquery-3.6.3.min.js"></script>
 		<script type="text/javascript" src="<?= Q_FRAME_REL; ?>view/js/functions.js"></script>
 		<script type="text/javascript" src="<?= Q_FRAME_REL; ?>view/js/debug_dev.js"></script>
 	</body>
@@ -1082,7 +1084,7 @@ final class QWebRequest
 		{
 			$response = null;
 			
-			if  ((strtolower(trim($_SERVER["CONTENT_TYPE"])) === 'application/json') && (empty($_POST)))
+			if ((strtolower(trim($_SERVER["CONTENT_TYPE"])) === 'application/json') && (empty($_POST)))
 			{
 				$_POST = json_decode(file_get_contents('php://input'), true);
 			}

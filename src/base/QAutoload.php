@@ -1367,7 +1367,7 @@ final class QAutoload
 			}
 			else if (filter_var($restriction, FILTER_VALIDATE_IP) !== false)
 			{
-				if ($restriction === filter_input(INPUT_SERVER, array_key_exists('HTTP_X_FORWARDED_FOR', $_SERVER) ? "HTTP_X_FORWARDED_FOR" : "REMOTE_ADDR", FILTER_VALIDATE_IP))
+				if ($restriction === filter_input(INPUT_SERVER, "REMOTE_ADDR", FILTER_VALIDATE_IP))
 				{
 					self::RunDevelopmenMode($full_resync, $debug_mode, $ajax_mode);
 					$scaned = true;
@@ -1476,7 +1476,7 @@ final class QAutoload
 		self::$DevelopmentMode = true;
 		
 		file_put_contents("temp_log_dev_mode.txt", 
-				date("Y-m-d H:i:s")." - " . $_SERVER["HTTP_X_FORWARDED_FOR"] . " : " .$_SERVER["REMOTE_ADDR"] . "\n" , FILE_APPEND);
+				date("Y-m-d H:i:s")." - " . $_SERVER["REMOTE_ADDR"] . "\n" , FILE_APPEND);
 		
 		if (!$ajax_mode)
 		{

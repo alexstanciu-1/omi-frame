@@ -69,14 +69,14 @@ class QErrorHandler
 			 */
 			return;
 		}
-
-		static::$UncaughtException = $ex;
 		
+		static::$UncaughtException = $ex;
+	
 		$headers_sent = headers_sent();
 		
 		if (!$headers_sent)
 			header("HTTP/1.1 500 Internal Server Error");
-		
+				
 		$in_production = !\QAutoload::GetDevelopmentMode();
 		$err_uid = uniqid();
 		$backtrace_stack = $ex->getTrace();
@@ -308,6 +308,8 @@ class QErrorHandler
 			file_put_contents($file_path.".gzip", gzencode($data));
 		else
 			file_put_contents($file_path, $data);
+		
+		return $err_uid;
 	}
 	
 	/**

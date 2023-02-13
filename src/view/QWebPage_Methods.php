@@ -68,4 +68,9 @@ trait QWebPage_Methods
 			qmkdir($ret);
 		return $ret;
 	}
+	
+	public static function Cache_Font(string $font)
+	{
+		return $font;
+	}
 }

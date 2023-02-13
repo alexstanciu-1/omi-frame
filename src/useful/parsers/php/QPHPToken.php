@@ -1618,10 +1618,7 @@ abstract class QPHPToken
 				else
 					$new_toks[] = $tok;
 			}
-			
-			// echo "{$this->filename} ========================================================";
-			// var_dump($new_toks);
-			
+
 			return $new_toks;
 		}
 		else
@@ -2782,9 +2779,11 @@ abstract class QPHPToken
 			// qvar_dump($template);
 		}
 		
+		$output_escape_method = defined('Q_USE_XSS_OUTPUT_FIXING') && Q_USE_XSS_OUTPUT_FIXING ? 'q_xss_output' : 'htmlspecialchars';
+		
 		// htmlspecialchars($string, ENT_HTML5 | ENT_COMPAT | ENT_SUBSTITUTE)
 		$reg_exp = "/\\{\\{\\s*(\\$(?:[a-zA-Z0-9\\_\\s\\[\\]\\\"\\'\\$]|(?:\\-\\>))+)\\s*\\}\\}/us"; // matching vars & adding isset
-		$template = preg_replace($reg_exp, "<?= isset(\$1) ? htmlspecialchars(\$1, ENT_QUOTES | ENT_HTML5, 'UTF-8') : \"\" ?>", $template);
+		$template = preg_replace($reg_exp, "<?= isset(\$1) ? {$output_escape_method}(\$1, ENT_QUOTES | ENT_HTML5, 'UTF-8') : \"\" ?>", $template);
 		if ($template === null)
 		{
 			# qvar_dump(PREG_BAD_UTF8_ERROR);
@@ -2801,7 +2800,7 @@ abstract class QPHPToken
 		}
 		
 		$reg_exp = "/\\{\\{\\s*(.*?)\\s*\\}\\}/us"; // matching expressions
-		$template = preg_replace($reg_exp, "<?= htmlspecialchars(\$1, ENT_QUOTES | ENT_HTML5, 'UTF-8') ?>", $template);
+		$template = preg_replace($reg_exp, "<?= {$output_escape_method}(\$1, ENT_QUOTES | ENT_HTML5, 'UTF-8') ?>", $template);
 		if ($template === null)
 		{
 			# qvar_dump(PREG_BAD_UTF8_ERROR);
@@ -2940,7 +2939,7 @@ abstract class QPHPToken
 				{
 					// htmlspecialchars($name, ENT_COMPAT, 'UTF-8');
 					if ((substr($chunk, 0, 2) === "{{") && (substr($chunk, -2, 2) === "}}"))
-						$out[] = "<?= htmlspecialchars(".trim(substr($chunk, 2, -2)).", ENT_QUOTES | ENT_HTML5, 'UTF-8') ?>";
+						$out[] = "<?= {$output_escape_method}(".trim(substr($chunk, 2, -2)).", ENT_QUOTES | ENT_HTML5, 'UTF-8') ?>";
 					else
 						$out[] = $chunk;
 					break;

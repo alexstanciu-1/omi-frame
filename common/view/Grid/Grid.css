@@ -45,3 +45,7 @@
 .qc-list .shrc-ctrl .srch-options .qc-enum-dd  {
 	border: 1px solid #43A0F5;
 }
+
+.image-preview img {
+	max-height: 150px;
+}

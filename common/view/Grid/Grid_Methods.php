@@ -164,7 +164,7 @@ trait Grid_Methods
 		if ($selector === null)
 			$selector = $this->getSelectorForMode("list");
 		
-		$file = \QAutoload::GetTempWebPath().uniqid().".csv";
+		$file = "temp/".sha1(uniqid("", true)).".csv";
 		\QModel::ToCsvFile($file, $this->data, $selector);
 
 		header('Content-Description: File Transfer');

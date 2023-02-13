@@ -1,4 +1,4 @@
-<div xg-item='<?= $xg_tag ?>' class='qc-xg-item' 
+<div xg-security="$grid_mode, $settings['model:property'], $vars_path, $data" xg-item='<?= $xg_tag ?>' class='qc-xg-item' 
 	 q-args="$settings = null, $data = null, $bind_params = null, $grid_mode = null, $id = null, $vars_path = '<?= $vars_post_path ?>', $_qengine_args = null">
 	<div class='sidebar'>
 		<div class='sidebar-content'>
@@ -19,51 +19,84 @@
 		$show_delete = ((($grid_mode !== "add") && ($grid_mode !== "delete")) && (!$dataCls::$_USE_SECURITY_FILTERS || ($user && $user->can('delete', '<?= $config['__view__'] ?>', $data))));
 	@endcode
 	
-	<div class='qc-inner'>
+	<div class='qc-inner' <?= isset($_TYPE_FLAGS['popup_width']) ? ' data-q-popup_width="'.$_TYPE_FLAGS['popup_width'].'" ' : '' ?>>
 		<div class="page-header">
-			<h2 class='page-title'>{{_L($this->caption ?: '<?= $viewCaption ?>') . ( $this->show_caption_action ? (($grid_mode === "add") ? " "._L("Add") : (($grid_mode === "edit") ? " "._L("Update") : (($grid_mode === "delete") ? " "._L("Delete") : " "._L("View")))) : "")}}</h2>
-			<?php if (!$isPureReference) : ?>
-				<div class='qc-top-actions m-bottom-1'>
-					<a href="{{$this->url()}}" class="qc-back-btn btn-info btn-border qc-tooltip tooltip-bottom m-right-20">
-						<i class="fa fa-arrow-left"></i>
-						{{_L('Back')}}
-					</a>
-					@if ($data && $data->getId() && ($show_edit || $show_view || $show_delete))
-						@if ($show_edit)
-							<a href='{{$this->getUrlForTag("id", "edit", $data->getId())}}' class="qc-edit-btn btn btn-warning btn-border">
-								{{_L('Edit')}}
-							</a>
-						@endif
-						@if ($show_view)
-							<a href='{{$this->getUrlForTag("id", "view", $data->getId())}}' class="btn btn-warning qc-view-btn btn-border">
-								{{_L('View')}}
-							</a>
-						@endif
-						@if ($show_delete)
-							<a href='{{$this->getUrlForTag("id", "delete", $data->getId())}}' class="btn btn-danger qc-delete-btn btn-border">
-								{{_L('Delete')}}
-							</a>
-						@endif
-					@endif
-				</div>
-			<?php endif; ?>
-		</div>
-		<div class='page-body'>
-			<div class='qc-grid-properties' data-properties='{{$this->getJsProperties()}}'></div>
-			<form class="xg-form" xg-form='<?= $xg_tag ?>' enctype='multipart/form-data' method='POST' autocomplete='off'>
-				<input type="hidden" value="1" name="__submitted" />
-				@if ($id)
-					<input type="hidden" value="{{$id}}" name="{{$vars_path ? $vars_path.'[Id]' : 'Id'}}" />
+			<a href="{{$this->url()}}" class="qc-back-btn btn-back">
+				<i class="zmdi zmdi-long-arrow-left"></i>
+			</a>
+			<h2 class="page-title">
+				@code
+					$caption_add = !empty('<?= $addCaption ?>') ? '<?= $addCaption ?>' : null;
+					$caption_edit = !empty('<?= $editCaption ?>') ? '<?= $editCaption ?>' : null;
+					$caption_view_mode = !empty('<?= $viewModeCaption ?>') ? '<?= $viewModeCaption ?>' : null;
+					$caption_delete = !empty('<?= $deleteCaption ?>') ? '<?= $deleteCaption ?>' : null;
+				@endcode
+				@if (($grid_mode === "add") && $caption_add)
+					{{_L($caption_add)}}
+				@elseif (($grid_mode === "edit") && $caption_edit)
+					{{_L($caption_edit)}}
+				@elseif (($grid_mode === "view") && $caption_view_mode)
+					{{_L($caption_view_mode)}}
 				@else
-					<?= $hiddens ?>
+					<span class="">{{( $this->show_caption_action ? (($grid_mode === "add") ? " "._L("Add") : (($grid_mode === "edit") ? " "._L("Manage") : (($grid_mode === "delete") ? " "._L("Delete") : " "._L("View")))) : "")}}</span> {{_L($this->caption ?: '<?= $viewCaption ?>')}}
 				@endif
-				<?= $tabs_str ?>
-				@php $cls = (($grid_mode == 'add') || ($grid_mode == 'edit')) ? 'btn-success' : (($grid_mode == 'delete') ? 'btn-alert' : 'btn-warning');
-				@php $caption = ($grid_mode == 'add') ? 'CREATE' : (($grid_mode == 'delete') ? 'DELETE' : 'SAVE')
+			</h2>
+			<div class="page-header-actions">
+				<!-- <a href="{{$this->url()}}" class="qc-back-btn btn btn-primary btn-border">
+					&laquo; <span class="_tblack">{{_T('5a312a7b7299e', 'Back')}}</span>
+				</a> -->
 				@if ($grid_mode !== 'view')
-					<button class="qc-submit-btn btn {{$cls}}" onclick="return false;">{{_L($caption)}}</button>
+						@if (($grid_mode === "add") || ($grid_mode === "edit"))
+							<a href="javascript: void(0);" class="btn btn-info qc-submit-btn btn-border">
+								{{_T('5a2fa73ca20f6', 'Save')}}
+							</a>
+						@elseif ($grid_mode === "delete")
+							<a href="javascript: //" class="btn btn-delete qc-submit-btn btn-border">
+								{{_L("Delete")}}
+							</a>
+						@endif
 				@endif
-			</form>
+				<?php if (!$isPureReference) : ?>
+					<div class='qc-top-actions _dinlineblock'>
+						@if ($data && $data->getId() && ($show_edit || $show_view || $show_delete))
+							@if ($show_edit)
+								<a href='{{$this->getUrlForTag("id", "edit", $data->getId())}}' class="qc-edit-btn btn btn-warning btn-border">
+									{{_L('Edit')}}
+								</a>
+							@endif
+							@if ($show_view)
+								<a href='{{$this->getUrlForTag("id", "view", $data->getId())}}' class="btn btn-info qc-view-btn btn-border">
+									{{_L('View')}}
+								</a>
+							@endif
+							@if ($show_delete)
+								<a href='{{$this->getUrlForTag("id", "delete", $data->getId())}}' class="btn btn-danger qc-delete-btn btn-border btn-delete">
+									{{_L('Delete')}}
+								</a>
+							@endif
+						@endif
+					</div>
+				<?php endif; ?>
+			</div>
+		</div>
+		<div class="page-body {{(($grid_mode == 'edit') || ($grid_mode == 'add') || ($grid_mode == 'view') || ($grid_mode == 'delete')) ? 'page-body-margin' : ''}}">
+			<div class='qc-grid-properties' data-properties='{{$this->getJsProperties()}}'></div>
+			<div class="form-wrapper">
+				<form class="xg-form" xg-form='<?= $xg_tag ?>' enctype='multipart/form-data' method='POST' autocomplete='off'>
+					<input type="hidden" value="1" name="__submitted" />
+					@if ($id)
+						<input type="hidden" value="{{$id}}" name="{{$vars_path ? $vars_path.'[Id]' : 'Id'}}" />
+					@else
+						<?= $hiddens ?>
+					@endif
+					<?= $tabs_str ?>
+					@php $cls = (($grid_mode == 'add') || ($grid_mode == 'edit')) ? 'btn-success' : (($grid_mode == 'delete') ? 'btn-alert' : 'btn-warning');
+					@php $caption = ($grid_mode == 'add') ? 'Create' : (($grid_mode == 'delete') ? 'Delete' : 'Save')
+					@if ($grid_mode !== 'view')
+						<!-- <button class="qc-submit-btn btn btn-primary" onclick="return false;">{{_L($caption)}}</button> -->
+					@endif
+				</form>
+			</div>
 		</div>
 	</div>
 </div>

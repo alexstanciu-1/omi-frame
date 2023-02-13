@@ -3,7 +3,7 @@
 		data-format="<?= $_date_format ?>" 
 		xg-property-value="<?= $xg_tag ?>" 
 		type="text" 
-		class="datepickr full-width form-input js-form-element-input" 
+		class="datepickr full-width js-form-element-input" 
 		value="{{<?= $_date_show_val ?>}}" />
 
 	<input type="hidden" readonly="readonly"

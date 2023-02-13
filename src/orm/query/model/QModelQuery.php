@@ -840,7 +840,17 @@ class QModelQuery
 						}
 						else if ($rp === "?@")
 						{
-							if (!preg_match("/^[\\\\\\w\\.\\\$\\_]+\$/ius", $c_bind))
+							# we only accept ASC and DESC now !
+							$uc_c_bind = strtoupper($c_bind);
+							if (($uc_c_bind === 'ASC') || ($uc_c_bind === 'DESC'))
+							{
+								$c_bind_val = strtoupper($c_bind);
+								$parts[] = $c_bind_val;
+								// repeat the last bind value if we run out of options
+								$c_next = next($binds);
+								$c_bind = (key($binds) !== null) ? $c_next : $c_bind;
+							}
+							else
 							{
 								if (\QAutoload::GetDevelopmentMode())
 								{
@@ -848,10 +858,6 @@ class QModelQuery
 								}
 								throw new Exception("Invalid variable for non-parse bind ?@. The variable must only contain alphanumeric or underscore characters.");
 							}
-							$parts[] = $c_bind;
-							// repeat the last bind value if we run out of options
-							$c_next = next($binds);
-							$c_bind = (key($binds) !== null) ? $c_next : $c_bind;
 						}
 						else
 							$parts[] = $rp;

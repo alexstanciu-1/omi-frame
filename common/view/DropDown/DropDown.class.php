@@ -43,6 +43,14 @@ abstract class DropDown_omi_view_ extends \QWebControl
 		
 		if ($binds["@CALL"])
 		{
+			if (!Q_IS_TFUSE)
+			{
+				# only allowed to do if logged
+				list ($logged_in_user_id /*, $logged_in_user_owner*/ )  = \Omi\User::Quick_Check_Login(false);
+				if (!$logged_in_user_id)
+					throw new \Exception('Not allowed.');
+			}
+			
 			list($call_class_name, $call_method_name) = explode("::", $binds["@CALL"]);
 			$class_reflection = $call_class_name ? \QModel::GetTypeByName($call_class_name) : null;
 			$method_reflection = $class_reflection ? $class_reflection->methods[$call_method_name] : null;

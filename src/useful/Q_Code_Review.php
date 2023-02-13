@@ -27,6 +27,152 @@ final class Q_Code_Review
 		}
 	}
 	
+	public static function Review_SQL_Injection(string $write_path)
+	{
+		throw new \Exception('Not finished.');
+		
+		echo "<pre>";
+		
+		if (!is_dir($write_path))
+			qmkdir($write_path);
+		if (!is_dir($write_path))
+		{
+			echo "Unable to create write dir.";
+			return;
+		}
+		$write_path = realpath($write_path)."/";
+		if (!defined('Q_CODE_DIR'))
+		{
+			echo "We need Q_CODE_DIR defined.";
+			return;
+		}
+		
+		static::Review(function (string $full_path, string $layer, string $ext, int $mtime) use ($write_path) {
+			
+			# /home/alex/voip-fuse/omi-frame/src/
+			# skip frame atm
+			if (substr($full_path, 0, strlen('/home/alex/voip-fuse/omi-frame/src/')) === '/home/alex/voip-fuse/omi-frame/src/')
+				return;
+
+			$c = file_get_contents($full_path);
+			if ($c === false)
+			{
+				echo "Failed to read: {$full_path}\n";
+				return;
+			}
+			
+			$matches_count = preg_match_all("/\\b\\\\?QQuery\\s*\\(/uis", $c);
+			if (!$matches_count)
+			{
+				# there is no need, no reset inside
+				return;
+			}
+			
+			$found_toks_count = 0;
+			$all_found = [];
+			$toks = token_get_all($c);
+			$toks_count = count($toks);
+			
+			foreach ($toks as $t)
+			{
+				if (is_array($t) && ($t[0] === T_INLINE_HTML))
+				{
+					$matches = null;
+					$rc_m = preg_match_all("/\\b\\\\?QQuery\\s*\\(/uis", $t[1], $matches);
+					if ($rc_m > 0)
+					{
+						echo "Inline QQuery @{$full_path} - line{$t[2]}\n";
+					}
+				}
+			}
+			
+			ob_start();
+			static::Find_Token_Pattern($toks, [
+					['mandatory', T_STRING, 'QQuery', true],
+					# ['optional', T_WHITESPACE],
+					['mandatory', null, '('],
+				], function (array $tokens_found, array &$tokens, int $first_match_pos) use ($toks_count, &$found_toks_count, &$all_found)
+				{
+					# extract first argument || while inside first argument ... 
+					static::Test_SQL_Injection($tokens, $first_match_pos, $first_match_pos + count($tokens_found), $toks_count);
+					
+					# qvar_dumpk($tokens_found);
+					# $all_found[] = $tokens_found;
+					# $tokens[$first_match_pos] = [T_STRING, 'q_reset', $tokens_found[0][2]];
+					
+					$found_toks_count++;
+				});
+			
+			$out = ob_get_clean();
+			if (strlen($out) > 0)
+			{
+				echo "@{$full_path}\n";
+				echo $out;
+				exit;
+			}
+			else
+				echo "@{$full_path} | OK.\n";
+			
+		});
+		
+		echo "</pre>";
+	}
+	
+	public static function Test_SQL_Injection(array $tokens, int $first_match_pos, int $arg_start, int $toks_count)
+	{
+		throw new \Exception('Not finished.');
+		
+		# $arg_start
+		$bracket_index = 0;
+		$bag = [];
+		$has_issues = false;
+		for ($i = $arg_start; $i < $toks_count; $i++)
+		{
+			$c_tok = $tokens[$i];
+			if (is_array($c_tok))
+			{
+				if (($c_tok[0] === T_CONSTANT_ENCAPSED_STRING) || ($c_tok[0] === T_WHITESPACE) || ($c_tok[0] === T_COMMENT) || ($c_tok[0] === T_DOC_COMMENT))
+				{
+					# we are ok, this is what it should be
+				}
+				else
+				{
+					# echo token_name($c_tok[0]) . ' - ' . $c_tok[1], "\n";
+					$has_issues = true;
+				}
+			}
+			else
+			{
+				if ((($c_tok === ',') || ($c_tok === ')')) && ($bracket_index === 0))
+					break; # we are done
+				
+				if ($c_tok === '(')
+				{
+					$bracket_index++;
+				}
+				else if ($c_tok === ')')
+				{
+					$bracket_index--;
+				}
+				else if ($c_tok === '.')
+				{
+					# ok, no danger yet
+				}
+				else
+				{
+					$has_issues = true;
+				}
+			}
+			
+			$bag[] = $c_tok;
+		}
+		
+		if ($has_issues)
+		{
+			var_dump($bag);
+		}
+	}
+	
 	public static function Review_Array_Reset(string $write_path)
 	{
 		echo "<pre>";

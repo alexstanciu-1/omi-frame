@@ -5,7 +5,7 @@
  */
 class QCodeSync2
 {
-	use QCodeSync2_Upgrade, QCodeSync2_Utility, QCodeSync2_Gen_Model, QCodeSync2_Gen_Urls, QCodeSync2_Reorganize;
+	use QCodeSync2_Upgrade, QCodeSync2_Utility, QCodeSync2_Gen_Model, QCodeSync2_Gen_Urls, QCodeSync2_Reorganize, QCodeSync2_Security;
 	
 	const Status_Added = 'added';
 	const Status_Changed = 'changed';
@@ -1118,7 +1118,9 @@ class QCodeSync2
 								
 								# cleanup the generated tpl file if it exists
 								if (file_exists(($possible_gen_path = $info['gens_dir'].$this->get_generated_xml_template_name($header_inf))))
+								{
 									unlink($possible_gen_path);
+								}
 							}
 							continue;
 						}
@@ -1509,10 +1511,19 @@ class QCodeSync2
 			// does not work inside a template !!!!
 		}*/
 		
+		# we need to secure after JS creation
+		
+		# we need to do this on-demand only !
+		# list ($xml_tokens) = $this->secure_template($xml_tokens, $header_inf);
+		
 		$xml_tokens_str = $xml_tokens->toString(false, true);
 		# here we apply the namespace
 		if (isset($header_inf['namespace']))
 			$xml_tokens_str = "<?php\nnamespace {$header_inf['namespace']};\n?>" . $xml_tokens_str;
+			
+		# echo "<pre>";
+		# echo htmlentities($xml_tokens_str);
+		# die;
 		
 		file_put_contents($gens_dir.$include_name, $xml_tokens_str);
 		opcache_invalidate($gens_dir.$include_name);

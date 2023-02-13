@@ -930,6 +930,23 @@ function Q_SESSION_UNSET($key)
 	return Q_SESSION($key, null, true);
 }
 
+function q_allowed_calls_without_login(string $class, string $method)
+{
+	return [
+		'Omi\User' => 
+		[
+			'GetCurrentUser' => true,
+			'Login' => true,
+			'CheckLogin' => true,
+		],
+		'Omi\VF\Telecom\NumberPorting' => 
+		[
+			'CheckHasPortingReceiveEmails' => true,
+		],
+		
+	][$class][$method] ?? false;
+}
+
 /**
  * Handles a frame specific request
  * 
@@ -965,11 +982,24 @@ function execQB($filter = null, $instance = null)
 					$request[$rk] = preg_replace('/<script\b[^>]*>(.*?)<\/script>/is', "", $rv);
 			}
 		}
-
+		
 		list ($class, $method, $id) = explode(".", $meta_str, 3);
 		if (($class !== "QApi") && (!qIsA($class, "QIModel")) && (!qIsA($class, "QViewBase")))
 			throw new Exception("You may only call a QIModel or a QViewBase. You have called a `{$class}`");
-	
+			
+		if ((!Q_IS_TFUSE) && (!q_allowed_calls_without_login($class, $method)))
+		{
+			# only allowed to do if logged
+			list ($logged_in_user_id /*, $logged_in_user_owner*/ )  = \Omi\User::Quick_Check_Login(false);
+			if (!$logged_in_user_id)
+			{
+				if (\QAutoload::GetDevelopmentMode())
+					throw new \Exception('Not allowed. ' . $class . "::" . $method);
+				else
+					throw new \Exception('Not allowed.');
+			}
+		}
+
 		if ((($filter === null) || ($method === $filter)) && 
 				($instance ? ((get_class($instance) === $class) && (($id === null) || ($id == (($instance instanceof QViewBase) ? $instance->getFullId() : $instance->getId())))) : true))
 		{
@@ -1140,7 +1170,7 @@ function execQB($filter = null, $instance = null)
  * @return boolean|\QFile
  * @throws Exception
  */
-function extractQbRequest($data, &$parent = null, $key = null, $f_name = null, $f_type = null, $f_tmp_name = null, $f_error = null, $f_size = null, &$refs = null)
+function extractQbRequest($data, &$parent = null, $key = null, $f_name = null, $f_type = null, $f_tmp_name = null, $f_error = null, $f_size = null, &$refs = null, bool &$xss_applied = null)
 {
 	if (is_array($data))
 	{
@@ -1196,12 +1226,18 @@ function extractQbRequest($data, &$parent = null, $key = null, $f_name = null, $
 					}
 					else
 					{
+						list ($logged_in_user_id, $logged_in_user_owner, $current_context_id)  = \Omi\User::Quick_Check_Login();
+						if (!$logged_in_user_id)
+							throw new \Exception('You are not allowed to upload');
+						
 						$pos = 1;
 						$ext = pathinfo($fn, PATHINFO_EXTENSION) ?: null;
-						$baseFn = pathinfo($fn, PATHINFO_FILENAME);
-					
+						
 						if (!q_allowed_upload_extension($ext))
 							throw new \Exception('Not allowed.');
+					
+						$fn = $logged_in_user_id . "-" . ($current_context_id ?? $logged_in_user_owner) . "_" . sha1(uniqid("", true)) . "_secured" . ($ext !== null ? ".".$ext : "");
+						$baseFn = pathinfo($fn, PATHINFO_FILENAME);
 					
 						// avoid overwrite
 						while (file_exists($full_path.$fn))
@@ -1322,14 +1358,22 @@ function extractQbRequest($data, &$parent = null, $key = null, $f_name = null, $
 					$parent->{"set{$collection_prop->name}"}($params);
 					foreach ($data as $k => $v)
 					{
-						$i_val = extractQbRequest($v, $params, $k, $f_name ? $f_name[$k] : null, $f_type ? $f_type[$k] : null, $f_tmp_name ? $f_tmp_name[$k] : null, $f_error ? $f_error[$k] : null, $f_size ? $f_size[$k] : null, $refs);
+						# $xss_applied = false;
+						$i_val = extractQbRequest($v, $params, $k, $f_name ? $f_name[$k] : null, $f_type ? $f_type[$k] : null, $f_tmp_name ? $f_tmp_name[$k] : null, $f_error ? $f_error[$k] : null, $f_size ? $f_size[$k] : null, $refs/*, $xss_applied*/);
 						$parent->$set_meth($i_val, $k);
+						#if ($xss_applied)
+						#	$params->_xss[$k] = true;
 					}
 				}
 				else
 				{
 					foreach ($data as $k => $v)
-						$params[$k] = extractQbRequest($v, $params, $k, $f_name ? $f_name[$k] : null, $f_type ? $f_type[$k] : null, $f_tmp_name ? $f_tmp_name[$k] : null, $f_error ? $f_error[$k] : null, $f_size ? $f_size[$k] : null, $refs);
+					{
+						# $xss_applied = false;
+						$params[$k] = extractQbRequest($v, $params, $k, $f_name ? $f_name[$k] : null, $f_type ? $f_type[$k] : null, $f_tmp_name ? $f_tmp_name[$k] : null, $f_error ? $f_error[$k] : null, $f_size ? $f_size[$k] : null, $refs /*, $xss_applied*/);
+						# if ($xss_applied)
+							# $params->_xss[$k] = true;
+					}
 				}
 			}
 			else
@@ -1365,12 +1409,18 @@ function extractQbRequest($data, &$parent = null, $key = null, $f_name = null, $
 							}
 						}
 						
-						$ex_v = extractQbRequest($v, $params, $k, $f_name ? $f_name[$k] : null, $f_type ? $f_type[$k] : null, $f_tmp_name ? $f_tmp_name[$k] : null, $f_error ? $f_error[$k] : null, $f_size ? $f_size[$k] : null, $refs);
+						# $xss_applied = false;
+						$ex_v = extractQbRequest($v, $params, $k, $f_name ? $f_name[$k] : null, $f_type ? $f_type[$k] : null, $f_tmp_name ? $f_tmp_name[$k] : null, $f_error ? $f_error[$k] : null, $f_size ? $f_size[$k] : null, $refs/*, $xss_applied*/);
 						$params->{"set{$k}"}($ex_v);
+						# if ($xss_applied)
+							# $params->_xss[$k] = true;
 					}
 					else
 					{
-						$params->$k = extractQbRequest($v, $params, $k, $f_name ? $f_name[$k] : null, $f_type ? $f_type[$k] : null, $f_tmp_name ? $f_tmp_name[$k] : null, $f_error ? $f_error[$k] : null, $f_size ? $f_size[$k] : null, $refs);
+						# $xss_applied = false;
+						$params->$k = extractQbRequest($v, $params, $k, $f_name ? $f_name[$k] : null, $f_type ? $f_type[$k] : null, $f_tmp_name ? $f_tmp_name[$k] : null, $f_error ? $f_error[$k] : null, $f_size ? $f_size[$k] : null, $refs/*, $xss_applied*/);
+						# if ($xss_applied)
+						#	$params->_xss[$k] = true;
 						if (is_array($v) && ($k[0] !== '_') && \QAutoload::GetDevelopmentMode())
 						{
 							qvar_dumpk($params, $k, $v);
@@ -1406,6 +1456,13 @@ function extractQbRequest($data, &$parent = null, $key = null, $f_name = null, $
 	}
 	else if (is_string($data))
 	{
+		# if (Q_USE_XSS_PROTECTION && preg_match('/\\&(?:amp|quot|apos|lt|gt|\\#039)\\;/uis', $data))
+		{
+			# we are detecting if XSS was applied to the data
+			# THIS IS APPLIED ON THE POST DATA | $data = htmlspecialchars($data, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5);
+			# $xss_applied = true;
+		}
+		
 		if ($data[0] === "_")
 			return (string)substr($data, 1);
 		else if ($data === "true")
@@ -5202,3 +5259,38 @@ function q_allowed_upload_extension(string $ext)
 	return in_array(strtolower($ext), $allowed_exts);
 }
 
+function q_xss_decode(string $string = null)
+{
+	if (is_null($string))
+		return null;
+	return htmlspecialchars_decode($string, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5);
+}
+
+function q_xss_encode(string $string = null, bool $double_encode = false)
+{
+	if (is_null($string))
+		return null;
+	return htmlspecialchars($string, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5, null, $double_encode);
+}
+
+function q_xss_output(string $string = null, int $flags = ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5, string $encoding = null, bool $double_encode = false) : string
+{
+	if (is_null($string))
+		return "";
+	return htmlspecialchars($string, $flags, $encoding, $double_encode);
+}
+
+function q_data_type_blob(\QModelProperty $property = null)
+{
+	if ($property === null)
+		return false;
+	$possible_binary_types = ['TINYBLOB', 'BLOB', 'MEDIUMBLOB', 'LONGBLOB'];
+	
+	if (($s_type = isset($property->storage['type']) ? strtoupper(trim($property->storage['type'])) : null)
+		&& (in_array($s_type, $possible_binary_types)))
+	{
+		return true;
+	}
+	else
+		return false;
+}

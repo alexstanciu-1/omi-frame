@@ -206,7 +206,7 @@ trait QCodeSync2_Gen_Model
 			qvar_dumpk("MMMM", $type_inf);
 			throw new Exception("Bad type parsing. This should not be");
 		}
-
+		
 		if ($valid_type)
 		{
 			$acc_type_meth_name = $meth_name."_Item_";
@@ -236,9 +236,31 @@ trait QCodeSync2_Gen_Model
 					$is_ok = ($is_ok ? $is_ok." && " : "")."({$validation_str})";
 			}
 			
+			$apply_xss_protection = false; # we do it on the input data now !
+			/*
+			$possible_binary_types = ['TINYBLOB', 'BLOB', 'MEDIUMBLOB', 'LONGBLOB'];
+			
+			$apply_xss_protection = defined('Q_USE_XSS_PROTECTION') && Q_USE_XSS_PROTECTION;
+			
+			# LONGBLOB, BLOB, 
+			if ($apply_xss_protection && 
+					($s_type = isset($parsed_data['storage']['type']) ? strtoupper(trim($parsed_data['storage']['type'])) : null) &&
+					in_array($s_type, $possible_binary_types))
+			{
+				$apply_xss_protection = false;
+			}
+			*/
+			# we will hard-code something atm
+			
 			$str = "	public function {$meth_name}(\$value, ".($for_array ? "\$key = null, \$row_id = null, " : "")."\$check = true, \$null_on_fail = false)
 	{
-		\$fail = false;{$get_type}{$before}".($possible_collection ? "
+		".($apply_xss_protection ? "# xss protection ... should be improved
+		if (is_string(\$value) && preg_match('/\\&|\\\"|\'|\\<|\\>/uis', \$value))
+		{
+			\$value = htmlspecialchars(\$value, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5);
+			\$xss_replaces = true;
+		}
+		" : "")."\$fail = false;{$get_type}{$before}".($possible_collection ? "
 		if (is_array(\$value) && (\$check !== 1))
 			\$value = new \QModelArray(\$value);" : "").(($fixval_str || $remove_thous_sep) ? ("
 		\$value = ".($remove_thous_sep ? "str_replace(Q_Thousands_Separator, '', " : "(").
@@ -259,7 +281,10 @@ trait QCodeSync2_Gen_Model
 				{$assign_to}->setRowIdAtIndex(\$key, \$row_id);" : "").
 			($for_id ? "
 			\$this->_id = (is_string(\$return) && empty(\$return)) ? null : \$return;" : "")."
-			\$this->".($for_array ? "{$property_name}->_wst[\$key]" : "_wst[\"{$property_name}\"]")." = true;
+			\$this->".($for_array ? "{$property_name}->_wst[\$key]" : "_wst[\"{$property_name}\"]")." = true;".
+			($apply_xss_protection ? "
+			if (isset(\$xss_replaces) && \$xss_replaces)
+				\$this->".($for_array ? "{$property_name}->_xss[\$key]" : "_xss[\"{$property_name}\"]")." = true;" : "")."
 		}
 		return \$return;
 	}\n";

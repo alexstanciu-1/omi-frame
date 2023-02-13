@@ -194,7 +194,16 @@ trait QModel_Methods
 			if ($property[0] == "_")
 				return $this->$property;
 			else
-				return ($get = ($this->_ty ? $this->_ty->properties[$property]->getter : $this->getModelType()->properties[$property]->getter)) ? $this->$get() : $this->$property;
+			{
+				/*
+				return ($get = ($this->_ty ? $this->_ty->properties[$property]->getter : $this->getModelType()->properties[$property]->getter)) ? 
+							$this->$get() : (
+								(isset($this->_xss[$property]) && $this->_xss[$property] && \QModel::$XSS_SAFE) ? q_reverse_xss($this->$property) : $this->$property);
+				*/
+				
+				return ($get = ($this->_ty ? $this->_ty->properties[$property]->getter : $this->getModelType()->properties[$property]->getter)) ? 
+							$this->$get() : $this->$property;
+			}
 		}
 		else if (!$property)
 		{
@@ -2130,7 +2139,7 @@ trait QModel_Methods
 	 * 
 	 * @return string
 	 */
-	public static function GetListingEntity()
+	public static function GetListingEntity($view_tag = null)
 	{
 		$class = get_called_class();
 		$le = static::$ListingEntity[$class];

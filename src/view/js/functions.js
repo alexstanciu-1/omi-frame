@@ -55,6 +55,10 @@ function reset($array)
 		return null;
 }
 
+function q_reset($array)
+{
+	return reset($array);
+}
 
 // ensure we have Object.keys
 if (!Object.keys)
@@ -2571,3 +2575,17 @@ function q_download(fileURL)
 
 	(window.URL || window.webkitURL).revokeObjectURL(save.href);
 }
+
+// string, quote_style, charset, double_encode
+function q_xss_output($string, $flags, $encoding, $double_encode)
+{
+	// q_xss_output(string $string = null, int $flags = ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5, string $encoding = null, bool $double_encode = false) : string
+	if ($string === null)
+		return "";
+	if ($double_encode === undefined)
+		$double_encode = false;
+	if ($flags === undefined)
+		$flags = ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5;
+	return htmlspecialchars($string, $flags, $encoding, $double_encode);
+}
+

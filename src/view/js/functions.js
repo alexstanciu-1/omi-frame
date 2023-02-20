@@ -710,6 +710,11 @@ function qbMakeCtrlRequest(url, req_method, ctrl, ctrl_id, meth_class, method_na
 								{
 									var decoded_error_json = q_devmode_handle_ajax(jqXHR, textStatus, errorThrown);
 									
+									if (decoded_error_json && decoded_error_json.__devmode__ && decoded_error_json.__hiddenOutput__)
+									{
+									
+									}
+									
 									var is_redirect = ((jqXHR.readyState === 0) && (jqXHR.status === 0) && (jqXHR.statusText === "error"));
 									if (is_redirect)
 										return;

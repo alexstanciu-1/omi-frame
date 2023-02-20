@@ -41,7 +41,7 @@
 				<div class='qc-dd-rep padding-view qc-dd-rep-prop-<?= $property ?>' q-path='{{<?= $vPath ?>}}'>
 					{{$data-><?= $property ?>->getModelCaption()}}
 					<input type='hidden' value='{{<?= $data ?>->getId()}}' name='{{<?= $vPath ?>}}[Id]' class='qc-dd-rep-input-id' />
-					<input type='hidden' value='{{get_class(<?= $data ?>)}}' name='{{<?= $vPath ?>}}[_ty]' class='qc-dd-rep-input-ty' />		
+					<input type='hidden' value='{{<?= $data ?> ? get_class(<?= $data ?>) : null}}' name='{{<?= $vPath ?>}}[_ty]' class='qc-dd-rep-input-ty' />		
 					<input class='qc-dd-full-data' type='hidden' value='{{(<?= $data ?>) ? (<?= $data ?>->toJSON()) : ""}}' />
 				</div>
 			@endif

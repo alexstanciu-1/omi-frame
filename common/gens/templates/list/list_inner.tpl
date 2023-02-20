@@ -139,7 +139,7 @@
 			<div class='qc-collection-more-wrapper' style="{{!((is_object($data) && $data->_show_more) || (count($data ?? []) >= $this->rowsOnPage)) ? 'display: none;' : ''}}">
 				<button onclick="javascript: void(0);" class='qc-collection-more btn btn-info btn-border btn-more' 
 					type="button"
-					data-offset='{{$data ? count($data) : 0}}' 
+					data-offset='{{$data ? count($data ?: []) : 0}}' 
 					data-length='{{$this->rowsOnPage}}' 
 					data-from='{{$this->from}}'
 					data-selector='{{$this->getSelectorForMode($this->grid_mode)}}'

@@ -39,7 +39,7 @@
 							}
 						}
 					?>
-					<?php if (!$read_only) : ?>
+					<?php if (defined('Q_GENS_WITH_LINKED_EDIT') && Q_GENS_WITH_LINKED_EDIT && (!$read_only)) : ?>
 						<th class='qc-action-heading'>
 							linked<br/>edit <input type="checkbox" class="qc-collection-chk-toggle js-click" data-js-action="collection_chk_toggle" title="Enable Link Edit" />
 						</th>

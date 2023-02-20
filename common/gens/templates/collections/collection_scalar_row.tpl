@@ -51,7 +51,7 @@
 			@if (!$_hide_rm)
 				<ul class='actions'>
 					<li>
-						<a title="{{_L('Delete')}}" class="mdt-a nowrap qc-ref-ctrl-delete qc-delete"{{$_qengine_args['_tsp'] ? " data-vars-path='".$_qengine_args['_tsp'][0]."'" : ""}}>
+						<a title="{{_L('Delete')}}" class="mdt-a nowrap qc-ref-ctrl-delete qc-delete" data-vars-path="{{$_qengine_args['_tsp'][0]}}">
 							<i class="zmdi zmdi-delete"></i>
 						</a>
 					</li>

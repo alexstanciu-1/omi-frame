@@ -29,8 +29,8 @@
 	<?php endif; ?>
 <?php else : ?>
 <span class="qc-scalar-view padding-view" qc-xg-property-value="<?= $xg_tag ?>">{{<?= $_data_value ?>}}<?php if ($_is_file) : ?>
-		@if ($this->data && <?= $_data_value ?>)
-			<a class="fa fa-download qc-in-view-download" target="_blank" href="{{$data->getFullPath_URL_Escaped('<?= $property ?>')}}"></a>
+		@if ($data && <?= $_data_value ?>)
+			<a class="fa fa-download qc-in-view-download" target="_blank" href="{{Q_APP_REL . $data->getFullPath_URL_Escaped('<?= $property ?>')}}"></a>
 		@endif
 	<?php endif; ?></span>
 <?php endif; ?>

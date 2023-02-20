@@ -169,9 +169,6 @@ trait Grid_Security
 			if (!$data || (count($data) === 0))
 				throw new \Exception("No data submitted!");
 			static::BeforeProcessData($data);
-			
-			if (is_array($data))
-				static::FormSubmit_extract_misc_json($data);
 			static::BeforeProcessFiles($_FILES);
 
 			$grid = self::GetLoadedGrid($grid_data);
@@ -213,6 +210,9 @@ trait Grid_Security
 		if ($has_json)
 		{
 			$v = $data['_json_'];
+			if (Q_USE_XSS_INPUT_PROTECTION)
+				$v = q_xss_decode($v);
+			
 			$json_data = is_string($v) ? json_decode($v, true) : $v;
 			if (is_string($json_data))
 			{

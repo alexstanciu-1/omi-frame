@@ -1043,6 +1043,33 @@ function execQB($filter = null, $instance = null)
 			}
 			else
 				$params = extractQbRequest($request, $fake_parent, null, null, null, null, null, null, $refs);
+						
+			# fix params gap if exists
+			{
+				ksort($params); # first ensure order
+				$fixed_params = [];
+				$expected_key = 0;
+				foreach ($params as $pkey => $pval)
+				{
+					if ((string)((int)$pkey) !== (string)$pkey)
+					{
+						# non-numeric
+						$fixed_params[$pkey] = $pval;
+					}	
+					else
+					{
+						if ((int)$pkey !== $expected_key)
+						{
+							# fill gaps
+							for ($i = $expected_key; $i < $pkey; $i++)
+								$fixed_params[$i] = null;
+						}
+						$fixed_params[$pkey] = $pval;
+						$expected_key = $pkey + 1;
+					}
+				}
+				$params = $fixed_params;
+			}
 			
 			// catch any output in case of a render method
 			
@@ -1093,6 +1120,9 @@ function execQB($filter = null, $instance = null)
 					]]);
 				}
 				$output = ob_get_clean();
+				
+				if ($ex && is_string($output) && (strlen($output) > 1))
+					\QWebRequest::AddHiddenOutput($output);
 			}
 			
 			if (!empty($output))

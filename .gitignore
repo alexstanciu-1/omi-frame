@@ -8,9 +8,6 @@ tests/
 *.dyn.php
 *.gen.dyn.php
 
-*.min.js
-*.min.css
-
 ~gens/
 ~gens/**
 

@@ -603,12 +603,12 @@ class QApp extends QAppModule
 		return QModel::$Dims ? QModel::$Dims["lang"] : null;
 	}
 	
-	public static function AddCallbackAfterResponse($callback, $params)
+	public static function AddCallbackAfterResponse($callback, $params = [])
 	{
 		static::$CallbacksAfterResponse[] = [$callback, $params];
 	}
 	
-	public static function AddCallbackAfterResponseLast($callback, $params)
+	public static function AddCallbackAfterResponseLast($callback, $params = [])
 	{
 		static::$CallbacksAfterResponseLast[] = [$callback, $params];
 	}

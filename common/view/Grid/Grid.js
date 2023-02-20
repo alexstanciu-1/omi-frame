@@ -2440,7 +2440,10 @@ QExtendClass("Omi\\View\\Grid", "omi", {
 		if (!view)
 			return;
 		
-		this.quickCall(this._ty + "::RenderViewPopup", [view, id, popup_prop.data("params"), popup_prop.data("mode")], function (resp) {
+		var $params = popup_prop.data("params");
+		var $mode = popup_prop.data("mode");
+		
+		this.quickCall(this._ty + "::RenderViewPopup", [view, id, $params, $mode], function (resp) {
 			
 			var fp_unq = wr_jq.data("popup-prop-unq");
 			if (!fp_unq)

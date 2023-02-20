@@ -859,8 +859,6 @@ class QCodeSync2
 				throw new \Exception('Autoload is missing. You should force a full resync.');
 		}
 		
-		# qvar_dumpk('$this->changes_by_class', $this->changes_by_class);
-		
 		foreach ($this->info_by_class as $full_class_name => &$info)
 		{
 			if ((!$this->full_sync) && (!$this->changes_by_class[$full_class_name]))

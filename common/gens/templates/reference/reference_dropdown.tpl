@@ -41,7 +41,7 @@
 				<div class='qc-dd-rep padding-view qc-dd-rep-prop-<?= $property ?>' q-path='{{$vars_path ? $vars_path."[<?= $property ?>]" : "<?= $property ?>"}}'>
 					{{$data-><?= $property ?>->getModelCaption()}}
 					<input type='hidden' value='{{$data-><?= $property ?>->getId()}}' name='{{$vars_path ? $vars_path."[<?= $property ?>][Id]" : "<?= $property ?>[Id]"}}' class='qc-dd-rep-input-id' />
-					<input type='hidden' value='{{get_class($data-><?= $property ?>)}}' name='{{$vars_path ? $vars_path."[<?= $property ?>][_ty]" : "<?= $property ?>[_ty]"}}' class='qc-dd-rep-input-ty' />		
+					<input type='hidden' value='{{$data-><?= $property ?> ? get_class($data-><?= $property ?>) : null}}' name='{{$vars_path ? $vars_path."[<?= $property ?>][_ty]" : "<?= $property ?>[_ty]"}}' class='qc-dd-rep-input-ty' />		
 					<input class='qc-dd-full-data' type='hidden' value='<?= "<?= \$data->{$property} ? htmlspecialchars(\$data->{$property}->toJSON(), ENT_QUOTES | ENT_HTML5, 'UTF-8') : \"\" ?>" ?>' />
 				</div>
 			@endif

@@ -853,7 +853,7 @@ abstract class Email_omi_util_ extends \QModel
 		$attachments = array();
 
 		// HEADER
-		$h = imap_header($mbox, $mid);
+		$h = imap_headerinfo($mbox, $mid);
 		// add code here to get date, from, to, cc, subject...
 
 		// BODY

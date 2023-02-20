@@ -145,7 +145,7 @@ trait Grid_Methods
 	 */
 	public function exportExcel()
 	{
-		\QApi::Call('\Omi\Util\Excel::Download', $this->getExcelExportTemplate(), $this->getExportExcelBlocks(), 
+		\Omi\Util\Excel::Download($this->getExcelExportTemplate(), $this->getExportExcelBlocks(), 
 			null, $this->excelExportFileName ?: (static::$FromAlias ?: $this->from).".xlsm");
 	}
 
@@ -184,7 +184,9 @@ trait Grid_Methods
 	 */
 	public function getExcelExportTemplate()
 	{
-		$modsDir = dirname(dirname(dirname(dirname(__FILE__))));
+		# $modsDir = dirname(dirname(dirname(dirname(__FILE__))));
+		$modsDir = Omi_Mods_Path;
+		
 		$gridExcelTemplate = rtrim($modsDir, "\\/")."/common/res/export/templates/excel/grid/Grid.xlsm";
 		if (!file_exists($gridExcelTemplate))
 			throw new \Exception("Grid template not found! {$gridExcelTemplate}!");
@@ -703,6 +705,10 @@ trait Grid_Methods
 
 		// decode params - we may have keys like foo[bar][foo] - we need to expand them
 		static::ParamsDecode($data);
+		if (is_array($data))
+		{
+			static::FormSubmit_extract_misc_json($data);
+		}
 	}
 
 	protected static function ParamsDecode(&$data, $checkFile = true)
@@ -898,6 +904,7 @@ trait Grid_Methods
 		$grid->setupGrid($grid->grid_mode, $grid->grid_id, $grid->grid_params);
 		//$grid->setArguments([$grid->settings, $grid->data, $grid->grid_params, $grid->grid_mode, $id], $method);
 		//$grid->setRenderMethod($method);
+		
 		$grid->render();
 	}
 	

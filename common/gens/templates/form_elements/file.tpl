@@ -11,7 +11,7 @@
 			/>
 		</div>
 		@if (<?= $_data_value ?>)
-			<a target='_blank' class="f-download qc-download btn btn-warning btn-bordered download" href='{{<?= ($_data_value_parent ?: '$data') ?>->getFullPath_URL_Escaped("<?= $property ?>")}}'><i class="fa fa-download"></i></a>
+			<a target='_blank' class="f-download qc-download btn btn-warning btn-bordered download" href='{{Q_APP_REL . <?= ($_data_value_parent ?: '$data') ?>->getFullPath_URL_Escaped("<?= $property ?>")}}'><i class="fa fa-download"></i></a>
 		@endif
 	</div>
 	@if (<?= $_data_value ?>)

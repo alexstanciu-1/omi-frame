@@ -282,18 +282,16 @@ final class QWebRequest
 				}
 				else 
 				{
-						if ($controller)
-							$managed = is_string($controller) ? $controller::loadFromUrl($url) : $controller->loadFromUrl($url);
-						else
-							$managed = $App::loadFromUrl($url);
-						
+					if ($controller)
+						$managed = is_string($controller) ? $controller::loadFromUrl($url) : $controller->loadFromUrl($url);
+					else
+						$managed = $App::loadFromUrl($url);
 				}
 				
 				if (Q_IS_TFUSE)
 					static::$ControllerOutput = static::ReplaceCdnUrl(ob_get_clean());
 				else
 					static::$ControllerOutput = ob_get_clean();
-
 
 				if ((!$managed) && (!$fast_call))
 				{
@@ -522,7 +520,15 @@ final class QWebRequest
 		{
 			$jss = [];
 			foreach (QWebControl::$IncludeJs ?: [] as $k => $js)
-				$jss[$k] = \QWebControl::GetPreventCacheResourceSource($js);
+			{
+				if (is_array($js))
+				{
+					foreach ($js as $js_k => $js_v)
+						$jss[$k][$js_k] = \QWebControl::GetPreventCacheResourceSource($js_v);
+				}
+				else
+					$jss[$k] = \QWebControl::GetPreventCacheResourceSource($js);
+			}
 			
 			if (self::$AjaxResponse === null)
 				self::$AjaxResponse = ["___js" => $jss];
@@ -533,7 +539,15 @@ final class QWebRequest
 		{
 			$csss = [];
 			foreach (QWebControl::$IncludeCss ?: [] as $k => $css)
-				$csss[$k] = \QWebControl::GetPreventCacheResourceSource($css);
+			{
+				if (is_array($css))
+				{
+					foreach ($css as $css_k => $css_v)
+						$csss[$k][$css_k] = \QWebControl::GetPreventCacheResourceSource($css_v);
+				}
+				else
+					$csss[$k] = \QWebControl::GetPreventCacheResourceSource($css);
+			}
 
 			if (self::$AjaxResponse === null)
 				self::$AjaxResponse = ["___css" => $csss];
@@ -550,7 +564,9 @@ final class QWebRequest
 			self::$AjaxResponse["_security_random_text_"] = static::GetSecurityCode();
 			$refs = [];
 			if (\QAutoload::GetDevelopmentMode())
+			{
 				self::$AjaxResponse['__devmode__'] = true;
+			}
 			\QModel::QOutputJson(self::$AjaxResponse, true, $refs, true, self::$ArrayInItems);
 		}
 		
@@ -710,8 +726,8 @@ final class QWebRequest
 				static::HandleLegacyForAsyncRequest($uncaughtException);
 			static::HandleLegacyForAsyncRequest_OnShutdown();
 		}
-		
-		if (\QAutoload::GetDevelopmentMode())
+				
+		if (false && \QAutoload::GetDevelopmentMode())
 		{
 			// first determine if we stopped because of an error
 			// Throwable 
@@ -737,7 +753,10 @@ final class QWebRequest
 				// echo json_encode(['__error__' => ($uncaughtException ? $uncaughtException->getMessage() : 'no error'), '__hiddenOutput__' => $content]);
 				if ($uncaughtException)
 				{
-					$send_json = ['__hiddenOutput__' => $content, '__devmode__' => true];
+					$h_output = [$content];
+					foreach (self::$AjaxResponse["__hiddenOutput__"] ?: [] as $hiddn_data)
+							$h_output[] = $hiddn_data;
+					$send_json = ['__hiddenOutput__' => $h_output, '__devmode__' => true];
 					if ($legcay_error_handling)
 					{
 						$send_json['EXCEPTION'] = [
@@ -1103,14 +1122,6 @@ final class QWebRequest
 				
 				if ($url_first === 'login')
 				{
-					// !!! for test only !!!
-					/*if (empty($json_str))
-					{
-						$json_str = '{"user": "global4_sa", "pass": "Global4%pax52"}';
-						$json_data = json_decode($json_str, true);
-					}*/
-					// !!! end test only !!!
-					
 					// extract $user, $pass from JSON 
 					if ($json_data)
 					{

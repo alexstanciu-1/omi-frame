@@ -109,7 +109,7 @@
 <?php endif; ?>
 					</table>
 				</div>
-				@if (count($data) >= $this->rowsOnPage)
+				@if ($data && (count($data) >= $this->rowsOnPage))
 				<div class='qc-collection-more-wrapper'>
 					<button onclick="javascript: void(0);" class='qc-collection-more btn btn-info btn-border btn-more' 
 							data-offset='{{$data ? count($data ?? []) : 0}}' 

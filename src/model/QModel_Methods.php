@@ -1309,7 +1309,11 @@ trait QModel_Methods
 	public function getFullPath_URL_Escaped($property_name)
 	{
 		$path = $this->getModelType()->properties[$property_name]->storage["filePath"];
-		return rtrim($path, "\\/")."/".rawurlencode(($this->$property_name instanceof QFile) ? $this->$property_name->Path : $this->$property_name);
+		$file_path = ($this->$property_name instanceof QFile) ? $this->$property_name->Path : $this->$property_name;
+		if (($file_path !== null) && defined('Q_USE_XSS_QUERY_RESULT_PROTECTION') && Q_USE_XSS_QUERY_RESULT_PROTECTION)
+			$file_path = q_xss_decode($file_path);
+		
+		return rtrim($path, "\\/")."/".rawurlencode($file_path);
 	}
 	
 	/**
@@ -1889,7 +1893,7 @@ trait QModel_Methods
 		$id = $this->getId();
 		
 		$was_included = false;
-		if (!$ignore_refs)
+		if ((!Q_IS_TFUSE) || (!$ignore_refs))
 		{
 			if ($id !== null)
 			{

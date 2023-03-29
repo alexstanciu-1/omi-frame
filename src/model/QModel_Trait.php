@@ -1551,7 +1551,7 @@ trait QModel_Trait
 											$save_path_ext = pathinfo($upload_info["name"], PATHINFO_EXTENSION);
 										
 											if (!q_allowed_upload_extension($save_path_ext))
-												throw new \Exception('Not allowed.');
+												throw new \Exception('Not allowed #file-extension.');
 											
 											$save_path_fn = $logged_in_user_id . "-" . ($current_context_id ?? $logged_in_user_owner) . "_" . sha1(uniqid("", true)) . "_secured";
 											

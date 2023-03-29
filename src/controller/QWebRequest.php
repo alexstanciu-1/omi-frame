@@ -138,8 +138,32 @@ final class QWebRequest
 				
 			$tinit = microtime(true);
 			
+			// detect the type of the request
+			// Content-Type: application/soap+xml; charset=utf-8
+			if ($_GET["__or__"] || ($_GET["__or__"] !== null))
+			{
+				// var_dump($_GET["__or__"]);
+				$qs = static::$QUERY_STRING ?? (static::$QUERY_STRING = $_SERVER["QUERY_STRING"]);
+				$matches = null;
+				//preg_match("/__or__\\=(.*?)(?:\\&|\$)/us", $qs, $matches);
+				preg_match("/(?:^|\\&|\\?)__or__\\=(.*?)(?:\\&|\$)/us", $qs, $matches);
+				// remove __q_noiframe__ if exists !
+				if ($matches[1])
+					$matches[1] = preg_replace('/(?:^|\&)__q_noiframe__\b\/?/us', '', $matches[1]);
+				self::$OriginalRequest = urldecode($matches[1]);
+				unset($_GET["__or__"]);
+			}
+			
+			$explicit_fast_call = false;
+			if ((strpos(self::$OriginalRequest, '--call--') !== false) && 
+												($tmp_chunks = preg_split("/(\\/|\\\\)/uis", trim(self::$OriginalRequest), -1, PREG_SPLIT_NO_EMPTY)) && 
+												isset($tmp_chunks[0]) && (($tmp_chunks[0] === '--call--')) && (count($tmp_chunks) === 3))
+			{
+				$explicit_fast_call = [$tmp_chunks[1], $tmp_chunks[2]];
+			}
+						
 			self::$AjaxRequest = self::IsAjaxRequest();
-			self::$FastAjax = $fast_call = ($_POST["__qFastAjax__"] || $_GET["__qFastAjax__"]);
+			self::$FastAjax = $fast_call = ($_POST["__qFastAjax__"] || $_GET["__qFastAjax__"] || $explicit_fast_call);
 			
 			if (static::$QUERY_STRING === null)
 				static::$QUERY_STRING = $_SERVER["QUERY_STRING"];
@@ -179,22 +203,6 @@ final class QWebRequest
 				// else continue normal
 			}
 
-			// detect the type of the request
-			// Content-Type: application/soap+xml; charset=utf-8
-			if ($_GET["__or__"] || ($_GET["__or__"] !== null))
-			{
-				// var_dump($_GET["__or__"]);
-				$qs = static::$QUERY_STRING ?? (static::$QUERY_STRING = $_SERVER["QUERY_STRING"]);
-				$matches = null;
-				//preg_match("/__or__\\=(.*?)(?:\\&|\$)/us", $qs, $matches);
-				preg_match("/(?:^|\\&|\\?)__or__\\=(.*?)(?:\\&|\$)/us", $qs, $matches);
-				// remove __q_noiframe__ if exists !
-				if ($matches[1])
-					$matches[1] = preg_replace('/(?:^|\&)__q_noiframe__\b\/?/us', '', $matches[1]);
-				self::$OriginalRequest = urldecode($matches[1]);
-				unset($_GET["__or__"]);
-			}
-
 			if ($_GET["__MultiResponseId"])
 			{
 				static::$MultiRequestId = (string)$_GET["__MultiResponseId"];
@@ -226,12 +234,6 @@ final class QWebRequest
 			if ($_GET["__customExtract__"] || $_POST["__customExtract__"])
 				self::$ArrayInItems = false;
 
-			/*
-			if ($_POST)
-			{
-				file_put_contents("dump.".date("Y-m-d H:i:s", time()).".json", json_encode($_POST));
-			}
-			*/
 			$managed = false;
 
 			// we need to convert the raw request into one or more manageble callbacks
@@ -278,7 +280,7 @@ final class QWebRequest
 					else
 						$managed = $App::initController($url);
 					// execute the fast call : qbMethod="fast-ajax"
-					execQB();
+					execQB(null, null, $explicit_fast_call);
 				}
 				else 
 				{
@@ -727,7 +729,7 @@ final class QWebRequest
 			static::HandleLegacyForAsyncRequest_OnShutdown();
 		}
 				
-		if (false && \QAutoload::GetDevelopmentMode())
+		if (\QAutoload::GetDevelopmentMode())
 		{
 			// first determine if we stopped because of an error
 			// Throwable 

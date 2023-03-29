@@ -1,6 +1,8 @@
-<div jsFunc="renderItems($items = null, $from = null, $selector = null, $binds = null)" q-args="$items = null, $from = null, $selector = null, $binds = null">
-	@if ($binds && $binds['showNoneOption'])
+<div jsFunc="renderItems($items = null, $from = null, $selector = null, $binds = null)" q-args="$items = null, $from = null, $selector = null, $binds = null, $level = 0">
+	@php $none_opt_was_set = false;
+	@if ($binds && $binds['showNoneOption'] && ($level < 1))
 		<div class="qc-dd-item qc-dd-reset-item">None</div>
+		@php $none_opt_was_set = true;
 	@endif
 	<script jsFuncMode="prepend">
 
@@ -9,6 +11,7 @@
 
 	</script>
 	<?php
+
 
 	if ($items && (count($items) > 0))
 	{
@@ -30,9 +33,10 @@
 
 		$binds["_depth_"]++;
 
-		if (!$binds || !$binds['hideNoneOption'])
+		if ((!$binds || !$binds['hideNoneOption']) && ($level < 1) && (!$none_opt_was_set))
 		{
 			?><div class="qc-dd-item qc-dd-reset-item">{{$binds['noneOptionCaption'] ?: _L('None')}}</div><?php
+			$none_opt_was_set = true;
 		}
 		foreach ($items ?: [] as $item)
 		{
@@ -45,7 +49,7 @@
 			if (!$byParent[$item->getId()])
 				continue;
 
-			$this->renderItems($byParent[$item->getId()], $from, $selector, $binds);	
+			$this->renderItems($byParent[$item->getId()], $from, $selector, $binds, $level++);	
 		}
 	}
 	?>

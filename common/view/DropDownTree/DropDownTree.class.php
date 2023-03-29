@@ -26,7 +26,7 @@ abstract class DropDownTree_omi_view_ extends DropDown
 
 		if ($binds["_reset_owner_parent_"])
 		{
-			$owner = \QApi::Call('\Omi\App::GetCurrentOwner');
+			$owner = \Omi\App::GetCurrentOwner();
 			if ($owner)
 			{
 				foreach ($items ?: [] as $itm)
@@ -62,17 +62,6 @@ abstract class DropDownTree_omi_view_ extends DropDown
 				$newItms[] = $parent;
 		}
 
-		/*
-		if ($sp && !$binds["WHR_Search"])
-		{
-			// if we have starting point we may have it as parent or as self
-			$newItms = $binds["_sp_is_parent_"] ? 
-				($itmsByParent[$sp] ? $itmsByParent[$sp] : null) : 
-				($itemsById[$sp] ? [$itemsById[$sp]] : null);
-		}
-		qvardump($items, $newItms, $itmsByParent, $binds);
-		*/
-
 		return [$newItms, $itmsByParent];
 	}
 	/**
@@ -92,6 +81,7 @@ abstract class DropDownTree_omi_view_ extends DropDown
 			$binds["WHR_Search"] = "%".trim(preg_replace("/(\\s+)/uis", "%", $binds["WHR_Search"]))."%";
 		
 		$items = \QApi::Query($from, $selector, $binds);
+				
 		$dd = new $cc();
 		if (!$binds)
 			$binds = [];

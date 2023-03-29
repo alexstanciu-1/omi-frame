@@ -957,11 +957,63 @@ function q_allowed_calls_without_login(string $class, string $method)
  * @return mixed[]
  * @throws Exception
  */
-function execQB($filter = null, $instance = null)
+function execQB($filter = null, $instance = null, $explicit_fast_call = false)
 {
 	$pos = 0;
 	$ret = array();
 	$request = null;
+	
+	if ($explicit_fast_call)
+	{
+		# secure it first !
+		$allow_it = false;
+		
+		$allowed_ips = array_merge(defined('CRON_ALLOWED_IPS') && CRON_ALLOWED_IPS ? CRON_ALLOWED_IPS : [], [dev_ip, $_SERVER['SERVER_ADDR'], '::1', '127.0.0.1']);
+		
+		if (\Omi\User::CheckLogin() || in_array($_SERVER['REMOTE_ADDR'], $allowed_ips))
+			$allow_it = true;
+		if (!$allow_it)
+			throw new Exception("You do not have access.");
+		
+		list($class, $method) = $explicit_fast_call;
+		$class = str_replace(["-", "_"], ["\\", "\\"], $class);
+		$method = str_replace("-", "_", $method);
+		$m_type = QModel::GetTypeByName($class);
+		if (!$m_type)
+			throw new Exception("Type does not exists {$class}");
+		else if (!method_exists($class, $method))
+			throw new Exception("Method does not exists {$class}::{$method}");
+
+		$m_type_meth = $m_type ? $m_type->methods[$method] : null;
+		if ((!$m_type_meth) || (!$m_type->methodHasApiAccess($method)))
+		{
+			if (\QAutoload::GetDevelopmentMode())
+				qvar_dumpk($m_type);
+			throw new Exception("You do not have access to {$class}::{$method}");
+		}
+		
+		$r = new ReflectionMethod($class, $method);
+		$params = $r->getParameters();
+		$params_indexed = [];
+		foreach ($params ?: [] as $p_pos => $p_obj)
+			$params_indexed[$p_obj->name] = $p_pos;
+		
+		$args = [];
+		foreach ($_GET ?: [] as $k => $v)
+		{
+			if (isset($params_indexed[$k]))
+				$args[$params_indexed[$k]] = $v;
+			else if (is_numeric($k) && isset($params[$k]))
+				$args[$k] = $v;
+		}
+		
+		$ret = [];
+		$ret[0] = $class::$method(...$args);
+		
+		# qvar_dump('$ret', $ret);
+		
+		return $ret;
+	}
 	
 	while (($request = $_GET["_qb{$pos}"]) || ($request = $_POST["_qb{$pos}"]))
 	{
@@ -996,7 +1048,7 @@ function execQB($filter = null, $instance = null)
 				if (\QAutoload::GetDevelopmentMode())
 					throw new \Exception('Not allowed. ' . $class . "::" . $method);
 				else
-					throw new \Exception('Not allowed.');
+					throw new \Exception('Not allowed #no-user.');
 			}
 		}
 
@@ -1264,7 +1316,7 @@ function extractQbRequest($data, &$parent = null, $key = null, $f_name = null, $
 						$ext = pathinfo($fn, PATHINFO_EXTENSION) ?: null;
 						
 						if (!q_allowed_upload_extension($ext))
-							throw new \Exception('Not allowed.');
+							throw new \Exception('Not allowed #upload-extension.');
 					
 						$fn = $logged_in_user_id . "-" . ($current_context_id ?? $logged_in_user_owner) . "_" . sha1(uniqid("", true)) . "_secured" . ($ext !== null ? ".".$ext : "");
 						$baseFn = pathinfo($fn, PATHINFO_FILENAME);
@@ -4105,7 +4157,7 @@ function q_reset($list = null)
 		return $list->reset();
 	}
 	else
-		throw new \Exception('Invalid argument.');
+		return reset($list);
 }
 
 function q_is_remove(\QModelArray $array = null, int $pos = null)

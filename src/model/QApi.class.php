@@ -49,7 +49,7 @@ class QApi_frame_
 				if (\QAutoload::GetDevelopmentMode())
 					throw new \Exception('Not allowed. ' . $class_name . "::" . $method);
 				else
-					throw new \Exception('Not allowed.');
+					throw new \Exception('Not allowed #user-missing.');
 			}
 		}
 		

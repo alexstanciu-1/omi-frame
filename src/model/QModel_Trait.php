@@ -2797,6 +2797,7 @@ trait QModel_Trait
 		"Users.CreatedBy" => ["Users"],
 		"Users.Impersonate" => true,
 		"Users.Context" => true,
+		"Users.Access" => ["TradeCompanies"],
 		
 	];
 }

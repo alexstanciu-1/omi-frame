@@ -81,7 +81,7 @@ abstract class DropDownTree_omi_view_ extends DropDown
 			$binds["WHR_Search"] = "%".trim(preg_replace("/(\\s+)/uis", "%", $binds["WHR_Search"]))."%";
 		
 		$items = \QApi::Query($from, $selector, $binds);
-				
+		
 		$dd = new $cc();
 		if (!$binds)
 			$binds = [];

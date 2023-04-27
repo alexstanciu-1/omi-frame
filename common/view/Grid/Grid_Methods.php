@@ -245,15 +245,20 @@ trait Grid_Methods
 	 * 
 	 * @return array
 	 */
-	public function getHeadingsData()
+	public function getHeadingsData($selector = null, $extra_selector = null)
 	{
 		if ($this->_headingsData)
 			return $this->_headingsData;
 		$appModel = \QApp::GetDataClass();
-		$selector = method_exists($appModel, "GetEntityForGenerateList") ? 
-			$appModel::GetEntityForGenerateList_Final(static::$FromAlias) : $appModel::GetPropertyListingEntity(static::$FromAlias);
+		if ($selector === null)
+		{
+			$selector = method_exists($appModel, "GetEntityForGenerateList") ? 
+				$appModel::GetEntityForGenerateList_Final(static::$FromAlias) : $appModel::GetPropertyListingEntity(static::$FromAlias);
+		}
 		
-
+		if ($extra_selector !== null)
+			$selector = qJoinSelectors($selector, $extra_selector);
+		
 		// unset selector * from query
 		if ($selector && is_array($selector) && ($selector["*"] !== null))
 			unset($selector["*"]);

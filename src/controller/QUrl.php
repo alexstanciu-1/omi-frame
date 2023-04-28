@@ -342,7 +342,7 @@ class QUrl
 			$qs = (\QWebRequest::$QUERY_STRING ?? $_SERVER['QUERY_STRING']);
 		}
 		
-		return implode($url->parts, "/").($qs ? "?" : "").$qs;
+		return implode("/", $url->parts).($qs ? "?" : "").$qs;
 	}
 }
 

@@ -107,6 +107,10 @@ class QCodeSync2
 	 * @var array
 	 */
 	protected $js_gens_reset_map = [];
+	/**
+	 * @var array
+	 */
+	protected $backup_res_js_gen = [];
 	
 	public function init()
 	{
@@ -427,10 +431,12 @@ class QCodeSync2
 			$out_string = ob_get_clean();
 			
 			if ($_GET['force_resync'])
+			{
 				echo $out_string;
+			}
 			else
 			{
-				\QWebRequest::AddHiddenOutput($out_string);
+				# \QWebRequest::AddHiddenOutput($out_string);
 			}
 		}
 	}
@@ -496,13 +502,14 @@ class QCodeSync2
 		}
 		
 		# echo 'AFTER COLLECT: '. ((microtime(true) - $this->sync_started_at) * 1000) . ' ms', "<br/>\n";
-		
+				
 		# STAGE 2 - Populate dependencies
 		if (!$this->full_sync)
 			$this->sync_code__populate_dependencies();
 		
 		# STAGE 2.1. All previous info on $this->info_by_class is dropped except 'files' and info on $this->info_by_class['class_name'] is populated from 'files'
 		$this->sync_code__setup_default_metas();
+
 		# STAGE 3 - PRE Compile - we make sure that we can boot up PHP classes so that we can use native reflection
 		$this->sync_code__pre_compile();
 		
@@ -1082,8 +1089,30 @@ class QCodeSync2
 			// $info = $this->full_sync ? $ch_info : $this->info_by_class[$full_class_name];
 			if ((!$this->full_sync) && (!$this->changes_by_class[$full_class_name]))
 				continue;
-						
+			
 			echo "COMPILE DO :: {$full_class_name}<br/>\n";
+			
+			# # @TODO - ugly fix | fix deps issues for model classes !
+			if ((!$this->full_sync) && (!empty($info['files'])))
+			{
+				$last_status = null;
+				foreach ($info['files'] as $layer_tag => &$files_list)
+				{
+					foreach ($files_list as $file_tag => &$header_inf)
+					{
+						if (($header_inf['type'] === 'php') && $header_inf['is_patch'])
+						{
+							if ($header_inf['status'] !== null)
+								$last_status = $header_inf['status'];
+							else if ($last_status !== null)
+							{
+								# @TODO - ugly fix 
+								$header_inf['status'] = static::Status_Changed;
+							}
+						}
+					}
+				}			
+			}
 			
 			$traits_on_gen = [];
 			$php_class_done = false;
@@ -1096,6 +1125,8 @@ class QCodeSync2
 			
 			$removed_files = [];
 			$resync_template_trait = false;
+			
+			$model_deps_stack = [];
 						
 			foreach (array_reverse($info['files']) ?: [] as $layer_tag => $files_list)
 			{
@@ -1150,7 +1181,10 @@ class QCodeSync2
 								# if ($this->model_only_run) # @TODO - this was a fix for empty view classes !!! not sure if this is a good idea ?!!
 								{
 									echo "compile_model :: {$full_class_name}<br/>\n";
-									list($trait_name, $trait_path) = $this->compile_model($full_class_name, $header_inf, $info, $added_or_changed);
+									list($trait_name, $trait_path) = $this->compile_model($full_class_name, $header_inf, $info, $added_or_changed, $model_deps_stack);
+									
+									$model_deps_stack[] = $header_inf;
+									
 									if ($trait_name)
 										$traits_on_gen[$trait_name] = $trait_path;
 									$php_class_done = true;
@@ -1275,9 +1309,21 @@ class QCodeSync2
 		return $class_str;
 	}
 	
-	function compile_model(string $full_class_name, array $header_inf, array $full_class_info, bool $added_or_changed)
+	function compile_model(string $full_class_name, array $header_inf, array $full_class_info, bool $added_or_changed, array $merge_dependencies_stack = [])
 	{
-		# echo "compile_model :: {$full_class_name}\n";
+		echo "compile_model :: {$full_class_name}\n";
+		
+		foreach ($merge_dependencies_stack as $dep_header_info)
+		{
+			if (empty($header_inf) || empty($header_inf['class_full']) || empty($header_inf['layer']) || empty($header_inf['tag']))
+			{
+				qvar_dumpk("zzzzzz", get_defined_vars());
+				throw new \Exception('not ok!');
+			}
+			
+			$this->dependencies[$header_inf['class_full']][$header_inf['layer']][$header_inf['tag']]
+					[$dep_header_info['class_full']][$dep_header_info['layer']][$dep_header_info['tag']] = $dep_header_info['tag'];
+		}
 		
 		$short_class_name = $header_inf['final_class'];
 		$tait_name = $short_class_name."_GenModel_";
@@ -1289,7 +1335,7 @@ class QCodeSync2
 		$namespace = $header_inf['namespace'];
 		
 		$setter_methods = $this->generate_model_methods(new ReflectionClass($full_class_name));
-		
+				
 		if ($setter_methods) # later add || $security_methods ... and so on
 		{
 			list ($trait_start_str, $trait_end_str) = $this->compile_setup_trait($tait_name, $namespace);
@@ -1945,7 +1991,7 @@ class QCodeSync2
 		
 		$js_paths = [];
 		$css_paths = [];
-		
+				
 		if (!$this->model_only_run)
 		{
 			foreach ($this->info_by_class as $full_class_name => $info)
@@ -2181,6 +2227,8 @@ class QCodeSync2
 		
 		foreach ($this->info_by_class as $full_class_name => &$info)
 		{
+			$backup_res_js_gen = null;
+			
 			if (!$this->full_sync)
 			{
 				# copy from the previous state ($this->info_by_class => $this->changes_by_class)
@@ -2188,6 +2236,9 @@ class QCodeSync2
 				if (!$changes_by_class_files)
 					# there are no changes
 					continue;
+				
+				# @TODO - this is a work-around ... we should have a proper way of traking this !!!
+				$backup_res_js_gen = $info['res']['js']['gen'] ?? null;
 				
 				$prev_save_data = [];
 				$prev_save_data_files = [];
@@ -2330,6 +2381,9 @@ class QCodeSync2
 				if (!$info['extends'])
 					$info['extends'] = $extends_full;
 			}
+			
+			if ($backup_res_js_gen !== null)
+				$info['res']['js']['gen'] = $backup_res_js_gen;
 		}
 	}
 	
@@ -2354,6 +2408,7 @@ class QCodeSync2
 		foreach ($this->changes_by_class as $full_class_name => $changes_info)
 		{
 			$deps_info = $this->dependencies[$full_class_name];
+
 			if (!$deps_info)
 				continue;
 			
@@ -2380,11 +2435,9 @@ class QCodeSync2
 					# now ... for all the dependencies
 					foreach ($target_deps_list as $target_class_name => $target_info)
 					{
-						unset($change_info);
 						$change_info = &$triggered_changes[$target_class_name];
 						foreach ($target_info as $target_layer_tag => $target_tags)
 						{
-							unset($change_info_layer);
 							$change_info_layer = &$change_info['files'][$target_layer_tag];
 							foreach ($target_tags as $target_tag)
 							{
@@ -2405,10 +2458,12 @@ class QCodeSync2
 								if (empty($change_info['files']))
 									unset($change_info['files']);
 							}
+							unset($change_info_layer);
 						}
 
 						if (empty($change_info))
 							unset($triggered_changes[$target_class_name]);
+						unset($change_info);
 					}
 				}
 			}

@@ -107,10 +107,6 @@ class QCodeSync2
 	 * @var array
 	 */
 	protected $js_gens_reset_map = [];
-	/**
-	 * @var array
-	 */
-	protected $backup_res_js_gen = [];
 	
 	public function init()
 	{

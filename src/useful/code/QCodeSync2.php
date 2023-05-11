@@ -949,11 +949,15 @@ class QCodeSync2
 							)
 					{
 						$needs_class_setup = true;
+						$include_traits["{$short_class_name}_GenModel_"] = "{$short_class_name}_GenModel_";
 					}
 				}
 				
 				if ($is_model)
+				{
 					$needs_class_setup = true;
+					$include_traits["{$short_class_name}_GenModel_"] = "{$short_class_name}_GenModel_";
+				}
 				
 				if (file_exists($gen_file_wo_ext.'.model.gen.php'))
 				{
@@ -1033,7 +1037,7 @@ class QCodeSync2
 						echo "AUTOLOAD: `{$full_class_name}_GenUrl_` => ".$gen_file_wo_ext.".url.gen.php<br/>\n";
 					}
 					
-					$include_traits[] = "{$short_class_name}_GenUrl_";
+					$include_traits["{$short_class_name}_GenUrl_"] = "{$short_class_name}_GenUrl_";
 					echo "CREATE URL EMPTY: `{$full_class_name}_GenUrl_` => ".$gen_file_wo_ext.".url.gen.php<br/>\n";
 					
 					$needs_class_setup = true;

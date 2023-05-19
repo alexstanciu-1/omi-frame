@@ -1,0 +1,8 @@
+{
+	"responsive_sizes" : [128,178,240,360,480,560,780],
+	"images_folder" : "rsp_images",
+	"search_cls" : "-r-img-",
+	"src_attr" :  "r-src",
+	"use_na" : true,
+	"na_img" : "uploads/images/na.gif"
+}

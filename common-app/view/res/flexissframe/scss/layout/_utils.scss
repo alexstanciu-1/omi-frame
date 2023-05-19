@@ -1,0 +1,60 @@
+/**
+ |----------------------------------------------
+ | @PADDINGS
+ |----------------------------------------------
+ */
+/* ALL */
+/* LEFT */
+/* RIGHT */
+/* BOTTOM */
+/* TOP */
+
+/**
+ |----------------------------------------------
+ | @MARGINS
+ |----------------------------------------------
+ */
+
+/* BORDERS */
+.border-1 { @include border('0.1rem', 'solid', $black_color); }
+.border-2 { @include border('0.2rem', 'solid', $black_color); }
+.border-3 { @include border('0.3rem', 'solid', $black_color); }
+
+/* BORDER RADIUS */
+.border-radius-1 { @include border_radius('0.1rem'); }
+.border-radius-3 { @include border_radius('0.3rem'); }
+.border-radius-5 { @include border_radius('0.5rem'); }
+
+/* MARGINs */
+._mr2 { margin-right: 2rem; }
+._mt2 { margin-top: 2rem; }
+._mb2 { margin-bottom: 2rem; }
+
+/* TEXT TRANSFORM */
+._tuppercase { text-transform: uppercase; }
+
+/* TEXT ALIGN */
+._tcenter { text-align: center; }
+
+/* DISPLAY */
+._dnone { display: none; }
+._dblock { display: block; }
+._dinlineblock { display: inline-block; }
+
+/* POSITION */
+._pfixed { position: fixed; }
+._pabsolute { position: absolute; }
+._prelative { position: relative; }
+
+/* FLOATS */
+._fright { float: right; }
+._fleft { float: left; }
+._fnone { float: none; }
+
+/* MAX WIDTH */
+._maxw30 { max-width: 30rem; }
+
+.stretch-to-content {
+	white-space: nowrap;
+	width: 1px;
+}

@@ -2389,7 +2389,7 @@ trait QModel_Trait
 			$is_root = ($depth === 0);
 			$depth++;
 
-			if ((!($this instanceof \Omi\TF\FiltrableByOwnership)) && !$is_root)
+			if ((!($this instanceof \Omi\FiltrableByOwnership)) && !$is_root)
 				return;
 
 			if (!$selector)
@@ -2398,7 +2398,7 @@ trait QModel_Trait
 			else if (is_string($selector))
 				$selector = qParseEntity($selector);
 
-			if ($this instanceof \Omi\TF\FiltrableByOwnership)
+			if ($this instanceof \Omi\FiltrableByOwnership)
 			{
 				$selector = array_merge($selector, qParseEntity($this::GetFiltrableEntity()));
 			}

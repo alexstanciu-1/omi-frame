@@ -1,0 +1,42 @@
+/* PAGINATION */
+.qc-pagination { 
+	display: flex; 
+	display: -ms-flexbox;
+	list-style: none;
+	margin: $pagination_margin_y $pagination_margin_x;
+	padding: 0;
+}
+.qc-pagination li { 
+	margin: $pagination_item_margin_y $pagination_item_margin_x; 
+}
+// page link
+.qc-pagination li a { 
+	display: block; 
+	padding: $pagination_item_padding_y $pagination_item_padding_x; 
+	text-decoration: $pagination_item_text_decoration;
+	color: $pagination_item_color; 
+	line-height: inherit; 
+	border-radius: $pagination_item_border_radius;
+	font-weight: $pagination_item_font_weight;
+	font-size: $pagination_item_font_size;
+}
+.qc-pagination li a:hover { 
+	color: $pagination_item_color--hover; 
+	text-decoration: $pagination_item_text_decoration--hover; 
+}
+
+// active page
+.qc-pagination li.active a { 
+	background-color: $pagination_item_active_background_color; 
+	color: $pagination_item_active_color; 
+}
+
+// disabled page
+.qc-pagination li.disabled a {
+	color: $pagination_disabled_color;
+	background-color: $pagination_disabled_background_color;
+}
+.qc-pagination li.disabled a:hover {
+	background-color: $pagination_disabled_background_color--hover;
+	cursor: not-allowed;
+}

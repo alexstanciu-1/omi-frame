@@ -1,0 +1,30 @@
+/* STARS */
+.qc-star,
+.qc-star-1-5,
+.qc-star-2-5,
+.qc-star-3-5,
+.qc-star-4-5,
+.qc-star-5-5 { color: #999999; content: ""; }
+.qc-star:before, .qc-star:after,
+.qc-star-1-5:before, .qc-star-1-5:after,
+.qc-star-2-5:before, .qc-star-2-5:after,
+.qc-star-3-5:before, .qc-star-3-5:after,
+.qc-star-4-5:before, .qc-star-4-5:after,
+.qc-star-5-5:before, .qc-star-5-5:after { font-family: "FontAwesome"; }
+.qc-star-1-5:before,
+.qc-star-2-5:before,
+.qc-star-3-5:before,
+.qc-star-4-5:before,
+.qc-star-5-5:before { color: #FEA002; }
+.qc-star:before { content: ""; }
+.qc-star:after { content: "\f005  \f005  \f005  \f005  \f005"; }
+.qc-star-1-5:before { content: "\f005"; }
+.qc-star-1-5:after { content: "  \f005  \f005  \f005  \f005"; }
+.qc-star-2-5:before { content: "\f005  \f005"; }
+.qc-star-2-5:after { content: "  \f005  \f005  \f005"; }
+.qc-star-3-5:before { content: "\f005  \f005  \f005"; }
+.qc-star-3-5:after { content: "  \f005  \f005"; }
+.qc-star-4-5:before { content: "\f005  \f005  \f005  \f005"; }
+.qc-star-4-5:after { content: "  \f005"; }
+.qc-star-5-5:before { content: "\f005  \f005  \f005  \f005  \f005"; }
+.qc-star-5-5:after { content: ""; }

@@ -1,0 +1,6 @@
+.qc-show-more-inp { display: none; }
+.qc-show-more-content { display: none; }
+.qc-show-more-label { border: 0.1rem solid #CCCCCC; padding: 0.5rem; display: inline-block; }
+.qc-show-more-inp ~ .qc-show-more-label:before { content: 'Show more'; }
+.qc-show-more-inp:checked ~ .qc-show-more-label:before { content: 'Show less'; }
+.qc-show-more-inp:checked ~ .qc-show-more-wrap .qc-show-more-content { display:block; }

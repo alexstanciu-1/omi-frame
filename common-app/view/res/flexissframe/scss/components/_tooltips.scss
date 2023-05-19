@@ -1,0 +1,68 @@
+/* TOOLTIPS */
+.qc-tooltip { position: relative; display: inline; }
+
+.qc-tooltip .tooltip {
+	background: rgba(69, 77, 93, .9);
+    border-radius: .2rem;
+    bottom: 100%;
+    color: #fff;
+    display: block;
+    font-size: 1.2rem;
+    left: 50%;
+    max-width: 32rem;
+    opacity: 0;
+    overflow: hidden;
+    padding: 0.2rem 0.8rem;
+    pointer-events: none;
+    position: absolute;
+    text-overflow: ellipsis;
+    transform: translate(-50%, .4rem);
+    transition: all .2s ease;
+    white-space: pre;
+    z-index: 300;
+}
+.qc-tooltip:focus .tooltip,
+.qc-tooltip:hover .tooltip {
+	opacity: 1;
+	transform: translate(-50%, -.2rem);
+}
+.qc-tooltip.tooltip-right .tooltip {
+	bottom: 50%;
+    left: 100%;
+    transform: translate(-.2rem, 50%);
+}
+.qc-tooltip.tooltip-right:focus .tooltip,
+.qc-tooltip.tooltip-right:hover .tooltip {
+  transform: translate(.2rem, 50%); 
+}
+.qc-tooltip.tooltip-bottom .tooltip {
+	bottom: auto;
+    top: 100%;
+	transform: translate(-50%, -.4rem);
+}
+.qc-tooltip.tooltip-bottom:focus .tooltip,
+.qc-tooltip.tooltip-bottom:hover .tooltip {
+  transform: translate(-50%, .2rem);
+}
+.qc-tooltip.tooltip-left .tooltip {
+	bottom: 50%;
+    left: auto;
+    right: 100%;
+    transform: translate(.4rem, 50%);
+}
+.qc-tooltip.tooltip-left:focus .tooltip,
+.qc-tooltip.tooltip-left:hover .tooltip {
+  transform: translate(-.2rem, 50%); 
+}
+
+/* INFO TOOLTIPS */
+.qc-tooltip .tooltip.info { background-color: $info_color; }
+
+/* SUCCESS TOOLTIPS */
+.qc-tooltip .tooltip.success { background-color: $success_color; }
+
+/* WARNING TOOLTIPS */
+.qc-tooltip .tooltip.warning { background-color: $warning_color; }
+
+/* ALERT TOOLTIPS */
+.qc-tooltip .tooltip.error { background-color: $error_color; }

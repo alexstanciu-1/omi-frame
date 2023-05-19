@@ -6,6 +6,11 @@ class Grid implements IGenerator
 {
 	use GridTpls, Grid_Config_;
 	
+	const Default_Template = 'v02-modern';
+	
+	public static $Template = null;
+	public static $Config = null;
+	
 	public static $OpCodes = [];
 
 	public static $CachedData = [];
@@ -22,7 +27,7 @@ class Grid implements IGenerator
 	 * 
 	 * @param array $config
 	 */
-	public static function Generate($config)
+	public static function Generate($config, string $template = null)
 	{
 		# static::$OpCodes = [];
 		# static::$CachedData = [];
@@ -30,6 +35,8 @@ class Grid implements IGenerator
 		static::$Place_Holders_Paths = [];
 		static::$Place_Holders_Content = [];
 		static::$Extra_Selectors = [];
+		
+		static::$Template = $template ?? (static::$Template ?? static::Default_Template);
 		
 		$original_config = $config;
 		
@@ -76,6 +83,8 @@ class Grid implements IGenerator
 				$views[$av] = $av;
 			}
 		}
+		
+		static::$Config = $config;
 		
 		try
 		{
@@ -273,7 +282,7 @@ class Grid implements IGenerator
 					
 					foreach ($layout_placement_list as $layout_placement)
 					{
-						list ($grp_layout, $selected_props) = static::Render_Boxes_To_Layout($layout_placement, $flat_selector, $m_property);
+						list ($grp_layout, $selected_props) = static::Render_Boxes_To_Layout($layout_placement, $flat_selector, $m_property, $config);
 						
 						if (!$selected_props)
 							throw new \Exception('Missing properties!');
@@ -843,8 +852,6 @@ class Grid implements IGenerator
 		$dataCls = \QApp::GetDataClass();
 		$acceptedFilters = $dataCls::GetAcceptedFilters($viewTag);
 	
-		//qvardump($viewTag, $acceptedFilters);
-
 		// go through each param
 		$__search_fields = [];
 		//qvardump($analyze_search_inf);
@@ -1148,8 +1155,11 @@ class Grid implements IGenerator
 	 * @return string
 	 * @throws \Exception
 	 */
-	public static function GetTemplate($template, array $config)
+	public static function GetTemplate($template, array $config = null)
 	{
+		if ($config === null)
+			$config = static::$Config;
+		
 		$config_folder = static::GetConfigFolder($config);
 		$alt_template = $config_folder ? ($config_folder."~templates/{$template}") : null;
 		
@@ -1159,9 +1169,7 @@ class Grid implements IGenerator
 		}
 		else
 		{
-			$dir = dirname(__FILE__);
-			$dir = rtrim($dir, "\\/")."/";
-			$template = $dir."templates/{$template}";
+			$template = __DIR__ . "/templates/" . static::$Template . "/{$template}";
 		
 			if (!file_exists($template))
 				throw new \Exception("Template \"{$template}\" not found!");
@@ -1267,7 +1275,7 @@ class Grid implements IGenerator
 
 		$config["headings_data"] = [$headings, $headings_rates, $heading_rates_total, $heading_props];
 		list($subBlocks, $bulk_edit_props) = static::GenerateGridListForm($config, $path, $item_basic_path, $is_top);
-
+		
 		// calculates the headings width percent
 
 		$_headings_data = [];
@@ -1632,13 +1640,25 @@ class Grid implements IGenerator
 			}
 			else
 			{
-				$_data_property = "\$vars_path ? \$vars_path.'[{$property}]' : '{$property}'";
+				$prop_parts = explode(".", $property);
+				if (count($prop_parts) > 1)
+				{
+					$input_name_path = $prop_parts[0]."[".implode("][", array_slice($prop_parts, 1))."]";
+					$input_value_path = str_replace(".", "->", $property);
+				}
+				else
+				{
+					$input_name_path = $property;
+					$input_value_path = $property;
+				}
+				
+				$_data_property = "\$vars_path ? \$vars_path.'[{$input_name_path}]' : '{$input_name_path}'";
 				$_data_property_id_ = "\$vars_path ? \$vars_path.'[Id]' : 'Id'";
 
 				$_data_value = ($blockWhenData || $blockWhenRecord) ? 
-					"\$data->{$property}" :
-					"((\$data->{$property} !== null) ? \$data->{$property} : ".(isset($_default) ? "'{$_default}'" : "''").")";
-				$_data_value_raw = "\$data->{$property}";
+					"\$data->{$input_value_path}" :
+					"((\$data->{$input_value_path} !== null) ? \$data->{$input_value_path} : ".(isset($_default) ? "'{$_default}'" : "''").")";
+				$_data_value_raw = "\$data->{$input_value_path}";
 				$_data_value_parent = "\$data";
 
 				$_data_value_id_ = ($blockWhenData || $blockWhenRecord) ? 
@@ -2269,7 +2289,7 @@ class Grid implements IGenerator
 			{
 				list($str_property, $property_sub_blocks) = static::GenerateGridProperty($property_cfg, $prop_path, $basic_path, true, $is_top);
 			}
-
+			
 			if (!$str_property)
 				continue;
 			
@@ -2921,11 +2941,26 @@ class Grid implements IGenerator
 	 */
 	public static function GetPropertyFlags($config, $path, $list_mode = false, $read_only = false, $in_search = false)
 	{
+		$prop_chunks = preg_split("/(\\s*\\.\\s*)/uis", trim($config["property"]), -1, PREG_SPLIT_NO_EMPTY);
+		
+		if (isset($prop_chunks[1]))
+		{
+			$parent_model = is_array($config["parent_model"]) ? reset($config["parent_model"]) : $config["parent_model"];
+			for ($i = 0; $i < (count($prop_chunks) - 1); $i++)
+			{
+				$c_property = $prop_chunks[$i];
+				$parent_model = \QApi::DetermineFromTypes(is_array($parent_model) ? reset($parent_model) : $parent_model, $c_property);
+			}
+			
+			$config['property'] = end($prop_chunks);
+			$config['parent_model'] = $parent_model;
+		}
+
 		$mode = $list_mode ? ($read_only ? "list" : "bulk") : ($read_only ? "view" : "form");
 
 		$model = is_array($config["parent_model"]) ? q_reset($config["parent_model"]) : $config["parent_model"];
 		$prop = $config["property"];
-
+		
 		// property identifier
 		$prop_idf = $config["__view__"] . "~" . $model . "~" . $prop. "~" . $path . "~" . 
 			($list_mode ? "1" : "0") . "~" . ($in_search ? "1" : "0") . "~" . ($read_only ? "1" : "0");
@@ -3671,8 +3706,11 @@ class Grid implements IGenerator
 		return null;
 	}
 	
-	public static function GetConfigFolder($config)
+	public static function GetConfigFolder($config = null)
 	{
+		if ($config === null)
+			$config = static::$Config;
+		
 		return $config["gen_config"] ? rtrim($config["gen_config"], "/")."/" : null;
 	}
 	
@@ -3937,115 +3975,12 @@ class Grid implements IGenerator
      * 
      * @throws \Exception
      */
-	protected static function Render_Boxes_To_Layout($layout_placement, $form_selector, $storage_model_property)
+	protected static function Render_Boxes_To_Layout($layout_placement, $form_selector, $storage_model_property, $config)
 	{
 		$grp_layout = "";
 		$selected_props = [];
 		
-		foreach ($layout_placement["rows"] ?: [] as $lp_row_index => $lp_row)
-		{
-			$grp_layout .= "<div class='row qc-boxes-row-{$lp_row_index}'>\n";
-
-			$cols_count = isset($lp_row['cols']) ? count($lp_row['cols']) : 0;
-			foreach ($lp_row['cols'] ?: [] as $lp_col_index => $lp_col)
-			{
-				if ($cols_count === 1)
-					$responsive_value = 12;
-				else if ($cols_count === 2)
-					$responsive_value = 6;
-				else if ($cols_count === 3)
-					$responsive_value = 4;
-				else if ($cols_count === 4)
-					$responsive_value = 6;
-				else if ($cols_count === 6)
-					$responsive_value = 2;
-				else 
-					throw new \Exception("Columns count of {$cols_count} is not supported!");
-
-				$grp_layout .= "<div class='q-panel-height-fix col-lg-{$responsive_value} qc-boxes-row-{$lp_row_index}-col-{$lp_col_index}'><div>\n";
-
-				foreach ($lp_col["sub-rows"] ?: [] as $lp_sub_row_index => $lp_sub_row)
-				{
-					$explicit_columns = false;
-					foreach ($lp_sub_row["@select"] ?: [] as $tmp_lsr => $tmp_lsr_val)
-					{
-						if ((!is_numeric($tmp_lsr)) && (!empty($tmp_lsr_val)))
-							$selected_props[$tmp_lsr] = $tmp_lsr;
-						else
-							$explicit_columns = true;
-					}
-					
-					$kss_c = array_keys($lp_sub_row["@select"]);
-					$inner_str = [];
-					
-					if ($explicit_columns)
-					{
-						$inner_str_pos = 0;
-						foreach ($lp_sub_row["@select"] ?: [] as $tmp_lsr => $tmp_lsr_val)
-						{
-							if ((!is_numeric($tmp_lsr)) && (!empty($tmp_lsr_val)))
-								$inner_str[$inner_str_pos] .= "{{@{$tmp_lsr}}}\n";
-							else
-								$inner_str_pos++;
-						}
-						$no_of_colls = count($inner_str);
-					}
-					else
-					{
-						$no_of_colls = $lp_sub_row["@cols"] ?: 1;
-						# $no_of_colls = 2;
-						$chunk_size = ceil(count($kss_c) / $no_of_colls);
-						for ($nii = 0; $nii < $no_of_colls; $nii++)
-						{
-							$props_slice = array_slice($kss_c, ($nii * $chunk_size), $chunk_size);
-							if (!$props_slice) # this was needed for testing
-								continue;
-							$inner_str[$nii] = "{{@".implode("}}\n{{@", $props_slice)."}}\n";
-						}
-					}
-					
-					$box_caption = preg_replace_callback('/(?<!\b)[A-Z][a-z]+|(?<=[a-z])[A-Z]/', function($match) {
-						return ' '. $match[0];
-					}, ($lp_sub_row["@caption"] ?: $lp_sub_row["@tag"]));
-
-					$box_caption = preg_replace('/[\\_\\s]+/', " ", $box_caption);
-			
-					$grp_layout .= "
-					<div class='details-box js-details-box_".preg_replace("/([^\\w\\d])/uis", "_", $lp_sub_row["@tag"])."  qc-boxes-row-{$lp_row_index}-col-{$lp_col_index}-row-{$lp_sub_row_index}'>
-						<div class='row'>
-							<h4>{{_L(".var_export((string)$box_caption, true).")}}</h4>
-							";
-
-					if ($no_of_colls === 1)
-						$responsive_value = 12;
-					else if ($no_of_colls === 2)
-						$responsive_value = 6;
-					else if ($no_of_colls === 3)
-						$responsive_value = 4;
-					else if ($no_of_colls === 4)
-						$responsive_value = 6;
-					else if ($no_of_colls === 6)
-						$responsive_value = 2;
-					else 
-						throw new \Exception("Sub-Columns count of {$no_of_colls} is not supported!");
-
-					foreach ($inner_str as $inns)
-						$grp_layout .= "<div class='col-lg-{$responsive_value} col-md-12'>
-								{$inns}
-							</div>";
-
-					$grp_layout .= "	</div>
-
-					</div>
-					";
-				}
-
-				$grp_layout .= "</div></div>\n";
-			}
-
-			$grp_layout .= "</div>\n";
-		}
-		
+		require(static::GetTemplate('_render_boxes_to_layout.tpl', $config));
 		
 		# debug output
 		{

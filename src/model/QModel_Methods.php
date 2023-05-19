@@ -3764,7 +3764,7 @@ trait QModel_Methods
 	{
 		if (!$this->getId())
 			$this->__isNEW__ = true;
-		if (($dataCls = \QApp::GetDataClass()) && $dataCls::$_USE_FILTER_BY_OWNERSHIP && ($this instanceof \Omi\TF\FiltrableByOwnership) && !$this->getId())
+		if (($dataCls = \QApp::GetDataClass()) && $dataCls::$_USE_FILTER_BY_OWNERSHIP && ($this instanceof \Omi\FiltrableByOwnership) && !$this->getId())
 		{
 			$isAgg = (defined('IS_AGREGATOR') && IS_AGREGATOR);
 			$IS_STARTUP = \Omi\App::Package_IsStartup();

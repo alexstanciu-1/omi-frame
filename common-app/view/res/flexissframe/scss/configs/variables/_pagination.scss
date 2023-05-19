@@ -1,0 +1,46 @@
+/*
+ Pagination Component
+*/
+$pagination_margin_x: 0;
+$pagination_margin_y: 0.5rem;
+
+/*
+ Pagination Item
+*/
+// li margins
+$pagination_item_margin_x: 0.2rem;
+$pagination_item_margin_y: 0;
+
+// Paddings
+$pagination_item_padding_x: 1.5rem;
+$pagination_item_padding_y: 0.5rem;
+
+// border radius
+$pagination_item_border_radius: 0.2rem;
+
+// text color
+$pagination_item_color: $dark_grey_color;
+$pagination_item_color--hover: $primary_color;
+
+// font weight
+$pagination_item_font_weight: 500;
+
+// font size
+$pagination_item_font_size: 13px;
+
+// text decoration
+$pagination_item_text_decoration: none;
+$pagination_item_text_decoration--hover: none;
+
+/*
+ Pagination Active Item
+*/
+$pagination_item_active_background_color: $primary_color;
+$pagination_item_active_color: $white_color;
+
+/*
+ Pagination Disabled Item
+*/
+$pagination_disabled_color: $grey_color;
+$pagination_disabled_background_color: $light_grey_color;
+$pagination_disabled_background_color--hover: $light_grey_color;

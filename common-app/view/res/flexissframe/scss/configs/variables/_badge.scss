@@ -1,0 +1,40 @@
+// badge background color
+$badge_background_color: $primary_color;
+
+// badge text color
+$badge_text_color: #FFFFFF;
+
+// badge border radius
+$badge_border_radius: 1rem;
+
+// badge font size
+$badge_font_size: 12px;
+
+// badge font weight
+$badge_font_weight: normal;
+
+// badge height
+$badge_height: 1.6rem;
+
+// badge min width
+$badge_min_width: 1.6rem;
+
+// badge paddings
+$badge_padding_x: 0.4rem;
+$badge_padding_y: 0.2rem;
+
+// badge horizontal margin
+$badge_margin_right: 0;
+$badge_margin_left: 0;
+
+/*
+ BADGE SUP AND SUB
+*/
+$badge_sup_size: -0.8rem;
+$badge_sub_size: 0.5rem;
+
+/*
+ BADGE NO CONTENT
+*/
+$badge_no_content_width: 0.6rem;
+$badge_no_content_height: 0.6rem;

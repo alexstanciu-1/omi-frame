@@ -1,0 +1,43 @@
+// card border radius
+$card_border_radius: 0.4rem;
+
+// card border
+$card_border_width: 0.1rem;
+$card_border_type: solid; 
+$card_border_color: #E8E8E8;
+
+/*
+ Card Header
+*/
+$card_header_padding_top: 1rem;
+$card_header_padding_right: 1rem;
+$card_header_padding_bottom: 0;
+$card_header_padding_left: 1rem;
+
+/*
+ Card Title
+*/
+$card_title_text_color: $dark_grey_color;
+$card_title_font_size: 2rem;
+$card_title_font_weight: 500;
+
+/*
+ Card Subtitle
+*/
+$card_subtitle_font_size: 1.6rem;
+$card_subtitle_font_weight: 500;
+$card_subtitle_text_color: $grey_color;
+
+/*
+ Card Body
+*/
+$card_body_padding_x: 1rem;
+$card_body_padding_y: 1rem;
+
+/*
+ Card Footer
+*/
+$card_footer_padding_top: 1rem;
+$card_footer_padding_right: 1rem;
+$card_footer_padding_bottom: 0;
+$card_footer_padding_left: 1rem;

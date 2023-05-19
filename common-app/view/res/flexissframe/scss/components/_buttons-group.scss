@@ -1,0 +1,195 @@
+/** 
+ |--------------------------------------------------------
+ | @BUTTONS GROUP
+ |--------------------------------------------------------
+ */
+.btn-group {
+
+}
+
+.btn-group.dropdown {
+	
+} 
+ 
+.buttons-group { 
+	border: 0.1rem solid #CCCCCC; 
+	display: inline-block; 
+	padding: 0;
+	margin: 0;
+}
+.buttons-group > li { 
+	list-style: none; 
+	display: block;
+	float: left;
+	position: relative;
+}
+.buttons-group > li > a {
+	background-color: #FFFFFF;
+	padding: 0 1rem;
+	text-transform: initial;
+	height: 3rem;
+	line-height: 3rem;
+	display: block;
+	border-right: 0.1rem solid #CCCCCC;
+}
+.buttons-group > li:last-child > a { border: none; }
+.buttons-group:after {
+	display: table;
+	content: " ";
+	clear: both;
+}
+.buttons-group > li > a i {
+	margin-right: 0.3rem;
+}
+.buttons-group > li a:hover { background-color: #F0F0F0; text-decoration: none; }
+.buttons-group .dropdown {
+	display: none;
+	position: absolute;
+	z-index: 9999;
+	left: 0;
+	margin-left: 0rem;
+	top: 0;
+	margin-top: 3rem;
+	border: 0.1rem solid #CCCCCC;
+}
+.buttons-group .dropdown li a {
+	position: relative;
+	display: block;
+	box-sizing: border-box;
+	background-color: #FFFFFF;
+	padding: 0 1rem;
+	font-size: 1.2rem;
+	height: 3rem; 
+    line-height: 3rem;
+	border-bottom: 0.1rem solid #CCCCCC;
+}
+.buttons-group .dropdown li:last-child a { border: none; }
+.buttons-group .dropdown li div { 
+	display: block;
+	padding: 0.2rem 1rem; 
+	border-bottom: 0.1rem solid #CCCCCC; 
+	border-top: 0.1rem solid #CCCCCC; 
+	background-color: #FFFFFF;
+}
+.buttons-group .dropdown li a:hover { background-color: #F0F0F0; }
+.buttons-group .dropdown li { list-style: none; }
+.buttons-group > li:hover > ul.dropdown { display: block; }
+.buttons-group span { display: inline-block; margin-left: 0.5rem; }
+.buttons-group .delimiter { background-color: #FFFFFF; }
+.buttons-group.t-tooltip .delimiter { display: none; }
+.buttons-group.inline.t-tooltip ul.dropdown li span { display: none; }
+.buttons-group.t-tooltip span { 
+	display: none; 
+	top: 0;
+	left: 0;
+	margin-left: 5rem;
+	background-color: #444444;
+	padding: 0 1rem;
+	z-index: 99999;
+	box-sizing: border-box;
+	box-shadow: 0 0.2rem 0.4rem rgba(0, 0, 0, .2);
+	line-height: 2.8rem;
+	text-transform: initial;
+	color: #FFFFFF;
+}
+.buttons-group.t-tooltip span:after { 
+	content: " ";
+	position: absolute; 
+	border-top: 1rem solid transparent;
+	border-right: 1rem solid #444444;
+	border-bottom: 1rem solid transparent;
+	margin-left: -1rem;
+	top: 15%;
+	left: 0;
+	z-index: 9999999;
+}
+.buttons-group.t-tooltip .dropdown li a:hover span { position: absolute; display: block; }
+
+/* INLINE */
+.buttons-group.inline ul.dropdown { 
+	display:block; 
+	position:relative; 
+	margin-top: 0; 
+	border: 0; 
+	z-index: 0; 
+	box-shadow: none;
+}
+.buttons-group.inline ul.dropdown li { display: inline-block; }
+.buttons-group.inline ul.dropdown li a { 
+	display: inline-block;
+}
+.buttons-group.inline ul.dropdown > li.delimiter { display: none; }
+.buttons-group.inline ul.dropdown li span { display: inline-block; text-transform: initial; }
+
+
+/*
+ @ACTIONS (SHOULD NOT BE NAMED LIKE THIS)
+*/
+.actions {
+	padding: 0;
+	margin: 0;
+}
+.actions li {
+	list-style: none;
+    display: inline-block;
+    position: relative;
+}
+.actions.inline ul.dropdown {
+    display: block;
+    position: relative;
+    margin-top: 0;
+    border: 0;
+    z-index: 0;
+}
+.actions .dropdown {
+    display: none;
+    position: absolute;
+    z-index: 9999;
+    left: 0;
+    margin-left: 0rem;
+    top: 0;
+    margin-top: 3rem;
+	padding: 0;
+    border: 0.1rem solid #E7E7E7;
+}
+.actions.inline ul.dropdown li {
+    display: inline-block;
+}
+.actions .dropdown li {
+    list-style: none;
+}
+.actions.inline ul.dropdown li a {
+    border: 0.1rem solid #E7E7E7;
+    display: inline-block;
+}
+.actions.inline ul.dropdown li a.delete:hover {
+	color: #F44336 !important;
+}
+.actions.inline ul.dropdown li a.edit:hover {
+	color: #2196F3 !important;
+}
+.actions .dropdown li a {
+    position: relative;
+    display: block;
+    box-sizing: border-box;
+    background-color: #FFFFFF;
+    padding: 0.3rem 1rem;
+    font-size: 1.4rem;
+}
+.actions.inline > li > a {
+    display: none;
+}
+.actions.inline ul.dropdown li a { 
+	border: none; 
+	color: #76838f !important; 
+	padding: 0.4rem 0.8rem; 
+	border-radius: 50%;
+	background-color: #EAEDEF;
+	width: 3rem;
+	height: 3rem;
+	text-align: center;
+}
+.actions.inline ul.dropdown { 
+	background-color: transparent !important;
+	margin-bottom: 0;
+}

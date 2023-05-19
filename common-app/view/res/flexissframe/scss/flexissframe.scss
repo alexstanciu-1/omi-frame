@@ -1,0 +1,44 @@
+/*
+ |----------------------------------------------------
+ | DEPENDENCIES MAP
+ |----------------------------------------------------
+ |
+ | CSS FRAME WITH FLEX GRID
+ */
+
+// variables and mixins
+@import "configs/variables";
+@import "configs/mixins";
+@import "configs/colors";
+
+@import "layout/normalize";
+@import "layout/reset";
+@import "layout/utils";
+
+// include elements
+@import "elements/typography";
+
+@import "layout/grid";
+
+// include components
+@import "components/accordion";
+@import "components/badge";
+@import "components/breadcrumbs";
+@import "components/buttons-group";
+@import "components/buttons";
+@import "components/card";
+@import "components/dropdown";
+@import "components/flextable";
+@import "components/form";
+@import "components/menu";
+@import "components/notice";
+@import "components/pagination";
+@import "components/popup";
+@import "components/show-more";
+@import "components/star";
+@import "components/switch";
+@import "components/tab";
+@import "components/table";
+@import "components/tags";
+@import "components/tooltips";
+@import "components/sidebar";

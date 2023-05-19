@@ -1,0 +1,26 @@
+// [default] width of the table
+$table_width: 100%;
+
+// [default] table cell padding (also applied for cells in the head)
+$table_cell_padding_x: 0.8rem;
+$table_cell_padding_y: 0.4rem;
+
+// [default] table cell font size
+$table_td_font_size: 1.4rem;
+
+// [default] table body/cell background color
+$table_td_background_color: $white_color;
+
+// [default] table body/cell text color
+$table_td_text_color: $black_color;
+
+// [default] table head background color
+$table_thead_background_color: #FFFFFF;
+
+// [default] table head text color
+$table_th_text_color: $black_color;
+
+// [default] table head font size
+$table_th_font_size: 1.6rem;
+
+$table_th_border_color: #E6EAEC;

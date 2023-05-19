@@ -1,0 +1,55 @@
+/**
+ |-----------------------------------------------------
+ | @BORDER
+ |-----------------------------------------------------
+ */
+@mixin border($width, $style, $color)
+{
+	.border { border: $width $style, $color; }	
+}
+
+/**
+ |-----------------------------------------------------
+ | @BORDER RADIUS
+ |-----------------------------------------------------
+ */
+@mixin border_radius($radius)
+{
+	border-radius: $radius;
+}
+
+/**
+ |-----------------------------------------------------
+ | @BOX SHADOW
+ |-----------------------------------------------------
+ */
+@mixin box-shadow($shadow_1, $shadow_2) 
+{
+	-webkit-box-shadow: $shadow_1, $shadow_2;
+	-moz-box-shadow: $shadow_1, $shadow_2;
+	box-shadow: $shadow_1, $shadow_2;
+}
+
+/**
+ |-----------------------------------------------------
+ | @TRANSITION
+ |-----------------------------------------------------
+ */
+@mixin transition($transition_property, $transition_duration, $transition_function)
+{
+	-webkit-transition: $transition_property $transition_duration $transition_function;
+	-moz-transition: $transition_property $transition_duration $transition_function;
+	-o-transition: $transition_property $transition_duration $transition_function;
+	-ms-transition: $transition_property $transition_duration $transition_function;
+	transition: $transition_property $transition_duration $transition_function;
+}
+
+/**
+ |-----------------------------------------------------
+ | @TEXT ALIGN
+ |-----------------------------------------------------
+ */
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+

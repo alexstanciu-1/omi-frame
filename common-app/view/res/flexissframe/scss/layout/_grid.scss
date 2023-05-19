@@ -1,0 +1,147 @@
+// container
+.container {
+	margin-left: auto;
+	margin-right: auto;
+	width: $container_width;
+	max-width: 100%;
+	padding-left: 1rem;
+	padding-right: 1rem;
+}
+// container fluid 
+.container-fluid {
+	width: 100%;
+	padding-left: 1rem;
+	padding-right: 1rem;
+}
+// row
+.row {
+	display: -webkit-box;
+	display: -ms-flexbox;
+	display: flex;
+	-webkit-box-flex: 1;
+	-ms-flex: 1;
+	flex: 1;
+	flex-direction: row;
+	-ms-flex-wrap: wrap;
+	flex-wrap: wrap;
+	margin-right: -1rem;
+	margin-left: -1rem;
+}
+.row.no-gutters {
+	margin-left: 0;
+	margin-right: 0;
+}
+.row.no-gutters > .col, 
+.row.no-gutters > [class*=col-] {
+	padding-left: 0;
+	padding-right: 0;
+}
+/* COLUMN */
+.col {
+	display: block;
+	padding: 1rem;
+	flex-grow: 1;
+	-webkit-box-flex: 1;
+    -ms-flex-positive: 1;
+	flex-shrink: 1;
+    flex-basis: 0;
+}
+// Responsive breakpoint system
+.show-xs,
+.show-sm,
+.show-md,
+.show-lg,
+.show-xl {
+  display: none !important;
+}
+
+// Responsive breakpoint system
+.hide-xs,
+.hide-sm,
+.hide-md,
+.hide-lg,
+.hide-xl {
+  display: block !important;
+}
+
+%grid-column {
+	width: 100%;
+	flex-basis: 100%;
+	padding-left: 1rem;
+	padding-right: 1rem;
+}
+
+/* BREAKPOINT MIN */
+@function breakpoint-min($name, $breakpoints) 
+{	
+	$min: map-get($name, $breakpoints);
+	@return if($min != 0, $min, null);
+}
+
+@each $breakpoint in map-keys($breakpoints)
+{
+	$min: breakpoint-min($breakpoints, $breakpoint);
+	
+	@if $min 
+	{	
+		@for $i from 1 through $grid_cols 
+		{
+			.col-#{$breakpoint}-#{$i} {
+				@extend %grid-column;
+			}
+		}
+
+		@media (min-width: $min) 
+		{	
+			@for $i from 1 through $grid_cols 
+			{
+				.col-#{$breakpoint}-#{$i} {
+					flex-basis: percentage($i/$grid_cols);
+					max-width: percentage($i/$grid_cols);
+				}
+				
+				.col-#{$breakpoint}-push-#{$i} {
+					left: percentage($i / $grid_cols);
+					position: relative;
+				}
+				.col-#{$breakpoint}-pull-#{$i} {
+					right: percentage($i / $grid_cols);
+					position: relative;
+				}
+				.col-#{$breakpoint}-offset-#{$i} { 
+					margin-left: percentage($i / $grid_cols);
+				}
+			}
+			
+			.show-#{$breakpoint} {
+				display: block !important;
+			}
+			.hide-#{$breakpoint} {
+				display: none !important;
+			}
+		}		
+	}
+	@else
+	{	
+		@for $i from 1 through $grid_cols 
+		{
+			.col-#{$breakpoint}-#{$i} {
+				flex-basis: percentage($i/$grid_cols);
+				max-width: percentage($i/$grid_cols);
+				padding-left: 1rem;
+				padding-right: 1rem;
+			}
+			.col-#{$breakpoint}-push-#{$i} {
+				left: percentage($i / $grid_cols);
+				position: relative;
+			}
+			.col-#{$breakpoint}-pull-#{$i} {
+				right: percentage($i / $grid_cols);
+				position: relative;
+			}
+			.col-#{$breakpoint}-offset-#{$i} { 
+				margin-left: percentage($i / $grid_cols);
+			}
+		}
+	}
+}

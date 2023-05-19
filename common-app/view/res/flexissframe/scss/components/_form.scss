@@ -1,0 +1,390 @@
+/*
+ |---------------------------------------------
+ | 5. Forms
+ |---------------------------------------------
+ */
+input[type="email"],
+input[type="number"],
+input[type="search"],
+input[type="text"],
+input[type="tel"],
+input[type="url"],
+input[type="password"],
+input[type="date"],
+input[type="month"],
+input[type="week"],
+input[type="time"],
+input[type="datetime"],
+input[type="datetime-local"],
+textarea,
+select {
+	padding: $input_padding_y $input_padding_x;
+	font-size: $input_font_size;
+	height: 3.6rem;
+	background-color: transparent;
+	box-shadow: none;
+	border: 0.1rem solid #D6D6D6;
+	box-sizing: border-box;
+	line-height: 1;
+	font-weight: 400;
+	-webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+select {
+	background: #fff url("data:image/svg+xml;charset=utf8,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%204%205'%3E%3Cpath%20fill='%23667189'%20d='M2%200L0%202h4zm0%205L0%203h4z'/%3E%3C/svg%3E") no-repeat right .5rem center/1.2rem 1.2rem;
+    padding-right: 1.2rem;
+}
+textarea { min-height: 6rem; }
+
+input[type="email"]:focus,
+input[type="number"]:focus,
+input[type="search"]:focus,
+input[type="text"]:focus,
+input[type="tel"]:focus,
+input[type="url"]:focus,
+input[type="password"]:focus,
+input[type="date"]:focus,
+input[type="month"]:focus,
+input[type="week"]:focus,
+input[type="time"]:focus,
+input[type="datetime"]:focus,
+input[type="datetime-local"]:focus,
+textarea:focus,
+select:focus {
+	outline: 0;
+	border-color: $primary_color;
+	box-shadow: 0 0 0 0.3rem rgba($primary_color, .2);
+}
+label {
+	cursor: pointer;
+	display:block;
+	margin-bottom: 0.5rem;
+}
+
+/* FORM INPUT */
+.qc-input,
+.form-input {
+	background-color: #FFFFFF;
+	@include border_radius(0.2rem);
+	@include transition(all, 0.3s, ease-in-out);
+	width: 100%;
+	border: 0.1rem solid #D6D6D6;
+}
+.form-group {
+	position: relative;
+    margin: $form_group_margin_top $form_group_margin_right $form_group_margin_bottom $form_group_margin_left;
+}
+.prop-label,
+.form-label {
+	display: block;
+	line-height: 1;
+	padding: 0.4rem 0;
+	font-weight: $form_label_font_weight;
+	color: $form_label_text_color;
+}
+.form-horizontal {
+	display: table;
+	width: 100%;
+}
+.form-horizontal .form-group {
+	display: table-row;
+	width: 100%;
+}
+.form-horizontal .form-label {
+	display: table-cell;
+	box-sizing: border-box;
+	padding-right: 1rem;
+	white-space: nowrap;
+}
+.form-horizontal .form-horizontal-input {
+	display: table-cell;
+	width: 100%;
+	padding-bottom: 1rem;
+}
+.form-input.error {
+	border-color: $error_color;
+}
+.form-input.error:focus {
+	box-shadow: 0 0 0 0.3rem rgba($error_color, .2);
+}
+.form-validation {
+	color: $info_color;
+	position: relative;
+	opacity: 0;
+	font-size: 1.1rem;
+	top: -0.5rem;
+}
+.form-validation.error.active {
+	color: $error_color;
+	opacity: 1;
+}
+.form-validation.warning.active {
+	color: $warning_color;
+	opacity: 1;
+}
+.form-validation.success.active {
+	color: $success_color;
+	opacity: 1;
+}
+
+.input-group {
+	display: flex;
+    display: -ms-flexbox;
+}
+.input-group .input-group-addon {
+	background: #f8f9fa;
+    border: 0.1rem solid #caced7;
+    border-radius: .1rem;
+    line-height: 1rem;
+    padding: 1rem 1rem;
+    white-space: nowrap;
+	border-bottom-right-radius: 0;
+    border-top-right-radius: 0;
+}
+.input-group .form-input {
+	-ms-flex: 1 1 auto;
+    flex: 1 1 auto;
+	border-radius: 0;
+    margin-left: -.1rem;
+}
+.input-group .btn {
+	border-bottom-left-radius: 0;
+    border-top-left-radius: 0;
+    margin-left: -.1rem;
+}
+
+/**
+ |-----------------------------------------------------
+ | @CUSTOM FILE INPUT
+ |-----------------------------------------------------
+ */
+.input-file input[type="file"] {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  font-size: 20px;
+  cursor: pointer;
+  opacity: 0;
+  filter: alpha(opacity=0);
+}
+
+/**
+ |-----------------------------------------------------
+ | @RADIO AND CHECKBOX
+ |-----------------------------------------------------
+ */
+/* BOTH */
+.qc-radio,
+.qc-checkbox { display: inline-block; }
+.qc-radio input,
+.qc-checkbox input { display: none; }
+.qc-radio label,
+.qc-checkbox label {
+	display: inline-block;
+	cursor: pointer;
+	position: relative;
+	margin-right: 0;
+	padding-left: 2.5rem;
+	line-height: 2rem;
+	margin-bottom: 1rem;
+	margin-right: 1rem;
+}
+/* RADIO */
+.qc-radio label:before {
+	border-radius: 50%;
+	content: "";
+    display: inline-block;
+    width: 2rem;
+    height: 2rem;
+    position: absolute;
+    left: 0;
+    top: 0;
+    background-color: transparent;
+	border: 0.1rem solid $primary_color;
+	color: #FFFFFF;
+	transition-duration: 0.5s;
+	box-sizing: border-box;
+}
+.qc-radio input[type="radio"]:checked + label:before {
+	text-align:center;
+	background-color: $primary_color;
+	border: 0.1rem solid $primary_color;
+}
+.qc-radio input[type="radio"]:checked + label:after {
+	background: #fff;
+    border-radius: 50%;
+    content: "";
+    height: 6px;
+    left: 1rem;
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 6px;
+}
+/* CHECKBOX */
+.qc-checkbox label:after {
+	background-color: #FFFFFF;
+	display: block;
+    height: 2rem;
+    position: absolute;
+    width: 2rem;
+	background-color: #FFFFFF;
+	border-radius: 0.2rem;
+	border: 0.1rem solid $primary_color;
+	content: '';
+	left: 0;
+	top: 0;
+	z-index: 1;
+	box-sizing: border-box;
+}
+.qc-checkbox label:before {
+	-moz-transform: scaleX(-1) rotate(135deg);
+    -ms-transform: scaleX(-1) rotate(135deg);
+    -webkit-transform: scaleX(-1) rotate(135deg);
+    transform: scaleX(-1) rotate(135deg);
+    -moz-transform-origin: left top;
+    -ms-transform-origin: left top;
+    -webkit-transform-origin: left top;
+    transform-origin: left top;
+    border-right: 2px solid #FFFFFF;
+    border-top: 2px solid #FFFFFF;
+    content: '';
+    display: block;
+    height: 1.2rem;
+    left: 0.2rem;
+    position: absolute;
+    top: 1rem;
+    width: 0.6rem;
+	z-index: 2;
+}
+.qc-checkbox input:checked + label:before {
+	-webkit-animation: check 0.8s;
+    -moz-animation: check 0.8s;
+    -o-animation: check 0.8s;
+    animation: check 0.8s;
+    border-color: $primary_color;
+}
+.qc-checkbox input:checked + label:after { background-color: #FFFFFF; }
+@-webkit-keyframes check {
+  0% {
+    height: 0;
+    width: 0;
+  }
+  25% {
+    height: 0;
+    width: 0.6rem;
+  }
+  50% {
+    height: 1.2rem;
+    width: 0.6rem;
+  }
+}
+@-moz-keyframes check {
+  0% {
+    height: 0;
+    width: 0;
+  }
+  25% {
+    height: 0;
+    width: 0.6rem;
+  }
+  50% {
+    height: 1.2rem;
+    width: 0.6rem;
+  }
+}
+@-ms-keyframes check {
+  0% {
+    height: 0;
+    width: 0;
+  }
+  25% {
+    height: 0;
+    width: 0.6rem;
+  }
+  50% {
+    height: 1.2rem;
+    width: 0.6rem;
+  }
+}
+@keyframes check {
+  0% {
+    height: 0;
+    width: 0;
+  }
+  25% {
+    height: 0;
+    width: 0.6rem;
+  }
+  50% {
+    height: 1.2rem;
+    width: 0.6rem;
+  }
+}
+
+/* SELECT */
+.qc-select {
+	width: auto;
+	position: relative;
+}
+.qc-select .sel-selection {
+	border: 0.1rem solid #CCCCCC;
+	display: inline-block;
+	padding: 0.4rem 0.6rem;
+	width: 100%;
+	position: relative;
+	height: 100%;
+}
+.qc-select .sel-selection:after {
+	content: "\f107";
+	font-family: "FontAwesome";
+	position: absolute;
+	top: 0;
+	right: 0;
+	margin-top: 0.5rem;
+	margin-right: 1rem;
+	font-size: 1.4rem;
+}
+.qc-select .sel-selection .selected-item {
+	border: 0.1rem solid #EFEFEF;
+	padding: 0.2rem;
+	border-radius: 0.3rem;
+	position: relative;
+	margin: 0.2rem 0.4rem 0.2rem 0;
+	display: inline-block;
+}
+.qc-select .sel-selection i {
+	font-size: 1rem;
+	color: #F44336;
+	margin: 0 0.4rem;
+	cursor: pointer;
+}
+.qc-select .select-dd {
+	display: none;	
+}
+.qc-select .select-dd.active {
+	display: block;
+}
+.qc-select .select-dd {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	border: 1px solid rgba(0,0,0,.15);
+	margin-top: 3rem;
+	background-color: #FFFFFF;
+	-webkit-box-shadow: 0 6px 12px rgba(0,0,0,.175);
+    box-shadow: 0 6px 12px rgba(0,0,0,.175);
+	z-index: 777;
+}
+.qc-select .select-search input[type="text"] {
+	width: 100%;
+	margin-top: 0.4rem;
+	margin-bottom: 0.4rem;
+}

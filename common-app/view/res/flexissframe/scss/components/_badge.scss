@@ -1,0 +1,87 @@
+.qc-badge {
+	display: inline-block;
+	line-height: 1;
+	background-color: $badge_background_color;
+	color: $badge_text_color;
+	border-radius: $badge_border_radius;
+	height: $badge_height;
+	padding: $badge_padding_y $badge_padding_x;
+	text-align: center;
+	min-width: $badge_min_width;
+	white-space: nowrap;
+	box-sizing: border-box;
+	transform: translate(0.2rem, 0rem);
+	margin: 0;
+	margin-right: $badge_margin_right;
+	margin-left: $badge_margin_left;
+	font-size: $badge_font_size;
+	font-weight: $badge_font_weight;
+	vertical-align: baseline;
+}
+.qc-badge.badge-no-content {
+	height: $badge_no_content_height;
+	min-width: $badge_no_content_width;
+	padding: 0;
+}
+.qc-badge.badge-sup {
+	transform: translate(0.2rem, $badge_sup_size);
+}
+.qc-badge.badge-sub {
+	transform: translate(0.2rem, $badge_sub_size);
+}
+.qc-badge.badge-primary {
+	background-color: $primary_color;
+}
+.qc-badge.badge-secondary {
+	background-color: $secondary_color;
+}
+.qc-badge.badge-info {
+	background-color: $info_color;
+}
+.qc-badge.badge-error {
+	background-color: $error_color;
+}
+.qc-badge.badge-warning {
+	background-color: $warning_color;
+}
+.qc-badge.badge-success {
+	background-color: $success_color;
+}
+/*
+ TAB BADGE
+*/
+.qc-tab-panel .qc-badge {
+	font-size: 12px;
+	font-weight: normal;
+}
+/*
+ BUTTON BADGE
+*/
+.qc-badge.btn-badge-top-right {
+	position: absolute;
+	top: 0;
+	right: 0;
+	box-shadow: 0 0 0 0.1rem #fff;
+	transform: translate(50%, -50%);
+}
+.qc-badge.btn-badge-bottom-right {
+	position: absolute;
+	bottom: 0;
+	right: 0;
+	box-shadow: 0 0 0 0.1rem #fff;
+	transform: translate(50%, 50%);
+}
+.qc-badge.btn-badge-bottom-left {
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	box-shadow: 0 0 0 0.1rem #fff;
+	transform: translate(-50%, 50%);
+}
+.qc-badge.btn-badge-top-left {
+	position: absolute;
+	top: 0;
+	left: 0;
+	box-shadow: 0 0 0 0.1rem #fff;
+	transform: translate(-50%, -50%);
+}

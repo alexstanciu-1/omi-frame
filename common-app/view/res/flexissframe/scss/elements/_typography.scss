@@ -1,0 +1,27 @@
+h1, h2, h3, h4, h5, h6 {
+	font-weight: 500;
+	line-height: 1.2;
+	margin-bottom: .5em;
+	margin-top: 0;
+}
+h1, .h1 { font-size: $h1_size; }
+h2, .h2 { font-size: $h2_size; }
+h3, .h3 { font-size: $h3_size; }
+h4, .h4 { font-size: $h4_size; }
+h5, .h5 { font-size: $h5_size; }
+h6, .h6 { font-size: $h6_size; }
+
+// paragraph
+p { margin: 0 0 1rem; }
+
+// link
+a { color: $primary_color; }
+
+code {
+	background: #fdf4f4;
+    border-radius: .1rem;
+    color: #e06870;
+    font-size: 85%;
+    line-height: 1.2;
+    padding: .1rem .15rem;
+}

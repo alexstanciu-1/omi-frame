@@ -1,0 +1,28 @@
+.qc-sidebar {
+	border-right: 0.1rem solid #DCDCDC;
+	height: 100%;
+	top: 0;
+	left: 0;
+	width: 25rem;
+	background-color: $white_color;
+}
+.qc-sidebar.toggled {
+	display: block;
+}
+
+
+
+/* ANIMATION */
+.qc-sidebar._atranslate {
+	-webkit-transform: translate3d(0, -100%, 0);
+    transform: translate3d(-100%, 0, 0);
+	transition: all 0.5s;
+    opacity: 0;
+	overflow-y: auto;
+	display: block;
+}
+.qc-sidebar.toggled._atranslate {
+	opacity: 1;
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+}

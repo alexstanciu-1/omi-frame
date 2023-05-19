@@ -1,0 +1,130 @@
+/**
+ |-----------------------------------------------------
+ | @TABLES
+ |-----------------------------------------------------
+ */
+table {
+	text-align: left;
+	width: $table_width;
+}
+table thead {
+	background-color: $table_thead_background_color;
+	border-bottom: 0.1rem solid #eaeff0;
+}
+table thead tr:first-child th:first-child {
+	border-top-left-radius: 0.4rem;
+}
+table th,
+table td {
+	font-size: $table_td_font_size;
+	/* border: 0.1rem solid #eaeff0; */
+	border: 0;
+	white-space: nowrap; 
+	padding: $table_cell_padding_y $table_cell_padding_x;
+}
+table th {
+	/* border: 0.1rem solid $table_th_border_color; */
+	border-bottom-width: 0.1rem; 
+	font-size: $table_th_font_size; 
+	color: $table_th_text_color;
+}
+table tbody,
+table td {
+	background-color: $table_td_background_color;
+}
+table.table-hover tbody,
+table.table-hover td {
+	background-color: transparent;
+}
+table.table-hover tbody tr {
+	background-color: $table_td_background_color;
+}
+.table-hover > tbody > tr:hover { background-color: #f5f5f5; }
+.table-bordered > thead > tr > th,
+.table-bordered > tbody > tr > td { border: 1px solid #E4E4E4; }
+.table-striped tbody tr:nth-of-type(odd) { background-color: #F5F5F5; }
+.table-compact > tbody > tr > td,
+.table-compact > thead > tr > th { padding: 0.5rem; }
+.table-responsive { overflow-x: auto; }
+.table-selectable > tbody > tr.active { background-color: rgb(255, 245, 230); }
+
+table > tbody > tr.row-expand { display: none; }
+table > tbody > tr.row-expand.expanded { display: table-row; }
+table > tbody > tr.row-expand > td { padding: 2rem; }
+table > tbody > tr.row-expand:hover { background-color: transparent; }
+
+table.table-order thead th.order { 
+	position: relative; 
+	cursor: pointer;
+}
+table.table-order thead th.order:after {
+	display: block;
+	font-family: "Material-Design-Iconic-Font";
+	content: "\f2f9";
+	right: 0;
+	bottom: 0;
+	position: absolute;
+	margin-right: 0.4rem;
+	margin-bottom: 0.7rem;
+	font-weight: 300;
+}
+table.table-order thead th.order:before 
+{
+	display: block;
+	font-family: "Material-Design-Iconic-Font";
+	content: "\f2fc";
+	right: 0;
+	top: 0;
+	margin-right: 0.4rem;
+	margin-top: 0.7rem;
+	position: absolute;
+	font-weight: 300;
+}
+table.table-order thead th.order.asc:after { display: none; }
+table.table-order thead th.order.asc:before { display: block; }
+table.table-order thead th.order.desc:after { display: block; }
+table.table-order thead th.order.desc:before { display: none; }
+
+
+/*
+ @TABLE HEAD SEARCH
+*/
+.table-heading-search th {
+	padding: 0;
+}
+.table-heading-search .qc-input,
+.table-heading-search .form-input {
+	border: none;
+}
+.table-heading-search .qc-input:focus,
+.table-heading-search .form-input:focus {
+	box-shadow: none;
+}
+
+/*
+ @TABLE RESPONSIVE MADE FROM DIVS
+*/
+.qc-table-responsive { display: table; width: 100%; }
+.qc-table-responsive > .table-row { display: table-row; }
+.qc-table-responsive > .table-row > .table-cell { 
+	display: table-cell; 
+	vertical-align: top;
+	box-sizing: border-box; 
+	padding: 0.5rem; 
+}
+.qc-table-responsive > .table-row > .table-cell.cell-fill { width: 100%; }
+.qc-table-responsive .table-row-group { display: table-row-group; }
+
+@each $breakpoint in map-keys($breakpoints)
+{
+	$min: breakpoint-min($breakpoints, $breakpoint);
+	@if $min
+	{
+		@media not all and (min-width: $min) {
+			.if-not-#{$breakpoint}-fill .fill {
+				width: 100%; 
+				display: block;
+			}
+		}
+	}
+}

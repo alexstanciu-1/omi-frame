@@ -1,0 +1,70 @@
+/**
+ |---------------------------------------------
+ | @NOTICE
+ |---------------------------------------------
+ */
+.notice {
+	display: block;
+	margin-bottom: 1rem;
+	padding: 1rem 2.5rem 1rem 1rem;
+	background-color: #FFFFFF;
+	color: #0000000;
+	border: 0.1rem solid #B6B6B6;
+	border-radius: 0.3rem;
+	position: relative;
+}
+.notice .close {
+	position: absolute;
+	color: #000000;
+	top: 50%;
+	margin-top: -1rem;
+	right: 0;
+	margin-right: 1rem;
+}
+
+/* NOTICE DANGER / ALERT */
+.notice.notice-danger,
+.notice.notice-alert {
+	background-color: $error_light_color;
+	border-color: $error_color;
+	color: $error_dark_color;
+}
+.notice.notice-danger .close,
+.notice.notice-alert .close { color: $error_dark_color; }
+
+/* NOTICE WARNING */
+.notice.notice-warning {
+	background-color: $warning_light_color;
+	border-color: $warning_color;
+	color: $warning_dark_color;
+}
+.notice.notice-warning .close { color: $warning_dark_color; }
+
+/* NOTICE SUCCESS */
+.notice.notice-success {
+	background-color: $success_light_color;
+	border-color: $success_color;
+	color: $success_dark_color;
+}
+.notice.notice-success .close { color: $success_dark_color; }
+
+/* INFO SUCCESS */
+.notice.notice-info {
+	background-color: $info_light_color;
+	border-color: $info_color;
+	color: $info_dark_color;
+}
+.notice.notice-info .close { color: $info_dark_color; }
+
+/* BORDERED NOTICE */
+.notice.notice-border {
+	border: 0;
+	border-left: 0.3rem solid #333333;
+	border-radius: 0;
+	background-color: #F5F5F5;
+}
+.notice.notice-success.notice-border { border-left: 0.3rem solid $success_dark_color; }
+.notice.notice-alert.notice-border,
+.notice.notice-danger.notice-border { border-left: 0.3rem solid $error_dark_color; }
+.notice.notice-warning.notice-border { border-left: 0.3rem solid $warning_dark_color; }
+.notice.notice-info.notice-border { border-left: 0.3rem solid $info_dark_color; }

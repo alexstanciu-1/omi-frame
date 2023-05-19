@@ -1,0 +1,50 @@
+Variabile generale
+[NumarContract]
+[DataCurenta]
+
+Variabile companie Prestator
+
+[Prestator.Denumire]
+[Prestator.Adresa.Oras]
+[Prestator.Adresa.Strada]
+[Prestator.Adresa.Numar]
+[Prestator.Telefon]
+[Prestator.Email]
+[Prestator.NumarRegistrulComertului]
+[Prestator.CodFiscal]
+[Prestator.IBAN]
+[Prestator.Banca]
+[Prestator.Contacte.Nume] 
+[Prestator.Contacte.Prenume]
+[Prestator.Contacte.Functie]
+
+Variabile companie Beneficiar
+
+[Beneficiar.Denumire]
+[Beneficiar.Adresa.Oras]
+[Beneficiar.Adresa.Strada]
+[Beneficiar.Adresa.Numar]
+[Beneficiar.Telefon]
+[Beneficiar.Email]
+[Beneficiar.NumarRegistrulComertului]
+[Beneficiar.CodFiscal]
+[Beneficiar.NumarLicentaTurism]
+[Beneficiar.DataEmitereLicentaTurism]
+[Beneficiar.IBAN]
+[Beneficiar.Banca]
+[Beneficiar.Contacte.Nume]
+[Beneficiar.Contacte.Prenume]
+[Beneficiar.Contacte.Functie]
+
+Variabile proprietate
+
+[Proprietate.Denumire]
+[Proprietate.NumarStele]
+[Proprietate.Tip]
+[Proprietate.Adresa]
+[Proprietate.NumarCertificatClasificare]
+[Proprietate.DataEmitereCertificatClasificare]
+[Proprietate.Moneda]
+[Proprietate.Comision]
+[Proprietate.Check-in]
+[Proprietate.Check-out]

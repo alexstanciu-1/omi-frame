@@ -6,7 +6,6 @@ namespace Omi\Util;
 /**
  * Description of Email
  *
- * @author Mihaita
  * @class.name Email
  */
 abstract class Email_omi_util_ extends \QModel

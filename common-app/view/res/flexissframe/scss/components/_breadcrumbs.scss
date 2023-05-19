@@ -1,0 +1,15 @@
+/* BREADCRUMBS */
+ul.qc-breadcrumbs {
+	display: block;
+	list-style: none;
+	margin-left: 0;
+	overflow: hidden;
+	padding: 0.5rem;
+}
+ul.qc-breadcrumbs li { float: left; margin: 0; }
+ul.qc-breadcrumbs li:first-child:before { content: " "; margin: 0; }
+ul.qc-breadcrumbs li:before { content: "/"; color: #CCCCCC; margin: 0 0.5rem; }
+ul.qc-breadcrumbs li.current a { color: #999999; cursor:default; }
+ul.qc-breadcrumbs li a { color: blueviolet; text-decoration: none; border: 0;}
+ul.qc-breadcrumbs li a:hover { text-decoration: underline; }
+ul.qc-breadcrumbs li.current a:hover { text-decoration: none; }

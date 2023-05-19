@@ -1,0 +1,14 @@
+.qc-tags div,
+.qc-tags span {
+	float: left;
+	display: block;
+	line-height: 1.6;
+	padding: 0 0.5rem;
+	border: 0.1rem solid #BBBBBB;
+	background-color: #F5F5F5;
+	margin-bottom: 0.5rem;
+	margin-right: 0.5rem;
+	font-size: 1.3rem;
+}
+.qc-tags div:after,
+.qc-tags:after { display: table; content: ""; clear: both; }

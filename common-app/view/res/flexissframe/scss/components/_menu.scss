@@ -1,0 +1,261 @@
+/*
+ |-----------------------------------------------------------
+ | @NAVBAR / MENU
+ |-----------------------------------------------------------
+ */
+/*
+ NAVBAR
+*/
+.qc-navbar {
+	background-color: #f8f9fa;
+	align-items: stretch;
+    display: flex;
+    display: -ms-flexbox;
+    -ms-flex-align: stretch;
+    -ms-flex-pack: justify;
+    -ms-flex-wrap: wrap;
+    flex-wrap: wrap;
+    justify-content: space-between;
+	padding: 1rem;
+}
+.qc-navbar .navbar-section {
+	align-items: center;
+    display: flex;
+    display: -ms-flexbox;
+    -ms-flex: 1 0 0;
+    flex: 1 0 0;
+    -ms-flex-align: center;
+}
+.qc-navbar .navbar-section.expand {
+	display: block;
+}
+.qc-navbar .navbar-section.stretch {
+	-webkit-box-align: stretch;
+    -ms-flex-align: stretch;
+    align-items: stretch;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+	-ms-flex: 0 0 auto;
+    flex: 0 0 auto;
+	align-items: center;
+}
+.qc-navbar .navbar-brand {
+	display: inline-block;
+	width: 8rem;
+	vertical-align: middle;
+	font-size: 1.6rem;
+	text-transform: uppercase;
+	font-weight: 500;
+}
+.qc-navbar .navbar-brand img {
+	max-width: 100%;
+	display: block;
+	margin: 0 auto;
+}
+.qc-navbar .navbar-section.end {
+	-ms-flex-pack: end; 
+	justify-content: flex-end;
+}
+/*
+ NAVBAR - SIDENAV
+*/
+.qc-navbar.sidenav { display: block; background-color: transparent; }
+.sidenav .navbar-section { display: block; }
+
+/*
+ MENU
+*/
+.qc-menu {
+	display: flex;
+	flex-direction: row;
+	padding: 0;
+	margin: 0;
+	position: relative;
+}
+.qc-menu li { display: inline-block; position: relative; }
+.qc-menu li a {
+	text-decoration: none;
+	color: #212121;
+	display: block;
+	padding: 1.2rem;
+	font-size: 12px;
+	font-weight: 600;
+}
+.qc-menu .dropdown {
+	display: none;
+	box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+	background-color: #FFFFFF;
+	padding: 0;
+}
+.qc-menu li:hover > a {
+	color: $primary_color;
+}
+.qc-menu li:hover .dropdown {
+	display: block;
+	position: absolute;
+	top: 100%;
+	left: 0;
+	z-index: 1000;
+	min-width: 15rem;
+}
+.qc-menu .dropdown li { display: block; }
+.qc-menu .dropdown li a { 
+	padding: 0.8rem 1.2rem;
+	font-weight: 400;
+}
+/*
+.btn-menu {
+	display: none;
+	margin: 0;
+	cursor: pointer;
+}
+.btn-menu:after {
+	content: "\f0c9";
+	font-family: "FontAwesome";
+	padding: 0.5rem;
+	color: #333333;
+	border: 0.1rem solid #333333;
+}
+@media (max-width: 768px) {
+	// display menu button
+	.btn-menu { display: block; }
+	
+	// hide menu
+	nav.qc-menu > ul { display: none; }
+	nav.qc-menu ul li label:after { 
+		font-family: "FontAwesome"; 
+		content: "\f105"; 
+		position: absolute; 
+		right: 0; 
+		margin-right: 2rem;
+		top: 0; 
+		margin-top: 0.5rem; 
+	}
+	
+	// display menu only on checked
+	nav.qc-menu > input[type="checkbox"]:checked ~ ul { width: 100%; display: block; }
+	nav.qc-menu > input[type="checkbox"]:checked ~ ul > li { padding: 0; } 
+	nav.qc-menu > input[type="checkbox"]:checked ~ ul li { width: 100%; }
+	nav.qc-menu ul li { border-bottom: none; }
+	nav.qc-menu ul li:last-child { border-bottom: 0.1rem solid #CCCCCC; }
+	nav.qc-menu ul li:hover > ul.dropdown { display:none; }
+	nav.qc-menu ul li > input[type="checkbox"]:checked ~ ul.dropdown { display: block; width: 100%; position: relative; float: none; left: 0; }
+	nav.qc-menu ul li > input[type="checkbox"]:checked ~ ul.dropdown > li { width: 100%; border: none; }
+	nav.qc-menu ul li > input[type="checkbox"]:checked ~ label { background-color: #CCCCCC; padding-left: 2rem; }
+	nav.qc-menu ul li > input[type="checkbox"]:checked ~ ul.dropdown { padding-left: 2rem; }
+	nav.qc-menu ul li > input[type="checkbox"]:checked ~ label:after { content: "\f107"; }
+}
+*/
+/* NAVIGATION MENU - MEGA MENU */
+.qc-menu li.mega-menu { position: static; }
+.qc-menu li.mega-menu a:after { position:relative; right: 0; }
+.qc-menu li.mega-menu > ul.dropdown { 
+	width: 100%;
+	margin: 0;
+	box-sizing: border-box;
+	z-index: 1000;
+}
+.qc-menu li.mega-menu > ul.dropdown > li { padding: 1rem; }
+.qc-menu li.mega-menu > ul.dropdown ul { margin: 0; padding: 0; }
+
+
+.menu-burger {
+	width: 7rem;
+    display: -ms-flexbox;
+    display: none;
+    -ms-flex-align: center;
+    align-items: center;
+    padding-left: 2rem;
+    cursor: pointer;
+    pointer-events: auto;
+    z-index: 2;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+.menu-burger .menu-btn-lines {
+	position: relative;
+    width: 50px;
+    height: 60px;
+    transition-duration: .5s;
+}
+.menu-burger .menu-btn-lines .icon {
+	position: absolute;
+    top: 29px;
+    height: 0;
+    width: 60px;
+    background-color: #000;
+    transition-duration: .5s;
+}
+.menu-burger.is-open .menu-btn-lines .icon {
+	transition-duration: .5s;
+	background: 0 0;
+}
+.menu-burger .menu-btn-lines .icon:before {
+	position: absolute;
+    top: -2px;
+    width: 25px;
+    height: 1px;
+    background-color: #000;
+    content: "";
+    transition-duration: .5s;
+    transform: translateX(-12px);
+}
+.menu-burger .menu-btn-lines .icon:after {
+	position: absolute;
+    width: 25px;
+    height: 1px;
+    top: 6px;
+    content: "";
+    background-color: #000;
+    transition-duration: .5s;
+}
+.menu-burger:hover .menu-btn-lines .icon:before {
+    transform: translateX(0);
+}
+.menu-burger:hover .menu-btn-lines .icon:after {
+    transform: translateX(-12px);
+}
+.menu-burger.is-open .menu-btn-lines .icon:before {
+	transform: rotateZ(45deg) scale(.7) translate(5px,5px)
+}
+.menu-burger.is-open .menu-btn-lines .icon:after {
+	transform: rotateZ(-45deg) scale(.7) translate(3px,-3px);
+}
+.menu-burger .menu-btn-word {
+	position: relative;
+    left: 11px;
+    width: 50px;
+    height: 14px;
+	font-size: 12px;
+}
+.menu-burger .menu-btn-word span {
+	position: absolute;
+    transition: opacity 1s cubic-bezier(.19,1,.22,1);
+}
+.menu-burger .menu-btn-word span:last-of-type {
+	opacity: 0;
+    left: -.3rem;
+}
+@media (max-width: 980px) {
+	.menu-burger {
+		display: flex;
+	}
+	.qc-menu {
+		display: none;
+	}
+}
+
+.sidenav .qc-menu { display: block; }
+.sidenav .qc-menu li { display: block; }
+.sidenav .qc-menu li a { font-weight: 500; }
+.sidenav .qc-menu li .dropdown {
+	display: block;
+	background-color: transparent;
+	box-shadow: none;
+}
+.sidenav .qc-menu li:hover > .dropdown { position: relative; top: 0; }
+.sidenav .qc-menu li .dropdown li a { padding: 0.6rem 3.2rem; }

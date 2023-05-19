@@ -1,0 +1,48 @@
+/* SWITCH */
+.qc-switch {
+	border: none;
+	outline: 0;
+	padding: 0;
+	position: relative;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+	margin-bottom: 1rem;
+}
+.qc-switch:after,
+.qc-switch:before {
+	content: "";
+	display: table;
+	clear: both;
+}
+.qc-switch label {
+	width: 4rem;
+	height: 2rem;
+	color: transparent;
+	background-color: $grey_color;
+	margin: 0;
+	border-radius: 2rem;
+	float: left;
+}
+.qc-switch label:after {
+	content: "";
+	display: block;
+	height: 1.6rem;
+	width: 1.6rem;
+	position: absolute;
+	background-color: $white_color;
+	top: 0.2rem;
+	left: 0.2rem;
+	border-radius: 50%;
+	transition-duration: .5s;
+}
+.qc-switch input { display: none; }
+.qc-switch input:checked + label { background-color: $primary_color; }
+.qc-switch input:checked + label:after { left: 2.3rem; }
+.qc-switch .switch-text {
+	float: left;
+	margin-left: 0.5rem;
+	height: 2rem;
+	line-height: 2rem;
+}

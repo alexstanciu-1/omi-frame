@@ -6,7 +6,6 @@ namespace Omi\View;
 /**
  * Description of Select
  *
- * @author Mihaita
  * @class.name Jwysiwyg
  */
 abstract class Jwysiwyg_omi_view_ extends \QWebControl

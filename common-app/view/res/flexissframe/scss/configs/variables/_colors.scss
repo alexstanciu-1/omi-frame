@@ -1,0 +1,44 @@
+// Black and White
+$white_color: #FFFFFF;
+$black_color: #212121;
+
+// Grey Colors
+$dark_grey_color: #6A6F82;
+$grey_color: #A6ABBE;
+$light_grey_color: #E5E5ED;
+
+// Main colors
+// PRIMARY
+$primary_color: #4CC78D;
+$light_primary_color: lighten($primary_color, 5%);
+$dark_primary_color: darken($primary_color, 5%);
+
+// SECONDARY
+$secondary_color: #03a9f4;
+$light_secondary_color: lighten($secondary_color, 5%);
+$dark_secondary_color: darken($secondary_color, 5%);
+
+// Status Colors
+// INFO COLOR
+$info_color: #1E9FF2;
+$info_light_color: $info_color;
+$info_dark_color: $info_color;
+
+// SUCCESS CIOLOR
+$success_color: #28D093;
+$success_light_color: $success_color;
+$success_dark_color: $success_color;
+
+// WARNING COLOR
+$warning_color: #F19000;
+$warning_light_color: $warning_color;
+$warning_dark_color: $warning_color;
+
+// ERROR COLOR
+$error_color: #FF4960;
+$error_light_color: $error_color;
+$error_dark_color: $error_color;
+
+// Extra colors
+$tomato_color: #FF6347;
+$watermelon_color: #EB617D;

@@ -1,0 +1,186 @@
+/* CUSTOM DROPDOWN */
+/*
+/* CUSTOM DROPDOWN */
+.qc-radio-dropdown {
+	position: relative;
+	min-width: 20rem;
+	padding: 0.4rem;
+	height: 3.1rem;
+	margin: 0;
+	background-color: #FFFFFF;
+	outline: none;
+	cursor: pointer;
+	border: 0.1rem solid #CCCCCC;
+	-webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+.qc-radio-dropdown:after {
+	font-family: "FontAwesome";
+	content: "\f107";
+    width: 0;
+    height: 0;
+    position: absolute;
+    right: 1.5rem;
+	border-color: #333333;
+}
+.qc-radio-dropdown ul.dropdown {
+	position: absolute;
+	padding: 0;
+	left: -0.1rem;
+	right: -0.1rem;
+	top: 100%;
+	display: none;
+    background: #fff;
+    font-weight: normal;
+    pointer-events: none;
+	list-style: none;
+	max-height: 20rem;
+	overflow-y:scroll;
+	-webkit-box-shadow: 0 0.2rem 0.5rem 0 rgba(0, 0, 0, 0.16), 0 0.2rem 1rem 0 rgba(0, 0, 0, 0.12);
+	-moz-box-shadow: 0 0.2rem 0.5rem 0 rgba(0, 0, 0, 0.16), 0 0.2rem 1rem 0 rgba(0, 0, 0, 0.12);
+	box-shadow: 0 0.2rem 0.5rem 0 rgba(0, 0, 0, 0.16), 0 0.2rem 1rem 0 rgba(0, 0, 0, 0.12);
+	box-sizing: border-box;
+	z-index: 999;
+	margin-top: 0.1rem;
+}
+.qc-radio-dropdown ul.dropdown li input { display: none; }
+.qc-radio-dropdown ul.dropdown li label {
+	margin: 0;
+	border: 0;
+	display: block;
+    text-decoration: none;
+    padding: 1rem;
+}
+.qc-radio-dropdown ul.dropdown li input[type="radio"]:checked ~ label { background: #f3f8f8; }
+.qc-radio-dropdown ul.dropdown li label:hover { background: #f3f8f8; }
+.qc-radio-dropdown.active ul.dropdown { display: block; pointer-events: auto; }
+.qc-radio-dropdown.active:after { content: "\f106"; font-family: "FontAwesome"; }
+.qc-radio-dropdown ul.dropdown li a { font-size: 1.4rem; color: #000000; }
+.qc-radio-dropdown ul.dropdown li a:hover { text-decoration: none; background-color: #CCCCCC; color: #FFFFFF; }
+
+.qc-dropdown {
+	display: inline-block;
+    position: relative;
+}
+.dropdown-list {
+	display: none;
+	animation: slide-down .15s ease 1;
+	left: 0;
+    max-height: 50vh;
+    position: absolute;
+    top: 100%;
+	background: #fff;
+    border-radius: .1rem;
+    box-shadow: 0 0.05rem 0.2rem rgba(69, 77, 93, .3);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    transform: translateY(.1rem);
+    z-index: 100;
+	margin-top: -0.2rem;
+}
+.dropdown-toggle:hover ~ .dropdown-list {
+	display: block;
+}
+.qc-dropdown .dropdown-list:hover {
+	display: block;
+}
+.dropdown-list li > a {
+    border-radius: .1rem;
+    color: inherit;
+    display: block;
+    padding: .4rem .8rem;
+    text-decoration: none;
+}
+.dropdown-list li a:hover {
+	color: $primary_color;
+	background-color: #f1f1f1;
+}
+
+
+
+
+/*
+ CUSTOM DROPDOWN FROM OMIFRAME
+*/
+.qc-dd {
+	display: block;
+    background-color: #FFFFFF;
+    position: relative;
+    width: 100%;
+    border: 0.1rem solid #D6D6D6;
+    box-sizing: border-box;
+    cursor: pointer;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    transition: all .15s;
+	border-radius: 0.2rem;
+	line-height: 1;
+}
+.qc-dd:focus {
+	border-color: $primary_color;
+}
+.qc-dd .qc-dd-pick {
+	padding: 1rem 1rem;
+	font-size: 1.4rem;
+	line-height: 1;
+}
+.qc-dd .qc-dd-pick:after {
+	position: absolute;
+	font-family: "FontAwesome";
+	content: "\f107";
+	right: 0;
+	top: 50%;
+	transform: translateY(-50%);
+	margin-right: 0.8rem;
+}
+.qc-dd .qc-dd-box {
+	position: absolute;
+	width: 100%;
+	-webkit-box-shadow: 0 0.2rem 0.5rem 0 rgba(0, 0, 0, 0.16), 0 0.2rem 1rem 0 rgba(0, 0, 0, 0.12);
+	-moz-box-shadow: 0 0.2rem 0.5rem 0 rgba(0, 0, 0, 0.16), 0 0.2rem 1rem 0 rgba(0, 0, 0, 0.12);
+	box-shadow: 0 0.2rem 0.5rem 0 rgba(0, 0, 0, 0.16), 0 0.2rem 1rem 0 rgba(0, 0, 0, 0.12);
+	z-index: 1000;
+	display: none;
+	box-sizing: border-box;
+	background-color: #FFFFFF;
+	margin-top: 0.1rem;
+}
+.qc-dd .qc-dd-box .qc-dd-search {
+	padding: 0.3rem;
+}
+.qc-dd .qc-dd-box .qc-dd-search input {
+	padding: 0.8rem 1rem;
+	width: 100%;
+	box-sizing: border-box;
+	border-radius: 0.2rem;
+}
+.qc-dd .qc-dd-box .qc-dd-item {
+	padding: 1rem;
+	background-color: #FFFFFF;
+}
+
+.qc-dd .qc-dd-box .qc-dd-item:hover {
+	background-color: #F2F2F2;
+}
+.qc-dd .qc-dd-box .qc-dd-items {
+    overflow-y: scroll;
+    height:  20rem;
+}
+
+.qc-with-picker-dd.qc-dd .qc-dd-pick[type='text'] {
+	margin: 0rem;
+	box-sizing: border-box;
+	padding: 0.4rem;
+}
+
+
+.qc-with-picker-dd .qc-dd-search {
+	display: none;
+}

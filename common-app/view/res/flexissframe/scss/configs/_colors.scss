@@ -1,0 +1,54 @@
+// Black and White colors
+._bgblack { background-color: $black_color; }
+._tblack { color: $black_color; }
+._bblack { border-color: $black_color; }
+
+._bgwhite { background-color: $white_color !important; }
+._twhite { color: $white_color; }
+._bwhite { border-color: $white_color; }
+
+// Grey Colors
+._bggrey { background-color: $grey_color; }
+._tgrey { color: $grey_color; }
+._bgrey { border-color: $grey_color; }
+._bglightgrey { bcakground-color: $light_grey_color; }
+._tlightgrey { color: $light_grey_color; }
+._blightgrey { border-color: $light_grey_color; }
+._bgdarkgrey { background-color: $dark_grey_color; }
+._tdarkgrey { color: $dark_grey_color; }
+._bdarkgrey { border-color: $dark_grey_color; }
+
+// Main colors
+._bgprimary { background-color: $primary_color; }
+._tprimary { color: $primary_color; }
+._bprimary { border-color: $primary_color; }
+._bprimary--hover:hover { border-color: $primary_color !important; }
+._bprimary--focus:focus { border-color: $primary_color !important; }
+
+._bgsecondary { background-color: $secondary_color; }
+._tsecondary { color: $secondary_color; }
+._bsecondary { border-color: $secondary_color; }
+
+// Status colors
+._bginfo { background-color: $info_color; }
+._tinfo { color: $info_color; }
+._binfo { border-color: $info_color; }
+
+._bgerror { background-color: $error_color; }
+._terror { color: $error_color; }
+._berror { border-color: $error_color; }
+
+._bgsuccess { background-color: $success_color; }
+._tsuccess { color: $success_color; }
+._bsuccess { border-color: $success_color; }
+
+._bgwarning { background-color: $warning_color; }
+._twarning { color: $warning_color; }
+._bwarning { border-color: $warning_color; }
+
+// Extra colors
+._bgtomato { background-color: $tomato_color; }
+._ttomato { color: $tomato_color; }
+._btomato { border-color: $tomato_color; }
+._btomato--hover:hover { border-color: $tomato_color !important; }
+._btomato--focus:focus { border-color: $tomato_color !important; }

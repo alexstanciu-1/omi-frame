@@ -1,0 +1,86 @@
+/*
+ TABS UL
+*/
+// Tabs container margins
+$tabs_margin_x: 0;
+$tabs_margin_y: 0;
+
+// Tabs container paddings
+$tabs_padding_x: 0;
+$tabs_padding_y: 0;
+
+// tabs border
+$tabs_border_width: 0.1rem; 
+$tabs_border_type: solid;
+$tabs_border_color: #DDDDDD;
+
+/*
+ TAB
+*/
+// Single tab item paddings
+$tab_padding_x: 2rem;
+$tab_padding_y: 1rem;
+
+// Single tab item margins
+$tab_margin_x: 0;
+$tab_margin_y: 0;
+
+$tab_margin_right: 0.2rem;
+
+// Single tab item font size
+$tab_font_size: 16px;
+
+// text transform tab
+$tab_text_transform: normal;
+
+// tab background
+$tab_background_color: transparent;
+
+// tab background on hover and active
+$tab_background_color--hover: #E3E3E3;
+$tab_background_color--active: transparent;
+
+// tab font weight
+$tab_font_weight: 500;
+
+// tab font weight on hover and active
+$tab_font_weight--hover: 500;
+$tab_font_weight--active: 500;
+
+// tab text color
+$tab_text_color: $grey_color;
+
+// tab text color on hover and active
+$tab_text_color--hover: $black_color;
+$tab_text_color--active: $black_color;
+
+// tab border
+$tab_border_width: 0.1rem; 
+$tab_border_type: solid; 
+$tab_border_color: $white_color;
+
+// tab border bottom
+$tab_border_bottom_width: 0.1rem; 
+$tab_border_bottom_type: solid;
+$tab_border_bottom_color: transparent;
+
+// tab border color on hover and active
+$tab_border_color--hover: transparent;
+$tab_border_color--active: #DDDDDD;
+
+// tab border bottom color on hover and active
+$tab_border_bottom_color--active: $white_color;
+
+/*
+ TAB CONTENT
+*/
+// tab content background color
+$tab_content_background_color: $white_color;
+
+// tab content paddings
+$tab_content_padding_x: 2rem; 
+$tab_content_padding_y: 2rem; 
+
+// tab content margins
+$tab_content_margin_x: 0;
+$tab_content_margin_y: 0;

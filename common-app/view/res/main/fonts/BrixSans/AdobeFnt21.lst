@@ -1,0 +1,115 @@
+%!Adobe-FontList 1.20
+%Locale:0x409
+
+%BeginFont
+Handler:DirectoryHandler
+FontType:Type1
+FontName:BrixSansBold
+FamilyName:Brix Sans
+StyleName:Bold
+MenuName:Brix Sans Bold
+StyleBits:0
+WeightClass:700
+WidthClass:5
+AngleClass:0
+FullName:Brix Sans Bold
+WritingScript:Roman
+OutlineFileName:/Volumes/M-Kunden/Kunden 2019 /NFON/Jobs/NFON-7-19-1550 Gestaltung Angebotsvorlage/Kreation/RZ/anRZ/NFON-7-19-1550 Angebotstemplate Ordner/Document fonts/HVD Fonts - BrixSansBold.otf
+DataFormat:sfntData
+UsesStandardEncoding:yes
+isCFF:yes
+hasSVG:no
+VariableFontType:NonVariableFont
+FileLength:110964
+FileModTime:432017208
+NameArray:0,Mac,4,Brix Sans Bold
+NameArray:0,Win,1,Brix Sans Bold
+NameArray:0,Win,16,Brix Sans
+%EndFont
+
+%BeginFont
+Handler:DirectoryHandler
+FontType:Type1
+FontName:BrixSansRegular
+FamilyName:Brix Sans
+StyleName:Regular
+MenuName:Brix Sans Regular
+StyleBits:0
+WeightClass:400
+WidthClass:5
+AngleClass:0
+FullName:Brix Sans Regular
+WritingScript:Roman
+OutlineFileName:/Volumes/M-Kunden/Kunden 2019 /NFON/Jobs/NFON-7-19-1550 Gestaltung Angebotsvorlage/Kreation/RZ/anRZ/NFON-7-19-1550 Angebotstemplate Ordner/Document fonts/HVD Fonts - BrixSansRegular.otf
+DataFormat:sfntData
+UsesStandardEncoding:yes
+isCFF:yes
+hasSVG:no
+VariableFontType:NonVariableFont
+FileLength:109888
+FileModTime:432017208
+NameArray:0,Mac,4,Brix Sans Regular
+NameArray:0,Win,1,Brix Sans Regular
+NameArray:0,Win,16,Brix Sans
+%EndFont
+
+%BeginFont
+Handler:DirectoryHandler
+FontType:Invalid
+OutlineFileName:/Volumes/M-Kunden/Kunden 2019 /NFON/Jobs/NFON-7-19-1550 Gestaltung Angebotsvorlage/Kreation/RZ/anRZ/NFON-7-19-1550 Angebotstemplate Ordner/Document fonts/AdobeFnt21.lst
+FileLength:2729
+FileModTime:586710921
+%EndFont
+
+%BeginFont
+Handler:DirectoryHandler
+FontType:Type1
+FontName:MinionPro-Regular
+FamilyName:Minion Pro
+StyleName:Regular
+MenuName:Minion Pro
+StyleBits:0
+WeightClass:400
+WidthClass:5
+AngleClass:0
+FullName:Minion Pro
+WritingScript:Roman
+OutlineFileName:/Volumes/M-Kunden/Kunden 2019 /NFON/Jobs/NFON-7-19-1550 Gestaltung Angebotsvorlage/Kreation/RZ/anRZ/NFON-7-19-1550 Angebotstemplate Ordner/Document fonts/MinionPro-Regular.otf
+DataFormat:sfntData
+UsesStandardEncoding:yes
+isCFF:yes
+hasSVG:no
+VariableFontType:NonVariableFont
+FileLength:218640
+FileModTime:581516495
+DesignSize:110
+NameArray:0,Mac,4,Minion Pro
+NameArray:0,Win,1,Minion Pro
+%EndFont
+
+%BeginFont
+Handler:DirectoryHandler
+FontType:Type1
+FontName:BrixSansLight
+FamilyName:Brix Sans
+StyleName:Light
+MenuName:Brix Sans Light
+StyleBits:0
+WeightClass:300
+WidthClass:5
+AngleClass:0
+FullName:Brix Sans Light
+WritingScript:Roman
+OutlineFileName:/Volumes/M-Kunden/Kunden 2019 /NFON/Jobs/NFON-7-19-1550 Gestaltung Angebotsvorlage/Kreation/RZ/anRZ/NFON-7-19-1550 Angebotstemplate Ordner/Document fonts/HVD Fonts - BrixSansLight.otf
+DataFormat:sfntData
+UsesStandardEncoding:yes
+isCFF:yes
+hasSVG:no
+VariableFontType:NonVariableFont
+FileLength:109604
+FileModTime:432017208
+NameArray:0,Mac,4,Brix Sans Light
+NameArray:0,Win,1,Brix Sans Light
+NameArray:0,Win,16,Brix Sans
+%EndFont
+

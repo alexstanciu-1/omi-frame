@@ -1,0 +1,60 @@
+/* TAB PANELS */
+.qc-tab-panel { position: relative; }
+.qc-tab-panel > ul.tabs {
+	display: block;
+	list-style: none;
+	position: relative;
+	padding: $tabs_padding_y $tabs_padding_x;
+	margin: $tabs_margin_y $tabs_margin_x;
+	border-bottom: $tabs_border_width $tabs_border_type $tabs_border_color;
+}
+.qc-tab-panel > ul.tabs:after{ clear:both; content: ""; display: table; }
+.qc-tab-panel > ul.tabs > li { 
+	display: block; 
+	float: left; 
+	margin-bottom: -0.1rem;
+}
+.qc-tab-panel > ul.tabs > li .tab-link {
+	display: block;
+    padding: $tab_padding_y $tab_padding_x;
+	text-transform: $tab_text_transform;
+    background: $tab_background_color;
+    cursor: pointer;
+	font-size: $tab_font_size;
+	font-weight: $tab_font_weight;
+    position: relative;
+	margin: $tab_margin_y $tab_margin_x;
+	margin-right: $tab_margin_right;
+	text-decoration: none;
+	border: $tab_border_width $tab_border_type $tab_border_color;
+	border-bottom: $tab_border_bottom_width $tab_border_bottom_type $tab_border_bottom_color;
+	color: $tab_text_color;
+	border-radius: 0.4rem 0.4rem 0 0;
+}
+.qc-tab-panel > ul.tabs > li .tab-link:hover { 
+	background: $tab_background_color--hover; 
+	font-weight: $tab_font_weight--hover;
+	color: $tab_text_color--hover;
+	border-color: $tab_border_color--hover;
+}
+.qc-tab-panel > ul.tabs li .tab-link.active { 
+	background: $tab_background_color--active;
+	font-weight: $tab_font_weight--active; 
+	color: $tab_text_color--active;
+	border-color: $tab_border_color--active;
+	border-bottom-color: $tab_border_bottom_color--active;
+}
+.qc-tab-panel > .tabs-content .tab-content {
+    display: none;
+    width: 100%;
+    padding: $tab_content_padding_y $tab_content_padding_x;  
+    position: relative;
+    margin: $tab_content_margin_y $tab_content_margin_x;
+    background-color: $tab_content_background_color;
+}
+.qc-tab-panel .tab-content.active { display: block; }
+/* VERTICAL */
+.qc-tab-panel.vertical > ul.tabs { width: auto; }
+.qc-tab-panel.vertical > ul.tabs > li { display: block; }
+.qc-tab-panel.vertical > .tabs-content > .tab-content { margin-top: 0; }
+.qc-tab-panel .table-cell { border: 0; background-color: transparent; }

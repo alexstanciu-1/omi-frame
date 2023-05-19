@@ -1,0 +1,37 @@
+.qc-popup > .popup-wrapper { 
+	position: fixed;
+	left: 0;
+	top: 0;
+	height: 100%;
+	width: 100%;
+	display: none; 
+	background-color: rgba(94, 110, 141, 0.9); 
+}
+.qc-popup > .popup-wrapper.is-visible { display: block; z-index: 999999; }
+.qc-popup > .popup-wrapper .popup-container { 
+	position: relative;
+	width: 90%;
+	max-width: 40rem;
+	margin: 4rem auto;
+	background: #FFF;
+	border-radius: 0.4rem;
+	padding: 2rem;
+}
+.qc-popup > .popup-wrapper .popup-container .popup-close {
+  position: absolute;
+  text-decoration: none;
+  line-height: 1.2rem;
+  top: 1rem;
+  right: 1rem;
+}
+.qc-popup > .popup-wrapper .popup-container .popup-close:before{
+	font-family: "FontAwesome";
+	content: "\f00d";
+	font-size: 1.6rem;
+	width: 1em;
+	height: 1em;
+	color: #333333;
+}
+.qc-popup > .popup-wrapper .popup-container .popup-close:hover:before { color: #766acf; }
+
+.nowrap { white-space: nowrap; }

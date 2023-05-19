@@ -931,6 +931,7 @@ class QCodeSync2
 				$info['is_model'] = 
 					$is_model = $this->check_if_qmodel($full_class_name);
 				
+				$create_empty_model_trait = false;
 				$include_traits = [];
 				
 				$gen_file_wo_ext = $gens_dir.$short_class_name;
@@ -949,11 +950,17 @@ class QCodeSync2
 							)
 					{
 						$needs_class_setup = true;
+						$include_traits["{$short_class_name}_GenModel_"] = "{$short_class_name}_GenModel_";
+						$create_empty_model_trait = true;
 					}
 				}
 				
 				if ($is_model)
+				{
 					$needs_class_setup = true;
+					$include_traits["{$short_class_name}_GenModel_"] = "{$short_class_name}_GenModel_";
+					$create_empty_model_trait = true;
+				}
 				
 				if (file_exists($gen_file_wo_ext.'.model.gen.php'))
 				{
@@ -1033,7 +1040,7 @@ class QCodeSync2
 						echo "AUTOLOAD: `{$full_class_name}_GenUrl_` => ".$gen_file_wo_ext.".url.gen.php<br/>\n";
 					}
 					
-					$include_traits[] = "{$short_class_name}_GenUrl_";
+					$include_traits["{$short_class_name}_GenUrl_"] = "{$short_class_name}_GenUrl_";
 					echo "CREATE URL EMPTY: `{$full_class_name}_GenUrl_` => ".$gen_file_wo_ext.".url.gen.php<br/>\n";
 					
 					$needs_class_setup = true;
@@ -1042,7 +1049,7 @@ class QCodeSync2
 				if ($needs_class_setup)
 				{
 					echo "ensure_class :: {$full_class_name} | {$gens_dir} | {$patch_extends} | ". implode(", ", $include_traits)." <br/>\n";
-					$class_path_full = $this->ensure_class($full_class_name, $short_class_name, $gens_dir, $patch_extends, $patch_extends_info, $include_traits);
+					$class_path_full = $this->ensure_class($full_class_name, $short_class_name, $gens_dir, $patch_extends, $patch_extends_info, $include_traits, $create_empty_model_trait);
 					$this->autoload[$full_class_name] = $class_path_full;
 					echo "AUTOLOAD FULL CLASS NAME: `{$full_class_name}` => {$class_path_full}<br/>\n";
 				}
@@ -1252,17 +1259,20 @@ class QCodeSync2
 	}
 	
 	function ensure_class(string $full_class_name, string $short_class_name, string $gen_dir, string $extend_class, 
-									array $extends_info, array $include_traits)
+									array $extends_info, array $include_traits, bool $create_empty_model_trait = false)
 	{
 		$gen_path = $gen_dir.$short_class_name.".gen.php";
 		
 		$expected_content = $this->compile_setup_class($full_class_name, $short_class_name, $extend_class, $extends_info['namespace'], $extends_info['doc_comment'], $extends_info);
 		
+		# qvar_dump('$expected_content', $expected_content, $include_traits);
+		# die;
 		
 		# in case the file does not exist, or the begining is not what we expect, reset it
 		{
 			# @TODO - if the file already exists, make sure the triats inside it are there & ok for autoload !
 			$content_str = "";
+			/*
 			if ($include_traits)
 			{
 				$content_str .= $expected_content[0];
@@ -1270,7 +1280,8 @@ class QCodeSync2
 				$content_str .= $expected_content[1];
 			}
 			else
-				$content_str = implode("", $expected_content);
+			*/
+			$content_str = implode("", $expected_content);
 			
 			if ((!file_exists($gen_path)) || (file_get_contents($gen_path) !== $content_str))
 			{
@@ -1282,6 +1293,9 @@ class QCodeSync2
 		}
 		if (!file_exists($gen_path))
 			throw new \Exception('Unable to setup class file: '.$gen_path);
+		
+		# if ($create_empty_model_trait)
+		#	$this->create_empty_model_trait($short_class_name, $gen_dir, $extends_info['namespace'] ?? null);
 		
 		return realpath($gen_path);
 	}
@@ -1331,8 +1345,9 @@ class QCodeSync2
 		$namespace = $header_inf['namespace'];
 		
 		$setter_methods = $this->generate_model_methods(new ReflectionClass($full_class_name));
-				
-		if ($setter_methods) # later add || $security_methods ... and so on
+		
+		# do it always , as it is a model (less complexity)
+		# if ($setter_methods) # later add || $security_methods ... and so on
 		{
 			list ($trait_start_str, $trait_end_str) = $this->compile_setup_trait($tait_name, $namespace);
 
@@ -1344,8 +1359,22 @@ class QCodeSync2
 
 			return [$tait_name, $gen_path.$short_class_name.".model.gen.php"];
 		}
-		else
-			return [null, null];
+		# else
+		#	return [null, null];
+	}
+	
+	function create_empty_model_trait(string $short_class_name, string $gen_path, string $namespace = null)
+	{
+		# $short_class_name = $header_inf['final_class'];
+		$tait_name = $short_class_name."_GenModel_";
+		
+		# if ((!$added_or_changed) && file_exists($gen_path.$short_class_name.".model.gen.php"))
+		#	return [$tait_name, $gen_path.$short_class_name.".model.gen.php"];
+		
+		# $namespace = $header_inf['namespace'];
+		
+		list ($trait_start_str, $trait_end_str) = $this->compile_setup_trait($tait_name, $namespace);
+		file_put_contents($gen_path.$short_class_name.".model.gen.php", $trait_start_str.$trait_end_str);
 	}
 	
 	function compile_url_controller(string $full_class_name, array $header_inf, array $full_class_info, bool $added_or_changed)
@@ -1747,6 +1776,7 @@ class QCodeSync2
 							}
 							else
 							{
+								qvar_dumpk("WARNING :: MISSING CLASS TO PATCH `\$header_inf`=".var_export($header_inf, true).";");
 								qvar_dumpk("mmmmmm", $header_inf, $patch_header_info, $dependencies_stack);
 								throw new \Exception('not ok!');
 							}

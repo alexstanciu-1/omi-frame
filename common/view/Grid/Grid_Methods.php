@@ -1298,5 +1298,29 @@ trait Grid_Methods
 		return $this->max_export_limit[$type] ?? ($this->max_export_limit['all'] ?: 10000);
 	}
 
+	public static function maximum_upload_size()
+	{
+		# from PHP DOC
+		function return_bytes($val) {
+			$val = trim($val);
+			$last = strtolower($val[strlen($val)-1]);
+			switch($last) {
+				// The 'G' modifier is available
+				case 'g':
+					$val *= 1024;
+				case 'm':
+					$val *= 1024;
+				case 'k':
+					$val *= 1024;
+			}
+
+			return $val;
+		}
+
+		$maxUpload      = return_bytes(ini_get('upload_max_filesize'));
+		$maxPost        = return_bytes(ini_get('post_max_size'));
+		
+		return min($maxUpload, $maxUpload);
+	}
 }
 

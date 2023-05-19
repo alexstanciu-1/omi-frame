@@ -362,7 +362,7 @@ final class QAutoload
 			if (!self::$AutoloadIncluded)
 				self::EnsureAutoloadWasIncluded($class_name);
 			
-			if (($qp = self::$AutoloadArray[$class_name]))
+			if (($qp = (self::$AutoloadArray[$class_name] ?? null)))
 			{
 				if (is_string($qp))
 				{
@@ -740,7 +740,7 @@ final class QAutoload
 				
 				if (is_dir($child))
 				{
-					$af = $avoid_folders ? $avoid_folders[$f] : null;
+					$af = $avoid_folders[$f] ?? null;
 					if (($af === true) || (($f[0] === "~") /* && ($path === "") */ )) # changed so that any ~ will be excluded no matter how deep
 						continue;
 					
@@ -763,7 +763,7 @@ final class QAutoload
 						{
 							unset($files_state[$rel]);
 						}
-						else if (($fsmt = $files_state[$rel]) !== null)
+						else if (($fsmt = ($files_state[$rel] ?? null)) !== null)
 						{
 							// no change | only for now
 							// we also make sure we don't track changes for "css" and "js"
@@ -909,7 +909,7 @@ final class QAutoload
 						//	continue;
 						
 						$info[$folder] = array();
-						if (!$files_state[$folder])
+						if (!($files_state[$folder] ?? null))
 							$files_state[$folder] = array();
 						$changed[$folder] = array();
 						$new[$folder] = array();
@@ -958,7 +958,7 @@ final class QAutoload
 						// QGEN_ConfigDirBase = ~backend_config
 						// Omi_Mods_Path = "~includes/omi-mods/" + "gens/templates"
 						// $save_state_path = QAutoload::GetRuntimeFolder()."temp/files_state.php";
-						$backend_scan_in = [Omi_Mods_Path."gens/templates/", QGEN_ConfigDirBase];
+						$backend_scan_in = [defined('QGEN_Templates_Path') ? QGEN_Templates_Path : Omi_Mods_Path."gens/templates/", QGEN_ConfigDirBase];
 						$list_backend = [];
 						foreach ($backend_scan_in as $backend_scan_in_itm)
 						{
@@ -1334,7 +1334,7 @@ final class QAutoload
 		
 		// skip for AJAX
 		$HTTP_X_REQUESTED_WITH = filter_input(INPUT_SERVER, "HTTP_X_REQUESTED_WITH");
-		$ajax_mode = ((isset($HTTP_X_REQUESTED_WITH) && (strtolower($HTTP_X_REQUESTED_WITH) === 'xmlhttprequest')) || ($_POST["__qFastAjax__"] || $_GET["__qFastAjax__"]));
+		$ajax_mode = ((isset($HTTP_X_REQUESTED_WITH) && (strtolower($HTTP_X_REQUESTED_WITH) === 'xmlhttprequest')) || ($_POST["__qFastAjax__"] ?? ($_GET["__qFastAjax__"] ?? null)));
 
 		// auth:user:pass
 		if (is_string($restriction))

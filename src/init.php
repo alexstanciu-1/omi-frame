@@ -3,6 +3,9 @@
 if (!defined('Q_IS_TFUSE'))
 	define('Q_IS_TFUSE', false);
 
+if (!defined('Q_RUN_CODE_UPGRADE_TO_TRAIT'))
+	define('Q_RUN_CODE_UPGRADE_TO_TRAIT', false);
+
 if (PHP_VERSION_ID < 80000)
 {
 	define("T_NAME_QUALIFIED", 314);

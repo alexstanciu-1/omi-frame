@@ -956,7 +956,8 @@ class QCodeSync2
 				if ($is_model)
 				{
 					$needs_class_setup = true;
-					$include_traits["{$short_class_name}_GenModel_"] = "{$short_class_name}_GenModel_";
+					if (!$this->full_sync)
+						$include_traits["{$short_class_name}_GenModel_"] = "{$short_class_name}_GenModel_";
 				}
 				
 				if (file_exists($gen_file_wo_ext.'.model.gen.php'))
@@ -2059,11 +2060,12 @@ class QCodeSync2
 							ini_get("mysqli.default_port"),
 							defined('MyProject_Mysql_Socket') ? MyProject_Mysql_Socket : ini_get("mysqli.default_socket"));
 
-			$mysql->connect();
-			$mysql->connection->query('SET NAMES utf8');
+			$mysql->offline_mode = true;
+			# $mysql->connect();
+			# $mysql->connection->query('SET NAMES utf8');
 			
 			// enable this to resync your DB structure
-			\QSqlModelInfoType::ResyncDataStructure($mysql, false);
+			\QSqlModelInfoType::ResyncDataStructure($mysql, false, true);
 		}
 		
 		# $cache_folder = QAutoload::GetRuntimeFolder()."temp/types/";

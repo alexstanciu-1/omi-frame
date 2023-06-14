@@ -9,8 +9,6 @@ namespace Omi;
 
 /**
  * Description of Cron
- *
- * @author Mihaita
  */
 class CronExec extends \QModel
 {

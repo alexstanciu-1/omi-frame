@@ -30,6 +30,11 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 	 */
 	protected $transaction;
 	
+	/**
+	 * @var boolean
+	 */
+	public $offline_mode = false;
+	
 	protected static $ModelTypeIds;
 
 	/**

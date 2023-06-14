@@ -408,13 +408,16 @@ class QErrorHandler
 		if (Q_IS_TFUSE)
 			return;
 		
-		$storage = \QApp::GetStorage();
-		if (($storage instanceof \QSqlStorage) && ($storage->connection instanceof \mysqli))
+		if (\QAutoload::$Storage_Init)
 		{
-			# make sure we close the connection , and rollback any unfinished transactions
-			$rc_rb = $storage->connection->rollback(MYSQLI_TRANS_COR_RELEASE);
-			$rc = $storage->connection->close();
-			file_put_contents("test_connection_close.txt", "\n" . date('Y-m-d H:i:s') . ' | ' . json_encode(['rollback' => $rc_rb, 'close' => $rc]), FILE_APPEND);
+			$storage = \QApp::GetStorage();
+			if (($storage instanceof \QSqlStorage) && ($storage->connection instanceof \mysqli))
+			{
+				# make sure we close the connection , and rollback any unfinished transactions
+				$rc_rb = $storage->connection->rollback(MYSQLI_TRANS_COR_RELEASE);
+				$rc = $storage->connection->close();
+				# file_put_contents("test_connection_close.txt", "\n" . date('Y-m-d H:i:s') . ' | ' . json_encode(['rollback' => $rc_rb, 'close' => $rc]), FILE_APPEND);
+			}
 		}
 		
 		# @TODO - maybe close other resources

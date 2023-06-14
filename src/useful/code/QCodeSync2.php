@@ -56,6 +56,10 @@ class QCodeSync2
 	/**
 	 * @var string[]
 	 */
+	protected $autoload_for_sync;
+	/**
+	 * @var string[]
+	 */
 	protected $model_types;
 	/**
 	 * @var string[]
@@ -124,13 +128,15 @@ class QCodeSync2
 	 */
 	public function resync($files, $changed_or_added, $removed_files, $new_files, bool $full_resync = false, array $generator_changes = null)
 	{
-		# ob_start();
+		$ex_ct = null;
+		
+		ob_start();
 		$this->start_time = microtime(true);
 		
 		try
 		{
 			$this->init();
-			
+
 			$this->sync_started_at = microtime(true);
 			if ($changed_or_added || $removed_files || $new_files)
 				echo ('RESYNC STARTS @AT: '. (($this->sync_started_at - $_SERVER['REQUEST_TIME_FLOAT']) * 1000) . ' ms'), "<br/>\n";
@@ -150,11 +156,11 @@ class QCodeSync2
 			{
 				ob_end_flush();
 				ob_end_flush();
-				
+
 				$this->full_sync = true;
 				$this->run_upgrade($files, $changed_or_added, $removed_files, $new_files);
 				// exit after upgrade
-				
+
 				# throw new \Exception('finished upgrade');
 				# return;
 				die('FINISH UPGRADE');
@@ -167,10 +173,10 @@ class QCodeSync2
 
 				# if ($this->full_sync) # this should only be triggerd explicitly
 				#	$this->empty_gens = true; # for testing
-				
+
 				$this->run_backend_fix = false;
 				$this->model_only_run = true;
-				
+
 				if (defined('Q_GENERATED_VIEW_FOLDER_TAG') && Q_GENERATED_VIEW_FOLDER_TAG) # if ($this->full_sync)
 				{
 					\QApp::SetDataClass_Internal(Q_DATA_CLASS);
@@ -180,7 +186,7 @@ class QCodeSync2
 						$tags_to_watch_folders = $this->tags_to_watch_folders;
 						$this->tags_to_watch_folders = [];
 					}
-					
+
 					$second_stage_tags = [];
 
 					$model_files = [];
@@ -205,7 +211,7 @@ class QCodeSync2
 								$model_new_files[$v] = $new_files[$v];
 						}
 					}
-					
+
 					// foreach ()
 					$this->watch_folders_tags = array_flip($this->tags_to_watch_folders);
 
@@ -218,18 +224,18 @@ class QCodeSync2
 						throw new \Exception('Data class constant `Q_DATA_CLASS` must be defined !');
 
 					# @TODO - remove all generated files
-					
+
 					# @TODO - set the correct value for this variable !
 					$has_backend_config_changes = $generator_changes ? true : false;
-					
+
 					$generated_views = [];
-					
+
 					if ($this->full_sync || ($model_changed_or_added || $model_removed_files) || $has_backend_config_changes)
 					{
 						// if (!$this->full_sync)
 						$ru = $this->full_sync ? null : $_SERVER["REQUEST_URI"];
 						$rel_url = ((!$this->full_sync) && $ru && (substr($ru, 0, strlen(BASE_HREF)) === BASE_HREF)) ? substr($ru, strlen(BASE_HREF)) : null;
-                        
+
 						if (defined('Q_BACKEND_URL_PREFIX') && Q_BACKEND_URL_PREFIX)
 						{
 							if (substr($rel_url, 0, strlen(Q_BACKEND_URL_PREFIX)) === Q_BACKEND_URL_PREFIX)
@@ -237,14 +243,14 @@ class QCodeSync2
 							else
 								$rel_url = false;
 						}
-						
+
 						if (is_string($rel_url))
 						{
 							$match_ru = null;
 							$rc_ru = preg_match("/^([^\\/]+)/uis", $rel_url, $match_ru);
 							$rel_url = $rc_ru ? $match_ru[1] : null;
 						}
-						
+
 						if (($this->full_sync || $rel_url) && ((!defined('Q_DISABLE_BACKEND_GENERATE')) || (!Q_DISABLE_BACKEND_GENERATE)))
 						{
 							# @TODO - Is there a better solution here then to unlock autoload ? issue is that interface_exists is called
@@ -268,7 +274,7 @@ class QCodeSync2
 
 									$prop_views = $prop_info->storage['views'];
 									$prop_views_arr = $prop_views ? preg_split("/(\\s*\\,\\s*)/uis", $prop_info->storage['views'], -1, PREG_SPLIT_NO_EMPTY) : null;
-						
+
 									if ((!$this->full_sync) && ($rel_url !== $property) && ((!$prop_views_arr) || (!in_array($rel_url, $prop_views_arr))))
 									{
 										continue;
@@ -308,9 +314,9 @@ class QCodeSync2
 									}
 
 									\Omi\Gens\Grid::Generate($config);
-									
+
 									echo "Grid::Generate({$property})<br/>\n";
-									
+
 									$generated_views[$property] = $property;
 									foreach ($prop_views_arr ?: [] as $prop_v)
 										$generated_views[$prop_v] = $prop_v;
@@ -322,9 +328,9 @@ class QCodeSync2
 							}
 						}
 					}
-					
+
 					define('Q_SYNC_GENERATED_VIEWS', $generated_views);
-					
+
 					{
 						$gens_folder = $second_stage_tags[Q_GENERATED_VIEW_FOLDER_TAG];
 
@@ -332,7 +338,7 @@ class QCodeSync2
 						$files_state = $full_resync ? [] : [$gens_folder => $files[$gens_folder]];
 						$changed = [];
 						$new = [];
-						
+
 						$info[$gens_folder] = [];
 						if (!$files_state[$gens_folder])
 							$files_state[$gens_folder] = [];
@@ -340,7 +346,7 @@ class QCodeSync2
 						$new[$gens_folder] = [];
 
 						// scan for changes inside Q_GENERATED_VIEW_FOLDER_TAG
-						
+
 						/* $full_resync = false, $debug_mode = false, $path = null, $avoid_folders = null, 
 											$skip_on_ajax = true,
 											&$info = null, &$files_state = null, &$changed = null, &$new = null, $root_folder = null,
@@ -350,7 +356,7 @@ class QCodeSync2
 												$info[$gens_folder], $files_state[$gens_folder], $changed[$gens_folder], $new[$gens_folder], 
 												null,
 												$info, $files_state, $changed, $new);
-						
+
 						/*					
 						self::ScanForChanges($full_resync, $debug_mode, $folder, (($pos === 0) ? $avoid_frame_folders : null), $skip_on_ajax,
 								$info[$folder], $files_state[$folder], $changed[$folder], $new[$folder], null, $info, $files_state, $changed, $new);
@@ -359,14 +365,14 @@ class QCodeSync2
 						$sync->full_sync = $this->full_sync;
 						$sync->inside_sync = true;
 						$this->model_only_run = false;
-						
+
 						$sync->init();
-						
+
 						$files_2 = $files;
 						$changed_or_added_2 = $changed_or_added;
 						$removed_files_2 = $removed_files;
 						$new_files_2 = $new_files;
-						
+
 						if (!isset($files_2[$gens_folder]))
 							$files_2[$gens_folder] = $info[$gens_folder];
 						else
@@ -374,7 +380,7 @@ class QCodeSync2
 							foreach ($info[$gens_folder] ?: [] as $k => $v)
 								$files_2[$gens_folder][$k] = $v;
 						}
-						
+
 						if (!isset($changed_or_added_2[$gens_folder]))
 							$changed_or_added_2[$gens_folder] = $changed[$gens_folder];
 						else
@@ -382,7 +388,7 @@ class QCodeSync2
 							foreach ($changed[$gens_folder] ?: [] as $k => $v)
 								$changed_or_added_2[$gens_folder][$k] = $v;
 						}
-						
+
 						if (!isset($removed_files_2[$gens_folder]))
 							$removed_files_2[$gens_folder] = $files_state[$gens_folder];
 						else
@@ -397,7 +403,7 @@ class QCodeSync2
 							foreach ($new[$gens_folder] ?: [] as $k => $v)
 								$new_files_2[$gens_folder][$k] = $v;
 						}
-						
+
 						// $sync->resync($files_2, $changed_or_added_2, $removed_files_2, $new_files_2, $full_resync);
 						$sync->sync_code($files_2 ?? [], $changed_or_added_2 ?? [], $removed_files_2 ?? [], $new_files_2 ?? []);
 					}
@@ -411,11 +417,16 @@ class QCodeSync2
 
 				return true;
 			}
-			
+
 			# if ($this->full_sync && file_exists(".upgrade_possible_parent_issues.json"))
 			{
 				# static::after_upgrade();
 			}
+		}
+		
+		catch (\Exception $ex)
+		{
+			$ex_ct = $ex;
 		}
 		finally
 		{
@@ -426,7 +437,7 @@ class QCodeSync2
 			
 			$out_string = ob_get_clean();
 			
-			if ($_GET['force_resync'])
+			if ($_GET['force_resync'] || $ex_ct)
 			{
 				echo $out_string;
 			}
@@ -434,6 +445,9 @@ class QCodeSync2
 			{
 				# \QWebRequest::AddHiddenOutput($out_string);
 			}
+			
+			if ($ex_ct)
+				throw $ex_ct;
 		}
 	}
 	
@@ -844,8 +858,12 @@ class QCodeSync2
 	 * @throws \Exception
 	 */
 	function sync_code__pre_compile()
-	{
+	{		
 		$this->autoload = [];
+		$this->autoload_for_sync = [];
+		
+		# @TODO - we also need to cache autoload_for_sync
+		
 		if (!$this->full_sync)
 		{
 			$temp_folder = QAutoload::GetRuntimeFolder()."temp/";
@@ -864,8 +882,71 @@ class QCodeSync2
 		
 		foreach ($this->info_by_class as $full_class_name => &$info)
 		{
+			$is_patch = $info['is_patch'];
+			$has_plain_class = $info['has_php'] && (!$is_patch);
+			
+			# is_model[bool]: true
+			if ($info['has_php'])
+			{
+				foreach ($info['files'] as $layer => $layer_files)
+				{
+					$layer_folder = $this->tags_to_watch_folders[$layer] ?? null;
+					if (empty($layer_folder))
+					{
+						if ($this->model_only_run)
+							continue;
+						else
+							throw new \Exception('Missing layer.');
+					}
+
+					$lf_php = $layer_files['php'] ?? null;
+					if (!$lf_php)
+						throw new \Exception('Missing class info @'.$full_class_name.'. Consider a full resync.');
+					if ($has_plain_class)
+					{
+						$this->autoload_for_sync[$full_class_name] = $layer_folder . $lf_php['file'];
+					}
+					else
+					{
+						# @TODO - test URL & misc 
+						# abstract
+						$abstract_class_name = (isset($lf_php["namespace"]) ? $lf_php["namespace"] . "\\" : ""). $lf_php['class'];
+
+						$this->autoload_for_sync[$abstract_class_name] = $layer_folder . $lf_php['file'];
+
+						$gens_layer = $info['gens_layer'] ?? null;
+						# real
+						if ((!$gens_layer) || ($gens_layer === $layer))
+						{
+							if (!isset($info['gens_dir']))
+								throw new \Exception('Gens dir not specified.');
+
+							$short_class_name = end(explode("\\", $full_class_name));
+
+							$extra_gen_content = null;
+							if ($info['has_url'])
+							{
+								$extra_gen_content = "	public function getUrlForTag(\$tag = '', \$_arg0 = null, \$_arg1 = null, \$_arg2 = null, \$_arg3 = null, \$_arg4 = null, \$_arg5 = null, \$_arg6 = null, \$_arg7 = null, \$_arg8 = null, \$_arg9 = null, \$_arg10 = null, \$_arg11 = null, \$_arg12 = null, \$_arg13 = null, \$_arg14 = null, \$_arg15 = null) {}\n".
+												"	public function loadFromUrl(\QUrl \$url, \$parent = null) {}\n".
+												"	public function initController(\QUrl \$url = null, \$parent = null) {}\n";
+							}
+
+							# /home/alex/voip-fuse/omi-frame/src/io/~gens/QFile.ignore.gen.php
+							$expected_path = $info['gens_dir'] . "{$short_class_name}.ignore.gen.php";
+
+							if (file_exists($expected_path) && (!$this->full_sync))
+								$this->autoload_for_sync[$full_class_name] = $expected_path;
+							else
+								$this->autoload_for_sync[$full_class_name] = $this->ensure_class($full_class_name, $short_class_name, $info['gens_dir'], $abstract_class_name, $lf_php, [], true, $extra_gen_content);
+						}
+					}
+				}
+			}
+
 			if ((!$this->full_sync) && (!$this->changes_by_class[$full_class_name]))
+			{			
 				continue;
+			}
 			
 			echo "PRE COMPILE :: {$full_class_name}<br/>\n";
 			/*if ($full_class_name === 'Registration_Request')
@@ -903,9 +984,6 @@ class QCodeSync2
 					}
 				}
 			}
-			
-			$is_patch = $info['is_patch'];
-			$has_plain_class = $info['has_php'] && (!$is_patch);
 			
 			if ($info['has_tpl'] || $is_patch || ($info['res'] && (!$has_plain_class)) || $info['has_url'])
 			{
@@ -1077,7 +1155,14 @@ class QCodeSync2
 			}
 		}
 		
-		\QAutoload::SetAutoloadArray($this->autoload);
+		# if (!$this->model_only_run)
+		{
+			# qvar_dump($this->autoload_for_sync);
+			# die;
+		}
+		
+		\QAutoload::SetAutoloadArray($this->autoload_for_sync);
+		
 	}
 	
 	function sync_code__compile_02()
@@ -1257,9 +1342,9 @@ class QCodeSync2
 	}
 	
 	function ensure_class(string $full_class_name, string $short_class_name, string $gen_dir, string $extend_class, 
-									array $extends_info, array $include_traits)
+									array $extends_info, array $include_traits, bool $for_generating_only = false, string $extra_gen_content = null)
 	{
-		$gen_path = $gen_dir.$short_class_name.".gen.php";
+		$gen_path = $gen_dir.$short_class_name. ($for_generating_only ? '.ignore' : '') . ".gen.php";
 		
 		$expected_content = $this->compile_setup_class($full_class_name, $short_class_name, $extend_class, $extends_info['namespace'], $extends_info['doc_comment'], $extends_info);
 		
@@ -1268,14 +1353,19 @@ class QCodeSync2
 		{
 			# @TODO - if the file already exists, make sure the triats inside it are there & ok for autoload !
 			$content_str = "";
-			if ($include_traits)
+			# if ($include_traits)
 			{
 				$content_str .= $expected_content[0];
-				$content_str .= "	use ".implode(", ", $include_traits).";\n\n";
+				
+				if ($include_traits)
+					$content_str .= "	use ".implode(", ", $include_traits).";\n\n";
+				if ($extra_gen_content !== null)
+					$content_str .= $extra_gen_content;
+					
 				$content_str .= $expected_content[1];
 			}
-			else
-				$content_str = implode("", $expected_content);
+			#else
+			#	$content_str = implode("", $expected_content);
 			
 			if ((!file_exists($gen_path)) || (file_get_contents($gen_path) !== $content_str))
 			{
@@ -1908,7 +1998,7 @@ class QCodeSync2
 	
 	function cache_data(bool $sync_sql_meta = false)
 	{
-		\QAutoload::SetAutoloadArray($this->autoload);
+		\QAutoload::SetAutoloadArray($this->autoload_for_sync);
 		\QAutoload::UnlockAutoload();
 		
 		$temp_folder = QAutoload::GetRuntimeFolder()."temp/";

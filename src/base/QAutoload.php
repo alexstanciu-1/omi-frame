@@ -707,8 +707,6 @@ final class QAutoload
 											&$info = null, &$files_state = null, &$changed = null, &$new = null, $root_folder = null,
 											&$top_info = null, &$top_files_state = null, &$top_changed = null, &$top_new = null)
 	{
-		
-		
 		if ($path)
 		{
 			$is_frame_now = ($root_folder === Q_FRAME_PATH);

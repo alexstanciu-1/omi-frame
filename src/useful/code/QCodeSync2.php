@@ -899,20 +899,24 @@ class QCodeSync2
 							throw new \Exception('Missing layer.');
 					}
 
-					$lf_php = $layer_files['php'] ?? null;
-					if (!$lf_php)
-						throw new \Exception('Missing class info @'.$full_class_name.'. Consider a full resync.');
+					$lf_php = $layer_files['php'];
 					if ($has_plain_class)
 					{
 						$this->autoload_for_sync[$full_class_name] = $layer_folder . $lf_php['file'];
 					}
 					else
 					{
+						if (!$lf_php)
+						{
+							$lf_php = ($layer_files['url'] ?? reset($layer_files));
+						}
+
 						# @TODO - test URL & misc 
 						# abstract
 						$abstract_class_name = (isset($lf_php["namespace"]) ? $lf_php["namespace"] . "\\" : ""). $lf_php['class'];
-
-						$this->autoload_for_sync[$abstract_class_name] = $layer_folder . $lf_php['file'];
+						
+						if (isset($layer_files['php']))
+							$this->autoload_for_sync[$abstract_class_name] = $layer_folder . $lf_php['file'];
 
 						$gens_layer = $info['gens_layer'] ?? null;
 						# real
@@ -1973,8 +1977,8 @@ class QCodeSync2
 		
 		if (($short_name === 'Controller') && ($extend_class === 'QWebControl'))
 		{
-			qvar_dumpk($full_class_name, $extend_class, $short_extends, $this->info_by_class[$full_class_name], debug_backtrace());
-			throw new \Exception('fail');
+			# qvar_dumpk($full_class_name, $extend_class, $short_extends, $this->info_by_class[$full_class_name], debug_backtrace());
+			# throw new \Exception('fail');
 		}
 		
 		$class_str .= ($is_abstract ? 'abstract ' : '').($is_final ? 'final ' : '').

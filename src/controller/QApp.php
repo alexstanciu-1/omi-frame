@@ -361,6 +361,8 @@ class QApp extends QAppModule
 	 */
 	public static final function SetStorage(QIStorage $storage, $key = null)
 	{
+		\QAutoload::$Storage_Init = true;
+		
 		if ((!self::$Storage) || ($key === null))
 			self::$Storage = $storage;
 		if (!self::$StorageList)

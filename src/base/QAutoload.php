@@ -185,6 +185,8 @@ final class QAutoload
 	
 	protected static $_Debug_Data = [];
 	
+	public static $Storage_Init = false;
+	
 	/**
 	 * Adds a folder to the list of folders that are scaned for classes
 	 * 
@@ -842,6 +844,70 @@ final class QAutoload
 		}
 		else
 		{
+			// we need to include all required classes 'manually' as Autoload will not be relayable while in sync
+			self::IncludeClassesInFolder(Q_FRAME_PATH."model/", true);
+			self::IncludeClassesInFolder(Q_FRAME_PATH."model/type/", true);
+			self::IncludeClassesInFolder(Q_FRAME_PATH."useful/code/", true);
+			self::IncludeClassesInFolder(Q_FRAME_PATH."useful/parsers/", true);
+			self::IncludeClassesInFolder(Q_FRAME_PATH."controller/", true);
+
+			if (PHP_SAPI === 'cli')
+			{
+				# echo "CLI MODE REVIEW\n";
+				# die;
+				# we do not sync in CLI mode atm
+				return false;
+			}
+			else if (PHP_SAPI === 'fpm-fcgi')
+			{
+				# echo "WEB MODE\n";
+				
+				if ($_GET['__q_run_code_resync__'] ?? null)
+				{
+					# continue 
+				}
+				else
+				{
+					$req_url = \QWebRequest::GetRequestFullUrl(false) . "?"
+							.(defined('Q_DEV_MODE_KEY') && Q_DEV_MODE_KEY ? "_dev_mode_key_=".urlencode(sha1(Q_DEV_MODE_KEY))."&" : ""). 
+							"__q_run_code_resync__=1" . (($_GET['force_resync'] ?? null) ? '&force_resync=1' : '');
+					
+					$curl = curl_init();
+					curl_setopt_array($curl, [
+						CURLOPT_URL => $req_url,
+						CURLOPT_RETURNTRANSFER => 1,
+						CURLOPT_FOLLOWLOCATION => 1,
+					]);
+					$rc = curl_exec($curl);
+					if ($rc === false)
+					{
+						echo "REQUEST ERROR ON [{$req_url}]: ", curl_error($curl);
+						die;
+					}
+					else
+					{
+						$rc = trim($rc);
+						if (empty($rc) && (!($_GET['force_resync'] ?? null)))
+						{
+							# compiled ok
+						}
+						else
+						{
+							echo "<pre>";
+							echo $rc;
+							echo "</pre>";
+							exit;
+						}
+					}
+				}
+			}
+			else
+			{
+				# echo "UNKNOWN PHP_SAPI: ".PHP_SAPI."\n";
+				# die;
+				return false;
+			}
+			
 			clearstatcache();
 			
 			$HTTP_X_REQUESTED_WITH = filter_input(INPUT_SERVER, "HTTP_X_REQUESTED_WITH");
@@ -1002,12 +1068,6 @@ final class QAutoload
 						}
 					}
 					
-					// we need to include all required classes 'manually' as Autoload will not be relayable while in sync
-					self::IncludeClassesInFolder(Q_FRAME_PATH."model/", true);
-					self::IncludeClassesInFolder(Q_FRAME_PATH."model/type/", true);
-					self::IncludeClassesInFolder(Q_FRAME_PATH."useful/code/", true);
-					self::IncludeClassesInFolder(Q_FRAME_PATH."useful/parsers/", true);
-					self::IncludeClassesInFolder(Q_FRAME_PATH."controller/", true);
 					// self::IncludeClassesInFolder(Q_FRAME_PATH."controller/", true);
 					
 					# we need to remove any mins
@@ -1420,6 +1480,11 @@ final class QAutoload
 				echo QAutoload::GetWasNotDeployedMessage();
 				*/
 			}
+		}
+		
+		if ($_GET['__q_run_code_resync__'] ?? null)
+		{
+			exit;
 		}
 	}
 	

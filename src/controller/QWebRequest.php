@@ -121,6 +121,35 @@ final class QWebRequest
 
 		return null;
 	}
+	
+	public static function Init_Vars(bool $force = false, bool $real_init = false)
+	{
+		if ((!$force) && (self::$BaseHref !== null))
+		{
+			return [static::$QUERY_STRING];
+		}
+		
+		$qs = null;
+		
+		self::$BaseHref = BASE_HREF ?? '';
+		
+		if ($_GET["__or__"] || ($_GET["__or__"] !== null))
+		{
+			// var_dump($_GET["__or__"]);
+			$qs = static::$QUERY_STRING ?? (static::$QUERY_STRING = $_SERVER["QUERY_STRING"]);
+			$matches = null;
+			//preg_match("/__or__\\=(.*?)(?:\\&|\$)/us", $qs, $matches);
+			preg_match("/(?:^|\\&|\\?)__or__\\=(.*?)(?:\\&|\$)/us", $qs, $matches);
+			// remove __q_noiframe__ if exists !
+			if (isset($matches[1]))
+				$matches[1] = preg_replace('/(?:^|\&)__q_noiframe__\b\/?/us', '', $matches[1]);
+			self::$OriginalRequest = urldecode($matches[1]);
+			if ($real_init)
+				unset($_GET["__or__"]);
+		}
+		
+		return [$qs];
+	}
 
 	/**
 	 * Processes the request
@@ -140,19 +169,7 @@ final class QWebRequest
 			
 			// detect the type of the request
 			// Content-Type: application/soap+xml; charset=utf-8
-			if ($_GET["__or__"] || ($_GET["__or__"] !== null))
-			{
-				// var_dump($_GET["__or__"]);
-				$qs = static::$QUERY_STRING ?? (static::$QUERY_STRING = $_SERVER["QUERY_STRING"]);
-				$matches = null;
-				//preg_match("/__or__\\=(.*?)(?:\\&|\$)/us", $qs, $matches);
-				preg_match("/(?:^|\\&|\\?)__or__\\=(.*?)(?:\\&|\$)/us", $qs, $matches);
-				// remove __q_noiframe__ if exists !
-				if ($matches[1])
-					$matches[1] = preg_replace('/(?:^|\&)__q_noiframe__\b\/?/us', '', $matches[1]);
-				self::$OriginalRequest = urldecode($matches[1]);
-				unset($_GET["__or__"]);
-			}
+			list ($qs) = static::Init_Vars(true, true);
 			
 			$explicit_fast_call = false;
 			if ((strpos(self::$OriginalRequest, '--call--') !== false) && 
@@ -215,7 +232,6 @@ final class QWebRequest
 				unset($_GET["__MultiResponseNoWait"]);
 			}
 
-			self::$BaseHref = BASE_HREF;
 			if ($skip_url)
 			{
 				self::$OriginalRequest = substr(self::$OriginalRequest, strlen($skip_url));
@@ -619,6 +635,8 @@ final class QWebRequest
 	 */
 	public static function GetRequestFullUrl($with_query_string = false, string $replace_host = null)
 	{
+		static::Init_Vars();
+		
 		$ssl = ((!empty($_SERVER['HTTPS'])) && ($_SERVER['HTTPS'] === 'on')) ? "s" : "";
 		$port = $_SERVER['SERVER_PORT'];
 		$port = ((!$ssl && ($port == '80')) || ($ssl && ($port == '443'))) ? '' : ':'.$port;

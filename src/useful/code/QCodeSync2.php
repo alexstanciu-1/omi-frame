@@ -107,9 +107,17 @@ class QCodeSync2
 	 * @var array
 	 */
 	protected $js_gens_reset_map = [];
+	/**
+	 * Files being modified
+	 * 
+	 * @var array
+	 */
+	protected $modified_gens = [];
 	
 	public function init()
 	{
+		$this->modified_gens = [];
+		
 		$this->temp_code_dir = "temp/code/";
 		$this->tags_to_watch_folders = \QAutoload::GetWatchFoldersByTags();
 		$this->watch_folders_tags = array_flip($this->tags_to_watch_folders);
@@ -307,7 +315,10 @@ class QCodeSync2
 										$generator_classes_included = true;
 									}
 
-									\Omi\Gens\Grid::Generate($config);
+									$gen_ret = \Omi\Gens\Grid::Generate($config);
+									
+									if (isset($gen_ret[0]))
+										$this->process_gen_changes($gen_ret[0]);
 									
 									echo "Grid::Generate({$property})<br/>\n";
 									
@@ -419,6 +430,16 @@ class QCodeSync2
 		}
 		finally
 		{
+			$modif_gens_path = \QAutoload::GetRuntimeFolder()."temp/modified_gen.json";
+			$prev_modif = file_exists($modif_gens_path) ? json_decode(file_get_contents($modif_gens_path) ?: []) : [];
+			if ($prev_modif)
+			{
+				foreach ($prev_modif ?: [] as $k => $v)
+					if (!isset($this->modified_gens[$k]))
+						$this->modified_gens[$k] = $v;
+			}
+			file_put_contents($modif_gens_path, json_encode($this->modified_gens, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_LINE_TERMINATORS | JSON_UNESCAPED_UNICODE));
+			
 			echo "<hr/>\n";
 			echo "EXEC TIME FOR SYNC: ".round(microtime(true) - $this->start_time, 3)." sec";
 			echo "<hr/>\n";
@@ -931,7 +952,6 @@ class QCodeSync2
 				$info['is_model'] = 
 					$is_model = $this->check_if_qmodel($full_class_name);
 				
-				$create_empty_model_trait = false;
 				$include_traits = [];
 				
 				$gen_file_wo_ext = $gens_dir.$short_class_name;
@@ -951,15 +971,14 @@ class QCodeSync2
 					{
 						$needs_class_setup = true;
 						$include_traits["{$short_class_name}_GenModel_"] = "{$short_class_name}_GenModel_";
-						$create_empty_model_trait = true;
 					}
 				}
 				
 				if ($is_model)
 				{
 					$needs_class_setup = true;
-					$include_traits["{$short_class_name}_GenModel_"] = "{$short_class_name}_GenModel_";
-					$create_empty_model_trait = true;
+					if (!$this->full_sync)
+						$include_traits["{$short_class_name}_GenModel_"] = "{$short_class_name}_GenModel_";
 				}
 				
 				if (file_exists($gen_file_wo_ext.'.model.gen.php'))
@@ -977,7 +996,7 @@ class QCodeSync2
 					else
 					{
 						$needs_class_setup = true;
-						# unlink($gen_file_wo_ext.'.model.gen.php'); # we have some issues here ... @TODO - we need to make it less fragile
+						# $this->unlink($gen_file_wo_ext.'.model.gen.php'); # we have some issues here ... @TODO - we need to make it less fragile
 						unset($this->autoload[$full_class_name.'_GenModel_']);
 					}
 				}
@@ -997,7 +1016,7 @@ class QCodeSync2
 					else
 					{
 						$needs_class_setup = true;
-						unlink($gen_file_wo_ext.'.view.gen.php');
+						$this->unlink($gen_file_wo_ext.'.view.gen.php');
 						unset($this->autoload[$full_class_name.'_GenView_']);
 					}
 				}
@@ -1017,7 +1036,7 @@ class QCodeSync2
 					else
 					{
 						$needs_class_setup = true;
-						unlink($gen_file_wo_ext.'.url.gen.php');
+						$this->unlink($gen_file_wo_ext.'.url.gen.php');
 						unset($this->autoload[$full_class_name.'_GenUrl_']);
 					}
 				}
@@ -1031,7 +1050,7 @@ class QCodeSync2
 							"	public function loadFromUrl(\QUrl \$url, \$parent = null) {}\n".
 							"	public function initController(\QUrl \$url = null, \$parent = null) {}\n".
 							"\n}\n\n";
-					file_put_contents($gen_file_wo_ext.'.url.gen.php', $url_trait_str);
+					$this->file_put_contents($gen_file_wo_ext.'.url.gen.php', $url_trait_str);
 					opcache_invalidate($gen_file_wo_ext.'.url.gen.php');
 					
 					if ($this->autoload[$full_class_name.'_GenUrl_'] !== $gen_file_wo_ext.'.url.gen.php')
@@ -1049,7 +1068,7 @@ class QCodeSync2
 				if ($needs_class_setup)
 				{
 					echo "ensure_class :: {$full_class_name} | {$gens_dir} | {$patch_extends} | ". implode(", ", $include_traits)." <br/>\n";
-					$class_path_full = $this->ensure_class($full_class_name, $short_class_name, $gens_dir, $patch_extends, $patch_extends_info, $include_traits, $create_empty_model_trait);
+					$class_path_full = $this->ensure_class($full_class_name, $short_class_name, $gens_dir, $patch_extends, $patch_extends_info, $include_traits);
 					$this->autoload[$full_class_name] = $class_path_full;
 					echo "AUTOLOAD FULL CLASS NAME: `{$full_class_name}` => {$class_path_full}<br/>\n";
 				}
@@ -1151,7 +1170,7 @@ class QCodeSync2
 								# cleanup the generated tpl file if it exists
 								if (file_exists(($possible_gen_path = $info['gens_dir'].$this->get_generated_xml_template_name($header_inf))))
 								{
-									unlink($possible_gen_path);
+									$this->unlink($possible_gen_path);
 								}
 							}
 							continue;
@@ -1259,20 +1278,17 @@ class QCodeSync2
 	}
 	
 	function ensure_class(string $full_class_name, string $short_class_name, string $gen_dir, string $extend_class, 
-									array $extends_info, array $include_traits, bool $create_empty_model_trait = false)
+									array $extends_info, array $include_traits)
 	{
 		$gen_path = $gen_dir.$short_class_name.".gen.php";
 		
 		$expected_content = $this->compile_setup_class($full_class_name, $short_class_name, $extend_class, $extends_info['namespace'], $extends_info['doc_comment'], $extends_info);
 		
-		# qvar_dump('$expected_content', $expected_content, $include_traits);
-		# die;
 		
 		# in case the file does not exist, or the begining is not what we expect, reset it
 		{
 			# @TODO - if the file already exists, make sure the triats inside it are there & ok for autoload !
 			$content_str = "";
-			/*
 			if ($include_traits)
 			{
 				$content_str .= $expected_content[0];
@@ -1280,12 +1296,11 @@ class QCodeSync2
 				$content_str .= $expected_content[1];
 			}
 			else
-			*/
-			$content_str = implode("", $expected_content);
+				$content_str = implode("", $expected_content);
 			
 			if ((!file_exists($gen_path)) || (file_get_contents($gen_path) !== $content_str))
 			{
-				$rc = file_put_contents($gen_path, $content_str);
+				$rc = $this->file_put_contents($gen_path, $content_str);
 				if ($rc === false)
 					throw new \Exception('Unable to write to: '.$gen_path);
 				opcache_invalidate($gen_path);
@@ -1293,9 +1308,6 @@ class QCodeSync2
 		}
 		if (!file_exists($gen_path))
 			throw new \Exception('Unable to setup class file: '.$gen_path);
-		
-		# if ($create_empty_model_trait)
-		#	$this->create_empty_model_trait($short_class_name, $gen_dir, $extends_info['namespace'] ?? null);
 		
 		return realpath($gen_path);
 	}
@@ -1313,7 +1325,7 @@ class QCodeSync2
 			$class_str .= "\tuse ".implode(", ", $add_traits).";\n\n";
 		$class_str .= $class_parts[1];
 		
-		file_put_contents($gen_path, $class_str);
+		$this->file_put_contents($gen_path, $class_str);
 		opcache_invalidate($gen_path);
 		
 		return $class_str;
@@ -1354,27 +1366,13 @@ class QCodeSync2
 			foreach ($setter_methods as $method_str)
 				$trait_start_str .= $method_str;
 
-			file_put_contents($gen_path.$short_class_name.".model.gen.php", $trait_start_str.$trait_end_str);
+			$this->file_put_contents($gen_path.$short_class_name.".model.gen.php", $trait_start_str.$trait_end_str);
 			opcache_invalidate($gen_path.$short_class_name.".model.gen.php");
 
 			return [$tait_name, $gen_path.$short_class_name.".model.gen.php"];
 		}
 		# else
 		#	return [null, null];
-	}
-	
-	function create_empty_model_trait(string $short_class_name, string $gen_path, string $namespace = null)
-	{
-		# $short_class_name = $header_inf['final_class'];
-		$tait_name = $short_class_name."_GenModel_";
-		
-		# if ((!$added_or_changed) && file_exists($gen_path.$short_class_name.".model.gen.php"))
-		#	return [$tait_name, $gen_path.$short_class_name.".model.gen.php"];
-		
-		# $namespace = $header_inf['namespace'];
-		
-		list ($trait_start_str, $trait_end_str) = $this->compile_setup_trait($tait_name, $namespace);
-		file_put_contents($gen_path.$short_class_name.".model.gen.php", $trait_start_str.$trait_end_str);
 	}
 	
 	function compile_url_controller(string $full_class_name, array $header_inf, array $full_class_info, bool $added_or_changed)
@@ -1399,7 +1397,7 @@ class QCodeSync2
 			$url_controller_str .= "namespace ".$header_inf["namespace"].";\n\n";
 		$url_controller_str .= $trait_obj;
 
-		file_put_contents($trait_path, $url_controller_str);
+		$this->file_put_contents($trait_path, $url_controller_str);
 		opcache_invalidate($trait_path);
 		
 		return [$trait_name, $trait_path];
@@ -1450,7 +1448,7 @@ class QCodeSync2
 		
 		$trait_path = $full_class_info['gens_dir'].$header_inf["final_class"].".view.gen.php";
 				
-		file_put_contents($trait_path, $tpl_trait_str);
+		$this->file_put_contents($trait_path, $tpl_trait_str);
 		opcache_invalidate($trait_path);
 		
 		return [$trait_name, $trait_path];
@@ -1594,7 +1592,7 @@ class QCodeSync2
 		# echo htmlentities($xml_tokens_str);
 		# die;
 		
-		file_put_contents($gens_dir.$include_name, $xml_tokens_str);
+		$this->file_put_contents($gens_dir.$include_name, $xml_tokens_str);
 		opcache_invalidate($gens_dir.$include_name);
 	}
 	
@@ -1671,7 +1669,7 @@ class QCodeSync2
 		$gens_layer = $this->info_by_class[$full_class_name]['gens_layer'];
 		$relative_file_path = substr($js_gens_path, strlen($this->tags_to_watch_folders[$gens_layer]));
 	
-		file_put_contents($js_gens_path, $contents);
+		$this->file_put_contents($js_gens_path, $contents);
 		
 		$this->info_by_class[$full_class_name]['res']['js']['gen'] = [
 				'class' => $header_inf['final_class'],
@@ -1940,15 +1938,15 @@ class QCodeSync2
 		$cache_folder = QAutoload::GetRuntimeFolder()."temp/types/";
 		
 		# $this->dependencies
-		file_put_contents($temp_folder."dependencies.php", "<?php\n\n\$_DATA = ".var_export($this->dependencies, true).";\n");
+		$this->file_put_contents($temp_folder."dependencies.php", "<?php\n\n\$_DATA = ".var_export($this->dependencies, true).";\n");
 		opcache_invalidate($temp_folder."dependencies.php", true); # we do not force as it may not have changed
 		# $this->info_by_class
-		file_put_contents($this->temp_code_dir."sync_info_by_class.php", "<?php\n\n\$_DATA = ".var_export($this->info_by_class, true).";\n");
+		$this->file_put_contents($this->temp_code_dir."sync_info_by_class.php", "<?php\n\n\$_DATA = ".var_export($this->info_by_class, true).";\n");
 		opcache_invalidate($this->temp_code_dir."sync_info_by_class.php", true);
 		
-		file_put_contents($temp_folder."autoload.php", "<?php\n\n\$_Q_FRAME_LOAD_ARRAY = ".var_export($this->autoload, true).";\n");
+		$this->file_put_contents($temp_folder."autoload.php", "<?php\n\n\$_Q_FRAME_LOAD_ARRAY = ".var_export($this->autoload, true).";\n");
 		opcache_invalidate($temp_folder."autoload.php", true);
-		// file_put_contents($temp_folder."autoload.php", "<?php\n\n\$_Q_FRAME_LOAD_ARRAY = ".var_export($this->autoload, true).";\n");
+		// $this->file_put_contents($temp_folder."autoload.php", "<?php\n\n\$_Q_FRAME_LOAD_ARRAY = ".var_export($this->autoload, true).";\n");
 		
 		// setup extended by list
 		$tree = new \stdClass();
@@ -1988,7 +1986,7 @@ class QCodeSync2
 		}
 		
 		// must also include interfaces ... bum
-		file_put_contents($temp_folder."extended_by.php", "<?php\n\n\$_Q_FRAME_EXTENDED_BY = ".var_export($extended_by, true).";\n");
+		$this->file_put_contents($temp_folder."extended_by.php", "<?php\n\n\$_Q_FRAME_EXTENDED_BY = ".var_export($extended_by, true).";\n");
 		opcache_invalidate($temp_folder."extended_by.php", true); # we do not force, maybe not changed
 		
 		$has_cache_changes = false;
@@ -2010,7 +2008,7 @@ class QCodeSync2
 		}
 		
 		// model_type.js : rethink it
-		file_put_contents($temp_folder."model_type.js", "window.\$_Q_FRAME_JS_CLASS_PARENTS = ".json_encode($model_extends_map, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE).";\n");
+		$this->file_put_contents($temp_folder."model_type.js", "window.\$_Q_FRAME_JS_CLASS_PARENTS = ".json_encode($model_extends_map, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE).";\n");
 		
 		$autoload_js = [];
 		$autoload_css = [];
@@ -2051,13 +2049,13 @@ class QCodeSync2
 				}
 			}
 
-			file_put_contents($temp_folder."js_paths.js", 
+			$this->file_put_contents($temp_folder."js_paths.js", 
 					"window.\$_Q_FRAME_JS_PATHS = ".json_encode($js_paths, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE).";\n".
 					"window.\$_Q_FRAME_CSS_PATHS = ".json_encode($css_paths, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE).";\n");
 
-			file_put_contents($temp_folder."autoload_js.php", "<?php\n\n\$_Q_FRAME_JS_LOAD_ARRAY = ".var_export($autoload_js, true).";\n");
+			$this->file_put_contents($temp_folder."autoload_js.php", "<?php\n\n\$_Q_FRAME_JS_LOAD_ARRAY = ".var_export($autoload_js, true).";\n");
 			opcache_invalidate($temp_folder."autoload_js.php", true); # do not force, maybe no change
-			file_put_contents($temp_folder."autoload_css.php", "<?php\n\n\$_Q_FRAME_CSS_LOAD_ARRAY = ".var_export($autoload_css, true).";\n");
+			$this->file_put_contents($temp_folder."autoload_css.php", "<?php\n\n\$_Q_FRAME_CSS_LOAD_ARRAY = ".var_export($autoload_css, true).";\n");
 			opcache_invalidate($temp_folder."autoload_css.php", true); # do not force, maybe no change
 		}
 		
@@ -2085,11 +2083,12 @@ class QCodeSync2
 							ini_get("mysqli.default_port"),
 							defined('MyProject_Mysql_Socket') ? MyProject_Mysql_Socket : ini_get("mysqli.default_socket"));
 
-			$mysql->connect();
-			$mysql->connection->query('SET NAMES utf8');
+			$mysql->offline_mode = true;
+			# $mysql->connect();
+			# $mysql->connection->query('SET NAMES utf8');
 			
 			// enable this to resync your DB structure
-			\QSqlModelInfoType::ResyncDataStructure($mysql, false);
+			\QSqlModelInfoType::ResyncDataStructure($mysql, false, true);
 		}
 		
 		# $cache_folder = QAutoload::GetRuntimeFolder()."temp/types/";
@@ -2220,7 +2219,7 @@ class QCodeSync2
 				continue;
 			else if ((substr($fg, -8, 8) === ".gen.php") && is_file($dir_path.$fg))
 			{
-				unlink($dir_path.$fg);
+				$this->unlink($dir_path.$fg);
 				$has_removed_files = true;
 			}
 			else
@@ -2416,7 +2415,7 @@ class QCodeSync2
 	function sync_code__populate_dependencies()
 	{
 		$temp_folder = QAutoload::GetRuntimeFolder()."temp/";
-		// file_put_contents($temp_folder."dependencies.php", "<?php\n\n\$_DATA = ".var_export($this->dependencies, true).";\n");
+		// $this->file_put_contents($temp_folder."dependencies.php", "<?php\n\n\$_DATA = ".var_export($this->dependencies, true).";\n");
 		if (file_exists($temp_folder."dependencies.php"))
 		{
 			$_DATA = null;
@@ -2679,5 +2678,41 @@ class QCodeSync2
 		}
 		
 		return ($this->cache_is_qview_base[$full_class_name] = false);
+	}
+	
+	protected function file_put_contents(string $filename, mixed $data, int $flags = 0, $context = null): int|false
+	{
+		$mtime = filemtime($filename);
+		
+		$rc = file_put_contents($filename, $data, $flags, $context);
+		$status = ($rc === false) ? 'error' : (($mtime === false) ? 'add' : 'change');
+		
+		$this->modified_gens[($rc === false) ? $filename : realpath($filename)] = [$status, filemtime($filename), $rc, 'put', $mtime];
+		
+		return $rc;
+	}
+	
+	protected function unlink(string $filename, $context = null): bool
+	{
+		$mtime = filemtime($filename);
+		
+		$fp = ($mtime === false) ? $filename : realpath($filename);
+		
+		$rc = unlink($filename, $context);
+		$status = ($rc === false) ? 'error' : 'delete';
+		
+		$this->modified_gens[$fp] = [$status, null, $rc, 'unlink', $mtime];
+		
+		return $rc;
+	}
+	
+	protected function process_gen_changes($file_changes)
+	{
+		# $_filePutContentsIfChanged_->files[realpath($filename)] = filemtime($filename);
+		foreach ($file_changes->files ?? [] as $full_path => $m_time)
+		{
+			$check_time = filemtime($full_path);
+			$this->modified_gens[$full_path] = [(($check_time !== false) ? 'change' : 'error'), $check_time, $check_time, 'put', $m_time];
+		}
 	}
 }

@@ -282,6 +282,16 @@ class QUrl
 	}
 	
 	/**
+	 * Gets parts
+	 * 
+	 * @return array
+	 */
+	public function getParts()
+	{
+		return $this->parts;
+	}
+	
+	/**
 	 * Gets part of the URL as string from the current position onward
 	 * 
 	 * @return string

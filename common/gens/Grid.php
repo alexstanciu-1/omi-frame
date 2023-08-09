@@ -86,6 +86,8 @@ class Grid implements IGenerator
 		
 		static::$Config = $config;
 		
+		$ret = [];
+		
 		try
 		{
 			filePutContentsIfChanged_start();
@@ -148,7 +150,12 @@ class Grid implements IGenerator
 				qvar_dumpk([$file_path, $file_m_time]);
 			}*/
 			
+			$changes = filePutContentsIfChanged_get();
+			
 			filePutContentsIfChanged_commit();
+			
+			$ret[0] = $changes;
+			
 		}
 		catch (\Exception $ex)
 		{
@@ -159,6 +166,8 @@ class Grid implements IGenerator
 		{
 			# just in case
 		}
+		
+		return $ret;
 	}
 
 	public static function GenerateViews($config, $namespace, $extends, $from,  $storage_model, $src_from_types, $m_property, $views = [], $original_config = null)

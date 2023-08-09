@@ -2,6 +2,7 @@
 
 const Q_IS_TFUSE = true;
 
+chdir(__DIR__);
 require_once("../src/init.php");
 
 error_reporting(E_ALL & ~(E_NOTICE | E_WARNING | E_DEPRECATED));
@@ -48,6 +49,7 @@ const Default_Logo = "uploads/branding/logos/nfon_logo_rsz.png";
 
 \QAutoload::LoadModule("../common-app/model/", false, 'mods_model', "mods");
 
+\QAutoload::LoadModule("code_inst/classes/", false, 'dk', "dk");
 \QAutoload::LoadModule("code_inst/model/", false, 'dk_model', "dk");
 
 \QAutoload::AddWatchFolder(Q_GENERATED_VIEW_FOLDER, false, Q_GENERATED_VIEW_FOLDER_TAG, false, "ui_config");
@@ -62,8 +64,12 @@ const Default_Logo = "uploads/branding/logos/nfon_logo_rsz.png";
 
 require_once 'code/_security.php';
 
-\QAutoload::EnableDevelopmentMode(true);
-# \QAutoload::EnableDevelopmentMode(true, true, true);
+if (($_GET['force_resync'] ?? false))
+{
+	\QAutoload::EnableDevelopmentMode(true, true, true);
+}
+else
+	\QAutoload::EnableDevelopmentMode(true);
 
 {
 	# $mysql = new \QMySqlStorage("sql", "127.0.0.1", MyProject_MysqlUser, MyProject_MysqlPass, MyProject_MysqlDb, 3306);
@@ -109,7 +115,17 @@ require_once 'code/_security.php';
 
 \QApp::EnableLegacyErrorHandling(false);
 
-if ($_SERVER['REMOTE_ADDR'] === '127.0.0.1')
+if ((PHP_SAPI === 'cli'))
+{
+	if ($argv[1] === 'setup_sync_watching')
+	{
+		$prj_id = trim($argv[2]);
+		if ($prj_id)
+			\Omi\DK\App_Proxy::Run_Sync_Watching($prj_id);
+	}
+	# file_put_contents(__DIR__ . "/test.txt", json_encode($argv[1]) . "\n" . date("Y-m-d H:i:s") . "\n");
+}
+else if (($_SERVER['REMOTE_ADDR'] === '127.0.0.1') || ($_SERVER['REMOTE_ADDR'] === '::1'))
 {
 	$username = function_exists('posix_getpwuid') ? posix_getpwuid(posix_geteuid())['name'] : $_SERVER['USER'];
 	if (!$username)
@@ -148,7 +164,18 @@ if ($_SERVER['REMOTE_ADDR'] === '127.0.0.1')
 	$rc = \Omi\User::LoginUser($db_user);
 	if ($rc !== true)
 		exit("UNABLE TO LOGIN USER.");
+	
+	if (($__or__ = ($_GET['__or__'] ?? null)) && is_string($__or__) && (($__or__ === 'app') || (substr($__or__, 0, 4) === 'app/')))
+	{
+		\Omi\DK\App_Proxy::Run($__or__, true);
+	}
+	else
+	{
+		\QApp::Run(new \Omi\View\Controller());
+	}
 }
 else
+{
+	# qvar_dump($_SERVER);
 	exit("NOT ALLOWED OUTSIDE LOCALHOST.");
-\QApp::Run(new \Omi\View\Controller());
+}

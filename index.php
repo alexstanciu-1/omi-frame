@@ -1,3 +1,4 @@
 <?php
 
-	header("Location: http://www.omiframe.com/docs");
+	chdir(__DIR__ . "/dev-kit");
+	require 'index.php';

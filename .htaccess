@@ -1,0 +1,16 @@
+
+RewriteEngine on
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_URI} !\.(gif|GIF|jpg|JPG|jpeg|JPEG|png|PNG|js|JS|css|CSS|bmp|BMP)$
+RewriteRule ^(.*)$ index.php?__or__=$1 [L,QSA]
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_URI} \.(gif|GIF|jpg|JPG|jpeg|JPEG|png|PNG|bmp|BMP)$
+RewriteRule ^(.*)$ img.responsive/img.responsive.php?__or__=$1 [L,QSA]
+
+# in CGI mode we need to get the AUTHORIZATION headers for PHP
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization},L]
+

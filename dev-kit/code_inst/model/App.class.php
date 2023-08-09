@@ -25,7 +25,7 @@ abstract class App_dk_model_ extends App_mods_model_
 		{
 			case "Projects":
 			{
-				$ret = qParseEntity('Name');
+				$ret = qParseEntity('Name,Path,Exec_Path,Dev_URL');
                 break;
 			}
 			// DEFAULT
@@ -51,7 +51,7 @@ abstract class App_dk_model_ extends App_mods_model_
 		{
 			case "Projects":
 			{
-				$ret = qParseEntity('Name');
+				$ret = qParseEntity('Name,Path,Exec_Path,Dev_URL');
                 break;
 			}
 			// DEFAULT

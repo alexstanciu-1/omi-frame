@@ -21,5 +21,15 @@ abstract class Project_dk_model_ extends \QModel
 	 */
 	protected $Path;
 	
+	/**
+	 * @var string
+	 */
+	protected $Exec_Path;
+	
+	/**
+	 * @var string
+	 */
+	protected $Dev_URL;
+	
 }
 

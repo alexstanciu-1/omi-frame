@@ -96,7 +96,7 @@ class QSqlModelInfoType
 		if (!$db->children)
 			$db->children = new QModelArray();
 		
-		$db_table = $db->children[$t_name] ?: (($exist_tab = $storage->getTableByName($t_name, $db)) ? $exist_tab : new QSqlTable($t_name));
+		$db_table = $db->children[$t_name] ?: (($exist_tab = ($storage->offline_mode ? null : $storage->getTableByName($t_name, $db))) ? $exist_tab : new QSqlTable($t_name));
 		if (!$db->children)
 			$db->children = new QModelArray();
 		
@@ -549,20 +549,24 @@ class QSqlModelInfoType
 		$mi->setup($mi, $storage, true);
 		
 		// $db = $storage->getDefaultDatabase();
-		
-		ob_start();
-		foreach ($mi->_dbs_list as $db)
+		if ((!isset($storage->offline_mode)) || (!$storage->offline_mode))
 		{
-			if (isset($db->children))
+			ob_start();
+			foreach ($mi->_dbs_list as $db)
 			{
-				foreach ($db->children as $table)
+				if (isset($db->children))
 				{
-					// echo $table->name."<br/>";
-					$storage->syncTable($table, $do_auto_structure_sync);
+					foreach ($db->children as $table)
+					{
+						// echo $table->name."<br/>";
+						$storage->syncTable($table, $do_auto_structure_sync);
+					}
 				}
 			}
+			$sql_statements = trim(ob_get_clean());
 		}
-		$sql_statements = trim(ob_get_clean());
+		else
+			$sql_statements = "";
 		
 		if (strlen($sql_statements) > 0)
 		{

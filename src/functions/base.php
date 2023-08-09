@@ -3264,6 +3264,12 @@ function filePutContentsIfChanged_start()
 	$_filePutContentsIfChanged_->files = [];
 }
 
+function filePutContentsIfChanged_get()
+{
+	global $_filePutContentsIfChanged_;
+	return $_filePutContentsIfChanged_;
+}
+
 function filePutContentsIfChanged_commit(bool $roolback = false)
 {
 	global $_filePutContentsIfChanged_;

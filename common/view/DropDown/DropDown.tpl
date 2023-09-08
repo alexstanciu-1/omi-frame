@@ -16,7 +16,7 @@
 				$this->$k = $v;
 		}
 		
-		$noItemCaption = $binds['noItemCaption'];
+		$noItemCaption = $binds['noItemCaption'] ?? 'Select';
 	?>
 
 	@if ($binds)

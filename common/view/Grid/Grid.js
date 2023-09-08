@@ -1523,9 +1523,10 @@ QExtendClass("Omi\\View\\Grid", "omi", {
 			// do quick search
 			this.doQuickSearch();
 		}
-		else if (sender_jq.hasClass("js-search-field") && ((sender_jq.hasClass("datepickr") 
-				|| ((sender_jq.prop('tagName') === 'INPUT') && ((sender_jq.attr('type') === 'hidden') || (sender_jq.attr('type') === 'datetime-local') || (sender_jq.attr('type') === 'datetime') || 
-																(sender_jq.attr('type') === 'time') || (sender_jq.attr('type') === 'date'))))))
+		else if (sender_jq.hasClass("js-search-field") && ((sender_jq.hasClass("datepickr") || 
+				((sender_jq.prop('tagName') === 'INPUT') && ((sender_jq.attr('type') === 'hidden') || 
+				(sender_jq.attr('type') === 'datetime-local') || (sender_jq.attr('type') === 'datetime') || 
+				(sender_jq.attr('type') === 'time') || (sender_jq.attr('type') === 'date'))))))
 		{
 			// keep in sync with advanced search
 			this.syncWithAdvancedSearch(sender_jq);

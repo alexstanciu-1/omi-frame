@@ -879,6 +879,7 @@ final class QAutoload
 						CURLOPT_FOLLOWLOCATION => 1,
 					]);
 					$rc = curl_exec($curl);
+					
 					if ($rc === false)
 					{
 						echo "REQUEST ERROR ON [{$req_url}]: ", curl_error($curl);
@@ -890,6 +891,7 @@ final class QAutoload
 						if (empty($rc) && (!($_GET['force_resync'] ?? null)))
 						{
 							# compiled ok
+							return;
 						}
 						else
 						{

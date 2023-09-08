@@ -6,7 +6,7 @@ class Grid implements IGenerator
 {
 	use GridTpls, Grid_Config_;
 	
-	const Default_Template = 'v02-modern';
+	const Default_Template = Q_Saas_Template;
 	
 	public static $Template = null;
 	public static $Config = null;
@@ -1927,6 +1927,7 @@ class Grid implements IGenerator
 			$_extra_attrs = $_PROP_FLAGS["display.attrs"];
 
 			$useEditor = $_PROP_FLAGS['display.editor'];
+			$useDatepicker = $_PROP_FLAGS['display.datepicker'];
 			$_default = $_PROP_FLAGS["default"];
 					
 			// if ($read_only)
@@ -2096,6 +2097,7 @@ class Grid implements IGenerator
 		$validationAlert = $_PROP_FLAGS['validation.alert'];
 
 		$useEditor = $_PROP_FLAGS['display.editor'];
+		$useDatepicker = $_PROP_FLAGS['display.datepicker'];
 
 		$placeholder = $_PROP_FLAGS["display.placeholder"];
 
@@ -2969,7 +2971,7 @@ class Grid implements IGenerator
 
 		$model = is_array($config["parent_model"]) ? q_reset($config["parent_model"]) : $config["parent_model"];
 		$prop = $config["property"];
-		
+
 		// property identifier
 		$prop_idf = $config["__view__"] . "~" . $model . "~" . $prop. "~" . $path . "~" . 
 			($list_mode ? "1" : "0") . "~" . ($in_search ? "1" : "0") . "~" . ($read_only ? "1" : "0");
@@ -3098,7 +3100,7 @@ class Grid implements IGenerator
 	
 		$data_full_path = $config['from'].($path ? ".".$path : "");
 		// readonly IF
-		static::$CachedData[$prop_idf]["readonly_IF"] = static::ExtractExtraConfig($config["cfg"], $path ?: "", "@readonly_if") ?: $mixed_data['storage.full']["admin.readonly_IF"];
+		static::$CachedData[$prop_idf]["readonly_IF"] = static::ExtractExtraConfig($config["cfg"], $path ?: "", "@readonly_if") ?? $mixed_data['storage.full']["admin.readonly_IF"];
 		if (static::$CachedData[$prop_idf]["readonly_IF"])
 			static::$CachedData[$prop_idf]["readonly_IF"] .= " || (!q_security_new('{$data_full_path}', \$grid_mode ?: 'edit', null, static::\$FromAlias))";
 		else
@@ -3286,6 +3288,10 @@ class Grid implements IGenerator
 				(static::$CachedData[$prop_idf]["display.textarea"] && 
 				(static::ExtractExtraConfig($config["cfg"], $path ?: "", "@display.editor") ||
 				$mixed_data["storage.full"]["use_wysiwyg"]));
+            
+			static::$CachedData[$prop_idf]["display.datepicker"] = 
+				((static::ExtractExtraConfig($config["cfg"], $path ?: "", "@display.datepicker") ||
+				$mixed_data["storage.full"]["use_flatpickr"]));
 
 			static::$CachedData[$prop_idf]["date.format"] = 
 				static::ExtractExtraConfig($config["cfg"], $path ?: "", "@date.format") ?: 

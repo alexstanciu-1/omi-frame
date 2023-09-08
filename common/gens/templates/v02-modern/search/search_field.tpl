@@ -93,15 +93,15 @@
 elseif ($type == "boolean") : ?>
 	<div class='js-radio-grp css-radio-grp'>
 		<div class="qc-radio">
-			<input sync-identifier='<?= $input_name ?>-yes' class="js-search-field js-keepin-sync" type="radio" name="<?= $input_name ?>" id="<?=  ($qsearch ? 'qsf-' : '' ) . $input_name ?>-yes" value="1" {{(isset($bind_params<?= $bind_val_index ?>) && $bind_params<?= $bind_val_index ?> == 1) ? checked : ''}} />
+			<input sync-identifier='<?= $input_name ?>-yes' class="js-search-field js-keepin-sync" type="radio" name="<?= $input_name ?>" id="<?=  ($qsearch ? 'qsf-' : '' ) . $input_name ?>-yes" value="1" {{(isset($bind_params<?= $bind_val_index ?>) && $bind_params<?= $bind_val_index ?> == 1) ? 'checked' : ''}} />
 			<label for="<?= ($qsearch ? 'qsf-' : '' ) . $input_name ?>-yes"><?= _L('Yes') ?></label>
 		</div>
 		<div class="qc-radio">
-			<input sync-identifier='<?= $input_name ?>-no' class="js-search-field js-keepin-sync" type="radio" name="<?= $input_name ?>" id="<?= ($qsearch ? 'qsf-' : '' ) . $input_name ?>-no" value="0" {{(isset($bind_params<?= $bind_val_index ?>) && $bind_params<?= $bind_val_index ?> == 0) ? checked : ''}} />
+			<input sync-identifier='<?= $input_name ?>-no' class="js-search-field js-keepin-sync" type="radio" name="<?= $input_name ?>" id="<?= ($qsearch ? 'qsf-' : '' ) . $input_name ?>-no" value="0" {{(isset($bind_params<?= $bind_val_index ?>) && $bind_params<?= $bind_val_index ?> == 0) ? 'checked' : ''}} />
 			<label for="<?= ($qsearch ? 'qsf-' : '' ) . $input_name ?>-no"><?= _L('No') ?></label>
 		</div>
 		<div class="qc-radio">
-			<input sync-identifier='<?= $input_name ?>-na' class="js-search-field js-keepin-sync" type="radio" name="<?= $input_name ?>" id="<?= ($qsearch ? 'qsf-' : '' ) . $input_name ?>-na" value="" {{!isset($bind_params<?= $bind_val_index ?>) ? checked : ''}} />
+			<input sync-identifier='<?= $input_name ?>-na' class="js-search-field js-keepin-sync" type="radio" name="<?= $input_name ?>" id="<?= ($qsearch ? 'qsf-' : '' ) . $input_name ?>-na" value="" {{!isset($bind_params<?= $bind_val_index ?>) ? 'checked' : ''}} />
 			<label for="<?= ($qsearch ? 'qsf-' : '' ) . $input_name ?>-na"><?= _L('N/A') ?></label>
 		</div>
 	</div>

@@ -49,7 +49,7 @@
 			if (!$byParent[$item->getId()])
 				continue;
 
-			$this->renderItems($byParent[$item->getId()], $from, $selector, $binds, $level++);	
+			$this->renderItems($byParent[$item->getId()], $from, $selector, $binds, ++$level);
 		}
 	}
 	?>

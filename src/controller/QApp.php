@@ -489,6 +489,8 @@ class QApp extends QAppModule
 		
 		if (defined('Q_CODE_DIR'))
 		{
+			if (($full_path === false) && \QAutoload::GetDevelopmentMode())
+				throw new \Exception('Invaild argument. Possible realpath failure.');
 			if ($full_path[0] !== '/')
 				$full_path = Q_RUNNING_PATH . ltrim($full_path, " \\/\t");
 			if (substr($full_path, 0, strlen(Q_CODE_DIR)) !== Q_CODE_DIR)

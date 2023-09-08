@@ -3,5 +3,10 @@
 		include(static::GetTemplate('reference/reference_list_view.tpl', $config));
 	else : ?>
 		@include(<?= $include_method ?>, $settings, <?= $_data_value ?>, $bind_params, $grid_mode, $id, <?= $_data_property ?>, $_qengine_args)
-	<?php endif; ?>
+	<?php endif;
+	$vPath = $_is_in_dd_collection ? "\$vars_path" : "(\$vars_path ? \$vars_path.'[{$property}]' : '{$property}')"; 
+	$data = $_is_in_dd_collection ? "\$data" : "\$data->{$property}";
+	?>
+	<input type="hidden" name="{{<?= $vPath ?>}}[Id]" value="{{<?= $data.'->Id' ?>}}" />
+	<input type="hidden" name="{{<?= $vPath ?>}}[_ty]" value="{{q_get_class(<?= $data ?>)}}" />
 </div>

@@ -73,7 +73,11 @@
 			@if (!$hasData)
 				<tbody class='qc-ddcoll-no-data'>
 					<tr>
+						<?php if ($read_only) { ?>
+						<td colspan='100%'>Empty.</td>
+						<?php } else { ?>
 						<td colspan='100%'>No data to pick from!</td>
+						<?php } ?>
 					</tr>
 				</tbody>
 			@endif

@@ -193,7 +193,7 @@ class QErrorHandler
 ";
 		$common_path = "";
 		$trace = $ex->getTrace();
-		
+		/*
 		foreach ($trace as $t)
 		{
 			if (!$common_path)
@@ -209,7 +209,7 @@ class QErrorHandler
 				$common_path = substr($common_path, 0, $i);
 			}
 		}
-		
+		*/
 		foreach ($trace as $t)
 		{
 			$file = $common_path ? substr($t['file'], strlen($common_path)) : $t['file'];

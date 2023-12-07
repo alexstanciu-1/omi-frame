@@ -6,7 +6,7 @@ class Grid implements IGenerator
 {
 	use GridTpls, Grid_Config_;
 	
-	const Default_Template = Q_Saas_Template;
+	public static $Default_Template = null;
 	
 	public static $Template = null;
 	public static $Config = null;
@@ -29,6 +29,13 @@ class Grid implements IGenerator
 	 */
 	public static function Generate($config, string $template = null)
 	{
+		if (static::$Default_Template === null)
+		{
+			if (defined('Q_Saas_Template') && Q_Saas_Template)
+				static::$Default_Template = Q_Saas_Template;
+			else
+				static::$Default_Template = 'v02-modern';
+		}
 		# static::$OpCodes = [];
 		# static::$CachedData = [];
 		static::$Place_Holders = [];
@@ -36,7 +43,7 @@ class Grid implements IGenerator
 		static::$Place_Holders_Content = [];
 		static::$Extra_Selectors = [];
 		
-		static::$Template = $template ?? (static::$Template ?? static::Default_Template);
+		static::$Template = $template ?? (static::$Template ?? static::$Default_Template);
 		
 		$original_config = $config;
 		

@@ -6,7 +6,7 @@ class Grid implements IGenerator
 {
 	use GridTpls, Grid_Config_;
 	
-	const Default_Template = 'v02-modern';
+	const Default_Template = Q_Saas_Template;
 	
 	public static $Template = null;
 	public static $Config = null;

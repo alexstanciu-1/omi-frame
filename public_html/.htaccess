@@ -1,0 +1,9 @@
+RewriteEngine on
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+RewriteRule ^(.*)$ index.php?__or__=$1 [B,L,QSA]
+
+# in CGI mode we need to get the AUTHORIZATION headers for PHP
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization},L]

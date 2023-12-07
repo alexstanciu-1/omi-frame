@@ -120,7 +120,7 @@
 										Dashboard
 									</a>
 								</li>
-								
+								<!--
 								<li>
 									<a href="Projects" class="{{(!$originalRequest) ? 'bg-main-accent-color-100' : ''}} group flex items-center px-2 py-2 text-sm leading-6 font-medium rounded-md text-indigo-100 focus:outline-none focus:bg-main-accent-color-100 hover:bg-main-accent-color-100 transition ease-in-out duration-150">
 										<svg class="mr-4 h-6 w-6 text-indigo-200 group-hover:text-indigo-200 group-focus:text-indigo-200 transition ease-in-out duration-150" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -129,7 +129,16 @@
 										Projects
 									</a>
 								</li>
-																
+								-->
+								<li>
+									<a href="App_Instances" class="{{(!$originalRequest) ? 'bg-main-accent-color-100' : ''}} group flex items-center px-2 py-2 text-sm leading-6 font-medium rounded-md text-indigo-100 focus:outline-none focus:bg-main-accent-color-100 hover:bg-main-accent-color-100 transition ease-in-out duration-150">
+										<svg class="mr-4 h-6 w-6 text-indigo-200 group-hover:text-indigo-200 group-focus:text-indigo-200 transition ease-in-out duration-150" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+										  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+										</svg>
+										App Instances
+									</a>
+								</li>
+								
 								@if (true)
 									<li>
 										<a href="javascript: void(0)" class="relative group flex items-center px-2 py-2 text-sm leading-6 font-medium rounded-md text-indigo-100 focus:outline-none focus:bg-main-accent-color-100 hover:bg-main-accent-color-100 transition ease-in-out duration-150 js-show-dd-menu">

@@ -1,5 +1,10 @@
 <?php
 
+if (defined('Q_CONFIG_FILE'))
+	require_once Q_CONFIG_FILE;
+
+require_once __DIR__ . '/boot.php';
+
 if (!defined('Q_IS_TFUSE'))
 	define('Q_IS_TFUSE', false);
 
@@ -18,7 +23,7 @@ if (Q_IS_TFUSE)
 	/**
 	 * First include QFirewall
 	 */
-	if (file_exists(__DIR__ . "/useful/QFirewall.php"))
+if ((PHP_SAPI !== 'cli') && file_exists(__DIR__ . "/useful/QFirewall.php"))
 	{
 		require_once(__DIR__ . "/useful/QFirewall.php");
 		#\QFirewall::BlockIPByCountry();
@@ -79,15 +84,15 @@ if (!defined("BASE_HREF"))
 	$_web_dir = realpath(substr($_SERVER["SCRIPT_FILENAME"], 0, -strlen($_SERVER["SCRIPT_NAME"])));
 	if (!$_web_dir)
 		throw new \Exception('The running dir is outside the current dir. Not implemented atm.');
-
-	$_scriptNameDir = substr($_filenameDir, strlen($_web_dir));
+	
+	$_scriptNameDir = substr($_SERVER['DOCUMENT_ROOT'], strlen($_web_dir));
 	define("BASE_HREF", $_scriptNameDir);
 }
 
 if (defined('Q_CODE_DIR'))
 {
 	define("Q_FRAME_REL", substr(Q_FRAME_PATH, strlen(Q_CODE_DIR)));
-
+		
 	define("Q_FRAME_BREL", substr(Q_FRAME_BPATH, strlen(Q_CODE_DIR)));
 	
 	if (Q_CODE_DIR !== Q_RUNNING_PATH)
@@ -141,4 +146,3 @@ register_shutdown_function(function () {
 	# yes, we need to make sure it runs last!
 	register_shutdown_function(['QErrorHandler', 'Cleanup_On_End']);
 });
-

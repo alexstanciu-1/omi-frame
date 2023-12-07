@@ -1161,6 +1161,54 @@ trait Grid_Methods
 		}
 	}
 	
+	public static function do_submit($data, $grid_mode, $grid_id = null, Grid $grid = null)
+	{
+		switch ($grid_mode)
+		{
+			case "add":
+			{
+				//$result = \QApi::Insert($this->from, $data);
+				$result = \QApi::Merge(static::$FromAlias, $data);
+				break;
+			}
+			case "edit":
+			{
+				//$result = \QApi::Update($this->from, $data);
+				$result = \QApi::Merge(static::$FromAlias, $data);
+				break;
+			}
+			case "merge":
+			{
+				$result = \QApi::Merge(static::$FromAlias, $data);
+				break;
+			}
+			case "bulk":
+			{
+				//$result = \QApi::Save($this->from, $data);
+				$result = \QApi::Merge(static::$FromAlias, isset($data[$grid->from]) ? $data[$grid->from] : $data);
+				break;
+			}
+			case "delete":
+			{
+				if ($grid_id)
+					$result = \QApi::DeleteById(static::$FromAlias, $grid_id);
+				else if (qis_array($data))
+				{
+					if (is_array($data))
+						$data = new \QModelArray($data);
+
+					$result = \QApi::Delete(static::$FromAlias, $data);
+				}
+				break;
+			}
+			default:
+			{
+				break;
+			}
+		}
+		return $result;
+	}
+	
 	/**
 	 * @param array $data 
 	 * @param string $grid_mode
@@ -1178,50 +1226,15 @@ trait Grid_Methods
 				'$grid_id' => $grid_id, '$dataCls' => $dataCls, '$dataCls::$FromAlias' => $dataCls::$FromAlias], ["grid", "data", "doSubmitData", "submit"]);
 
 			$result = null;
-			switch ($grid_mode)
-			{
-				case "add":
-				{
-					//$result = \QApi::Insert($this->from, $data);
-					$result = \QApi::Merge(static::$FromAlias, $data);
-					break;
-				}
-				case "edit":
-				{
-					//$result = \QApi::Update($this->from, $data);
-					$result = \QApi::Merge(static::$FromAlias, $data);
-					break;
-				}
-				case "merge":
-				{
-					$result = \QApi::Merge(static::$FromAlias, $data);
-					break;
-				}
-				case "bulk":
-				{
-					//$result = \QApi::Save($this->from, $data);
-					$result = \QApi::Merge(static::$FromAlias, isset($data[$this->from]) ? $data[$this->from] : $data);
-					break;
-				}
-				case "delete":
-				{
-					if ($grid_id)
-						$result = \QApi::DeleteById(static::$FromAlias, $grid_id);
-					else if (qis_array($data))
-					{
-						if (is_array($data))
-							$data = new \QModelArray($data);
-						
-						$result = \QApi::Delete(static::$FromAlias, $data);
-					}
-					break;
-				}
-				default:
-				{
-					break;
-				}
-			}
-			return $result;
+			
+			# $initial_data = $data;
+			if (is_array($data))
+				list($data) = \QApi::Array_To_Model($data, static::$FromAlias);
+			
+			# qvar_dump('$data', $data);
+			# throw new \Exception('aaaaa: ' . get_class($data) . ' - ' . $data[0]->Private_IP . ' - ' . json_encode($initial_data));
+			
+			return static::do_submit($data, $grid_mode, $grid_id, $this);
 		}
 		finally
 		{

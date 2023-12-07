@@ -813,8 +813,9 @@ abstract class QPHPToken
 	public function mergeDocComment($docComment)
 	{
 		$str_1 = is_string($this->docComment) ? $this->docComment : 
-								(($this->docComment instanceof QPHPTokenDocComment) ? $this->docComment->toString() : $this->docComment[1]);
-		$str_2 = is_string($docComment) ? $docComment : (($docComment instanceof QPHPTokenDocComment) ? $docComment->toString() : $docComment[1]);
+					(($this->docComment instanceof QPHPTokenDocComment) ? $this->docComment->toString() : $this->docComment[1]);
+		$str_2 = is_string($docComment) ? $docComment : 
+					(($docComment instanceof QPHPTokenDocComment) ? $docComment->toString() : $docComment[1]);
 		
 		$index_1 = $this->parseDocComment($str_1);
 		$index_2 = $this->parseDocComment($str_2);

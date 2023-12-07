@@ -103,7 +103,7 @@
 					if ($users && (count($users) == 1))
 						$user = $users[0];
 					
-					if ($user && ($user->Confirmed_Activation) || ($user->Type == 'H2B_Superadmin'))
+					# if ($user && ($user->Confirmed_Activation) || ($user->Type == 'H2B_Superadmin'))
 					{
 						$login = \QApi::Call("Omi\\User::Login", $user_or_email, $password, null, $remember);
 						
@@ -117,8 +117,8 @@
 
 						$error = $login;
 					}
-					else
-						$error = "Contul trebuie activat accesand link-ul de activare din email!";
+					# else
+					#	$error = "Contul trebuie activat accesand link-ul de activare din email!";
 				}
 				else
 					$error = "Username and password are mandatory!";

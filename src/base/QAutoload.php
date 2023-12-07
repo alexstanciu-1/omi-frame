@@ -868,7 +868,7 @@ final class QAutoload
 				}
 				else
 				{
-					$req_url = \QWebRequest::GetRequestFullUrl(false) . "?"
+					$req_url = \QWebRequest::GetRequestUrl() . "?"
 							.(defined('Q_DEV_MODE_KEY') && Q_DEV_MODE_KEY ? "_dev_mode_key_=".urlencode(sha1(Q_DEV_MODE_KEY))."&" : ""). 
 							"__q_run_code_resync__=1" . (($_GET['force_resync'] ?? null) ? '&force_resync=1' : '');
 					
@@ -879,6 +879,7 @@ final class QAutoload
 						CURLOPT_FOLLOWLOCATION => 1,
 					]);
 					$rc = curl_exec($curl);
+					
 					if ($rc === false)
 					{
 						echo "REQUEST ERROR ON [{$req_url}]: ", curl_error($curl);
@@ -890,6 +891,7 @@ final class QAutoload
 						if (empty($rc) && (!($_GET['force_resync'] ?? null)))
 						{
 							# compiled ok
+							return;
 						}
 						else
 						{

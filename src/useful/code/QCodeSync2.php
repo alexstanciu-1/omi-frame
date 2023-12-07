@@ -1394,6 +1394,9 @@ class QCodeSync2
 			
 			if ((!file_exists($gen_path)) || (file_get_contents($gen_path) !== $content_str))
 			{
+				if (!is_dir(dirname($gen_path)))
+					qmkdir(dirname($gen_path));
+				
 				$rc = $this->file_put_contents($gen_path, $content_str);
 				if ($rc === false)
 					throw new \Exception('Unable to write to: '.$gen_path);

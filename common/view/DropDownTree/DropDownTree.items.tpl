@@ -12,7 +12,6 @@
 	</script>
 	<?php
 
-
 	if ($items && (count($items) > 0))
 	{
 		if (!$binds["_depth_"])
@@ -49,7 +48,7 @@
 			if (!$byParent[$item->getId()])
 				continue;
 
-			$this->renderItems($byParent[$item->getId()], $from, $selector, $binds, $level++);	
+			$this->renderItems($byParent[$item->getId()], $from, $selector, $binds, ++$level);
 		}
 	}
 	?>

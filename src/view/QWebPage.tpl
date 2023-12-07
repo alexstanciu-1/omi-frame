@@ -13,7 +13,7 @@
 			{
 				echo "this is nuts";
 				# unsafe output ends
-				?><script type="text/javascript" src="<?= QAutoload::GetMainFolderWebPath() ?>temp/js_paths.js"></script><?php
+				?><script type="text/javascript" src="<?= \QApp::GetWebPath(realpath(QAutoload::GetMainFolderWebPath().'temp/js_paths.js')) ?>"></script><?php
 				# unsafe output starts
 			}
 			else
@@ -26,17 +26,17 @@
 			}
 			# unsafe output ends
 		?>
-		<script type="text/javascript" src="<?= Q_FRAME_REL; ?>view/js/stacktrace.js"></script>
-		<script type="text/javascript" src="<?= Q_FRAME_REL; ?>view/js/phpjs.js"></script>
-		<script type="text/javascript" src="<?= Q_FRAME_REL; ?>view/js/jquery-3.6.3.min.js"></script>
-		<script type="text/javascript" src="<?= Q_FRAME_REL; ?>view/js/functions.js"></script>
-		<script type="text/javascript" src="<?= Q_FRAME_REL; ?>base/QObject.js"></script>
-		<script type="text/javascript" src="<?= Q_FRAME_REL; ?>view/js/mvvm.js"></script>
+		<script type="text/javascript" src="<?= Q_FRAME_REL ?>view/js/stacktrace.js"></script>
+		<script type="text/javascript" src="<?= Q_FRAME_REL ?>view/js/phpjs.js"></script>
+		<script type="text/javascript" src="<?= Q_FRAME_REL ?>view/js/jquery-3.6.3.min.js"></script>
+		<script type="text/javascript" src="<?= Q_FRAME_REL ?>view/js/functions.js"></script>
+		<script type="text/javascript" src="<?= Q_FRAME_REL ?>base/QObject.js"></script>
+		<script type="text/javascript" src="<?= Q_FRAME_REL ?>view/js/mvvm.js"></script>
 
 		<script type="text/javascript">
 			<?php echo "var QApp = {\"DataClass\" : ". (QApp::Data() ? "\"".get_class(QApp::Data())."\"" : "null")." , \"DataId\" : ".(QApp::Data() ? "\"".QApp::Data()->getId()."\"" : "null")."};"; ?>
 		</script>
-		<!-- <script type="text/javascript" src="<?= Q_FRAME_REL; ?>view/js/init.js"></script> -->
+		<!-- <script type="text/javascript" src="<?= Q_FRAME_REL ?>view/js/init.js"></script> -->
 	</head>
 	<body>
 		<?php

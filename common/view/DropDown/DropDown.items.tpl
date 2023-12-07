@@ -4,7 +4,7 @@
 			$this->$k = $v;
 	?>
 	@if (!$binds || !$binds['hideNoneOption'])
-		<div class="qc-dd-item qc-dd-reset-item">{{$binds['noneOptionCaption'] ?: _L('None')}}</div>
+		<div class="qc-dd-item qc-dd-reset-item block px-4 py-2 text-sm leading-5 text-gray-700 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:bg-gray-100 focus:text-gray-900 cursor-pointer">{{$binds['noneOptionCaption'] ?: _L('None')}}</div>
 	@endif
 	@if ($items)
 		@each ($items as $item)

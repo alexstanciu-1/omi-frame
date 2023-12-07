@@ -130,7 +130,6 @@ final class QWebRequest
 		}
 		
 		$qs = null;
-		
 		self::$BaseHref = BASE_HREF ?? '';
 		
 		if ($_GET["__or__"] || ($_GET["__or__"] !== null))
@@ -635,13 +634,23 @@ final class QWebRequest
 	 */
 	public static function GetRequestFullUrl($with_query_string = false, string $replace_host = null)
 	{
+		return static::GetRequestUrl($with_query_string, true, $replace_host);
+	}
+	
+	/**
+	 * Gets request full url
+	 * 
+	 * @return string
+	 */
+	public static function GetRequestUrl($with_query_string = false, bool $with_original_request = false, string $replace_host = null)
+	{
 		static::Init_Vars();
 		
 		$ssl = ((!empty($_SERVER['HTTPS'])) && ($_SERVER['HTTPS'] === 'on')) ? "s" : "";
 		$port = $_SERVER['SERVER_PORT'];
 		$port = ((!$ssl && ($port == '80')) || ($ssl && ($port == '443'))) ? '' : ':'.$port;
 		
-		$url = "http{$ssl}://".($replace_host ?? $_SERVER['HTTP_HOST']).$port.self::$BaseHref.self::$OriginalRequest;
+		$url = "http{$ssl}://".($replace_host ?? $_SERVER['HTTP_HOST']).$port.self::$BaseHref.($with_original_request ? self::$OriginalRequest : '');
 		if ($with_query_string && (!empty($_GET)))
 			return $url."?".http_build_query($_GET);
 		else

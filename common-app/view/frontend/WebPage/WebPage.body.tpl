@@ -34,7 +34,7 @@
     
     <div class="h-screen flex {{(!$userData) ? 'bg-main-accent-color' : 'bg-cool-gray-100'}} <?= ($userData && !$hideSidebar) ? 'lg:ml-64 ml-0' : ''; ?> overflow-hidden js-page-content">
         @if ($userData && !$hideSidebar)
-			@include($this::nav)
+		@include($this::nav)
         @endif
     
         <div class="flex-1 focus:outline-none overflow-auto" id="middle-content" tabindex="0">
@@ -83,9 +83,10 @@
 						<!-- MY ACCOUNT DROPDOWN :: BEGIN -->
 						<div class="ml-3 relative mr-3" x-data="{ open: false }" @keydown.window.escape="open = false" @click.away="open = false">
 							<div class="flex items-center">
-								@php $owner = \Omi\User::GetCurrentUser()->Owner;
-								@php $owner->populate('Name, Reg_No, VAT_No, Address.*, Contacts.*, Contact_Emails_List.*, Contact_Phones_List.*, Bank_Accounts.{Bank_Name, IBAN, Currency}');
-								
+								<?php
+									if (($owner = \Omi\User::GetCurrentUser()->Owner))
+										$owner->populate('Name, Reg_No, VAT_No, Address.*, Contacts.*, Contact_Emails_List.*, Contact_Phones_List.*, Bank_Accounts.{Bank_Name, IBAN, Currency}');
+								?>
 								@if (!$owner->Name || !$owner->Reg_No || !$owner->VAT_No || !$owner->Address || !count($owner->Contacts) || !count($owner->Contact_Emails_List) || !count($owner->Contact_Phones_List) || !count($owner->Bank_Accounts))
 									<div class="relative w-4 h-4 block" data-tippy-content="Compania dvs nu are toate datele completate">
 										<span class="ringring"></span>

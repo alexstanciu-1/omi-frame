@@ -739,6 +739,9 @@ function qbMakeCtrlRequest(url, req_method, ctrl, ctrl_id, meth_class, method_na
 								{
 									var decoded_error_json = q_devmode_handle_ajax(jqXHR, textStatus, errorThrown);
 									
+									// console.log(jqXHR.responseText);
+									
+									
 									if (decoded_error_json && decoded_error_json.EXCEPTION)
 										errorThrown = decoded_error_json.EXCEPTION;
 									
@@ -2459,7 +2462,7 @@ var UUID = (function() {
 
 function q_devmode_handle_ajax(jqXHR, textStatus, errorThrown, json_response)
 {
-	if (errorThrown)
+	// if (errorThrown)
 	{
 		// there is an error
 		if ((!json_response) && jqXHR.responseText)
@@ -2476,7 +2479,11 @@ function q_devmode_handle_ajax(jqXHR, textStatus, errorThrown, json_response)
 	// if (errorThrown) - there is an error
 	// only in development mode
 	if (!(json_response && json_response['__devmode__']))
+	{
+		// console.log(json_response);
+		// alert('possible');
 		return json_response;
+	}
 	
 	if (json_response["__error__"])
 	{

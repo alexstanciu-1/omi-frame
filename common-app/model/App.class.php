@@ -67,7 +67,7 @@ abstract class App_mods_model_ extends \QModel
 	 */
 	protected $Languages;
 	/**
-	 * @storage.views Property_Owners,Channels,Company_Mail_Sender
+	 * @storage.views Company_Mail_Sender
 	 * 
 	 * @var \Omi\Comm\Company[]
 	 */
@@ -80,8 +80,6 @@ abstract class App_mods_model_ extends \QModel
 	protected $Registration_Requests;
 	
 	/**
-	 * @storage.views Age_Intervals_App
-	 * 
 	 * @storage.none
 	 * 
 	 * @var App
@@ -179,7 +177,7 @@ abstract class App_mods_model_ extends \QModel
 			}
 			default :
 			{
-				$ret = null;
+				$ret = true;
 				break;
 			}			
 		}
@@ -467,11 +465,6 @@ abstract class App_mods_model_ extends \QModel
 						// . 'ReplyTo'
 					. '}, '
 					. 'Username');
-				break;
-			}			
-			case "Age_Intervals_App":
-			{
-				$ret = qParseEntity("Age_Intervals.{Name, To, Active, Property}");
 				break;
 			}
 			

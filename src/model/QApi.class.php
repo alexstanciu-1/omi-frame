@@ -177,6 +177,45 @@ class QApi_frame_
 		return $q;
 	}
 	
+	public static function Array_To_Model(array $data, string $app_from, $src_from_types = null, $storage_model = null, $is_collection = null, $property_reflection = null)
+	{
+		if (!$src_from_types)
+		{
+			$storage_model = QApp::GetDataClass();
+			$is_collection = false;
+			$property_reflection = null;
+			$src_from_types = static::DetermineFromTypes($storage_model, $app_from, $is_collection, $property_reflection);
+			if (!$src_from_types)
+				throw new \Exception('Unable to determine a data type for: ' . $app_from);
+		}
+		
+		// determine $data_is_collection - don't use the parameter
+		/*==========================determine if data is provided as collection or as single item=========================*/
+		$_ft = reset($src_from_types);
+		$decode_type = $_ft ? $_ft.($is_collection ? "[]" : "") : "auto";
+
+		$data_is_collection = true;
+		$_ks = array_keys($data);
+
+		$_dmt = \QModel::GetTypeByName($_ft);
+
+		foreach ($_ks as $__k)
+		{
+			if ($_dmt->properties[$__k])
+			{
+				$data_is_collection = false;
+				break;
+			}
+		}
+		/*================================================================================================================*/
+
+		if ((!$data_is_collection) && $is_collection)
+			$data = [$data];
+		$data = QModel::FromArray($data, $decode_type);
+		
+		return [$data, $data_is_collection, $storage_model, $is_collection, $property_reflection, $src_from_types];
+	}
+	
 	/**
 	 * @api.enable
 	 * 
@@ -232,8 +271,14 @@ class QApi_frame_
 				{
 					if (is_array($data))
 					{
+						list ($data) 
+								= static::Array_To_Model($data, $src_from, $src_from_types, $storage_model, $is_collection, $property_reflection);
+						
+						# qvar_dump('$data', $data);
+						# throw new \Exception('eex: ' . get_class($data) . ' - ' . $data[0]->Private_IP . ' - ' . json_encode($initial_data));
+						/*
 						// determine $data_is_collection - don't use the parameter
-						/*==========================determine if data is provided as collection or as single item=========================*/
+						# ==========================determine if data is provided as collection or as single item=========================
 						$_ft = reset($src_from_types);
 						$decode_type = $_ft ? $_ft.($is_collection ? "[]" : "") : "auto";
 						
@@ -250,11 +295,10 @@ class QApi_frame_
 								break;
 							}
 						}
-						/*================================================================================================================*/
-
 						if ((!$data_is_collection) && $is_collection)
 							$data = [$data];
 						$data = QModel::FromArray($data, $decode_type);
+						*/
 					}
 				}
 				else if ($id && (!($data instanceof QIModel)))
@@ -316,7 +360,7 @@ class QApi_frame_
 					}
 				}
 			}
-			
+		
 			if ($src_from === 'SupportTickets')
 			{
 				# qvar_dumpk($storage_model, $src_from, $src_from_types, $data, $state, $selector);
@@ -339,13 +383,13 @@ class QApi_frame_
 		
 		$ret = !$result ? null : ((count($result) === 1) ? reset($result) : $result);
 
-		
+		/*
 		if (static::$DebugApi && static::DebugEndApi($debug_uidf))
 		{
 			list($orig_destination, $orig_data, $orig_state, $orig_selector, $orig_id, $orig_data_is_collection) = $orig_params;
 			static::DebugSave($ret, $orig_destination, $orig_data, $orig_state, $orig_selector, $orig_id, $orig_data_is_collection);
 		}
-		
+		*/
 		return $ret;
 	}
 	

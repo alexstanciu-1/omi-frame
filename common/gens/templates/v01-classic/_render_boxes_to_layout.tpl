@@ -2,14 +2,25 @@
 
 foreach ($layout_placement["rows"] ?: [] as $lp_row_index => $lp_row)
 {
-	// count columns
-	$cols_count = isset($lp_row['cols']) ? count($lp_row['cols']) : 0;
+	$grp_layout .= "<div class='row qc-boxes-row-{$lp_row_index}'>\n";
 
-	$grp_layout .= "<div class='grid grid-cols-1 md:grid-cols-" . $cols_count . " mb-8 gap-8 gap-y-8 qc-boxes-row-{$lp_row_index}'>\n";
+	$cols_count = isset($lp_row['cols']) ? count($lp_row['cols']) : 0;
 	foreach ($lp_row['cols'] ?: [] as $lp_col_index => $lp_col)
 	{
+		if ($cols_count === 1)
+			$responsive_value = 12;
+		else if ($cols_count === 2)
+			$responsive_value = 6;
+		else if ($cols_count === 3)
+			$responsive_value = 4;
+		else if ($cols_count === 4)
+			$responsive_value = 6;
+		else if ($cols_count === 6)
+			$responsive_value = 2;
+		else 
+			throw new \Exception("Columns count of {$cols_count} is not supported!");
 
-		$grp_layout .= "<div class='flex flex-col gap-y-8 qc-boxes-row-{$lp_row_index}-col-{$lp_col_index}'>\n";
+		$grp_layout .= "<div class='q-panel-height-fix col-lg-{$responsive_value} qc-boxes-row-{$lp_row_index}-col-{$lp_col_index}'><div>\n";
 
 		foreach ($lp_col["sub-rows"] ?: [] as $lp_sub_row_index => $lp_sub_row)
 		{
@@ -21,10 +32,10 @@ foreach ($layout_placement["rows"] ?: [] as $lp_row_index => $lp_row)
 				else
 					$explicit_columns = true;
 			}
-
+					
 			$kss_c = array_keys($lp_sub_row["@select"]);
 			$inner_str = [];
-
+					
 			if ($explicit_columns)
 			{
 				$inner_str_pos = 0;
@@ -50,17 +61,18 @@ foreach ($layout_placement["rows"] ?: [] as $lp_row_index => $lp_row)
 					$inner_str[$nii] = "{{@".implode("}}\n{{@", $props_slice)."}}\n";
 				}
 			}
-
+					
 			$box_caption = preg_replace_callback('/(?<!\b)[A-Z][a-z]+|(?<=[a-z])[A-Z]/', function($match) {
 				return ' '. $match[0];
-			}, htmlspecialchars($lp_sub_row["@caption"] ?: $lp_sub_row["@tag"]));
+			}, ($lp_sub_row["@caption"] ?: $lp_sub_row["@tag"]));
 
 			$box_caption = preg_replace('/[\\_\\s]+/', " ", $box_caption);
-
+			
 			$grp_layout .= "
-			<div class='flex-1 rounded-lg bg-white p-4 lg:p-8 shadow js-details-box_".preg_replace("/([^\\w\\d])/uis", "_", $lp_sub_row["@tag"])."  qc-boxes-row-{$lp_row_index}-col-{$lp_col_index}-row-{$lp_sub_row_index}'>
-									<h4 class=\"text-lg font-medium leading-6 text-gray-900 mb-4\">{{_L(\"".qaddslashes($box_caption)."\")}}</h4>
-									<div class='row'>";
+			<div class='details-box js-details-box_".preg_replace("/([^\\w\\d])/uis", "_", $lp_sub_row["@tag"])."  qc-boxes-row-{$lp_row_index}-col-{$lp_col_index}-row-{$lp_sub_row_index}'>
+				<div class='row'>
+					<h4>{{_L(".var_export((string)$box_caption, true).")}}</h4>
+					";
 
 			if ($no_of_colls === 1)
 				$responsive_value = 12;
@@ -86,8 +98,9 @@ foreach ($layout_placement["rows"] ?: [] as $lp_row_index => $lp_row)
 			";
 		}
 
-		$grp_layout .= "</div>\n";
+		$grp_layout .= "</div></div>\n";
 	}
 
 	$grp_layout .= "</div>\n";
 }
+

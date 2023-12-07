@@ -93,7 +93,7 @@ class Grid implements IGenerator
 			filePutContentsIfChanged_start();
 		
 			static::GenerateViews($config, $namespace, $extends, $from,  $storage_model, $src_from_types, $m_property, $views, $original_config);
-
+			
 			$opened_content = [];
 			
 			foreach (static::$Place_Holders as $ph_view => $s_ph)
@@ -718,17 +718,18 @@ class Grid implements IGenerator
 
 			$analyze_result = null;
 			$search_info = null;
-			$order_by_info = null;			
-
+			$order_by_info = null;
+			
 			// check if analyze
 			if ($analyze_query)
 			{
 				// analyze result
 				//qvardump($analyze_query);
 				$analyze_result = \QQueryAnalyzer::Analyze($analyze_query, $analyze_start_type);
+				
 				//qvardump($analyze_result);
 				$search_info = \QQueryAnalyzer::GetSearchInfo($analyze_result);
-
+				
 				//qvardump($analyze_query, $search_info, $analyze_result);
 
 				$order_by_info = \QQueryAnalyzer::GetOrderByInfo($analyze_result);
@@ -860,7 +861,7 @@ class Grid implements IGenerator
 
 		$dataCls = \QApp::GetDataClass();
 		$acceptedFilters = $dataCls::GetAcceptedFilters($viewTag);
-	
+		
 		// go through each param
 		$__search_fields = [];
 		//qvardump($analyze_search_inf);
@@ -992,7 +993,7 @@ class Grid implements IGenerator
 				}
 			}
 		}
-		
+				
 		// generate order_by
 		$oby_data = [];
 		if ($order_by_inf && (count($order_by_inf) > 0))
@@ -1927,6 +1928,7 @@ class Grid implements IGenerator
 			$_extra_attrs = $_PROP_FLAGS["display.attrs"];
 
 			$useEditor = $_PROP_FLAGS['display.editor'];
+			$useDatepicker = $_PROP_FLAGS['display.datepicker'];
 			$_default = $_PROP_FLAGS["default"];
 					
 			// if ($read_only)
@@ -2096,6 +2098,7 @@ class Grid implements IGenerator
 		$validationAlert = $_PROP_FLAGS['validation.alert'];
 
 		$useEditor = $_PROP_FLAGS['display.editor'];
+		$useDatepicker = $_PROP_FLAGS['display.datepicker'];
 
 		$placeholder = $_PROP_FLAGS["display.placeholder"];
 
@@ -2969,7 +2972,7 @@ class Grid implements IGenerator
 
 		$model = is_array($config["parent_model"]) ? q_reset($config["parent_model"]) : $config["parent_model"];
 		$prop = $config["property"];
-		
+
 		// property identifier
 		$prop_idf = $config["__view__"] . "~" . $model . "~" . $prop. "~" . $path . "~" . 
 			($list_mode ? "1" : "0") . "~" . ($in_search ? "1" : "0") . "~" . ($read_only ? "1" : "0");
@@ -3098,7 +3101,7 @@ class Grid implements IGenerator
 	
 		$data_full_path = $config['from'].($path ? ".".$path : "");
 		// readonly IF
-		static::$CachedData[$prop_idf]["readonly_IF"] = static::ExtractExtraConfig($config["cfg"], $path ?: "", "@readonly_if") ?: $mixed_data['storage.full']["admin.readonly_IF"];
+		static::$CachedData[$prop_idf]["readonly_IF"] = static::ExtractExtraConfig($config["cfg"], $path ?: "", "@readonly_if") ?? $mixed_data['storage.full']["admin.readonly_IF"];
 		if (static::$CachedData[$prop_idf]["readonly_IF"])
 			static::$CachedData[$prop_idf]["readonly_IF"] .= " || (!q_security_new('{$data_full_path}', \$grid_mode ?: 'edit', null, static::\$FromAlias))";
 		else
@@ -3286,6 +3289,10 @@ class Grid implements IGenerator
 				(static::$CachedData[$prop_idf]["display.textarea"] && 
 				(static::ExtractExtraConfig($config["cfg"], $path ?: "", "@display.editor") ||
 				$mixed_data["storage.full"]["use_wysiwyg"]));
+            
+			static::$CachedData[$prop_idf]["display.datepicker"] = 
+				((static::ExtractExtraConfig($config["cfg"], $path ?: "", "@display.datepicker") ||
+				$mixed_data["storage.full"]["use_flatpickr"]));
 
 			static::$CachedData[$prop_idf]["date.format"] = 
 				static::ExtractExtraConfig($config["cfg"], $path ?: "", "@date.format") ?: 

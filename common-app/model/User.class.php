@@ -66,6 +66,8 @@ abstract class User_mods_model_ extends \QUser
 	
 	protected static $LoginExtraWhere = '';
 	
+	protected static $Temporary_Session = null;
+	
 	protected static $InInfoRequest = false;
 	
 	/**
@@ -679,6 +681,21 @@ abstract class User_mods_model_ extends \QUser
 		
 		return true;
 	}
+	
+	public static function Quick_Check_Login(bool $quick = true)
+	{
+		# $t0 = microtime(true);
+		$ret = static::CheckLogin_Internal(null, false, $quick);
+		# $t1 = microtime(true);
+		
+		if ($ret)
+		{
+			return [$ret->User->Id, $ret->User->Owner->Id, \Omi\App::Get_Context_Id()];
+		}
+		else
+			return [null, null];
+	}
+	
 	/**
 	 * Check Login
 	 * 
@@ -713,6 +730,133 @@ abstract class User_mods_model_ extends \QUser
 		else
 			return false;
 	}
+	
+	public static function CheckLogin_Internal($session_id = null, $require_backend_access = false, bool $quick = false)
+	{
+		try
+		{
+			if (!(session_status() === PHP_SESSION_ACTIVE))
+			{
+				if ($quick)
+					return false;
+				session_start();
+			}
+
+			$ip = \QWebRequest::IsAsyncRequest() ? $_SERVER['HTTP_IP'] : Q_REMOTE_ADDR;
+
+			if (!$session_id)
+				$session_id = static::Get_Temporary_Session();
+			
+			if ((!$session_id) && (session_status() === PHP_SESSION_ACTIVE))
+				$session_id = session_id();
+
+			if ((!$session_id) || (!$ip))
+				return false;
+			
+			if ($require_backend_access)
+				$identity = Identity::QueryFirst("Id,User.{IsRemoteCallUser,Owner.Gid,Active},Session.* WHERE Session.SessionId=? AND Session.IP=? AND User AND User.BackendAccess", [$session_id, $ip]);
+			else
+				$identity = Identity::QueryFirst("Id,User.{IsRemoteCallUser,Owner.Gid,Active},Session.* WHERE Session.SessionId=? AND Session.IP=? AND User", [$session_id, $ip]);
+			
+			if (!isset($identity->User->Id))
+				return false;
+			
+			if ($identity) # && \QAutoload::GetDevelopmentMode())
+			{
+				$last_login = QQuery("LoginsLog.{User, UserData, Date, SessionId, Ip WHERE SessionId=? ORDER BY `Date` DESC,Id DESC LIMIT 1}", [$session_id])->LoginsLog;
+				
+				/**
+					* 1. Enforce IP (of last login)
+					* 2. Time limit (session needs to expire) / no more than a day since the login
+					* 3. If not active for X sec ...
+					*/
+				try
+				{
+					if (isset($last_login[0]))
+					{
+						if (trim($last_login[0]->Ip) !== trim($ip))
+						{
+							# can not use the same session under a different login, needs to login
+							return ($ret = false);
+						}
+						if ((!isset($last_login[0]->User->Id)) || ($last_login[0]->User->Id != $identity->User->Id))
+						{
+							return ($ret = false);
+						}
+						$time_since_login = time() - ($last_login[0]->Date ? strtotime($last_login[0]->Date) : 0);
+						# no more than a day since the login
+						if ($time_since_login > (24 * 60 * 60))
+						{
+							return ($ret = false);
+						}
+
+						$last_active_date = $identity->Session->Last_Access_Date ?? $last_login[0]->Date;
+
+						$time_since_active_session = time() - ($last_active_date ? strtotime($last_active_date) : 0);
+						if (($time_since_active_session) > (60 * 60)) # more than an hour since last active
+						{
+							return ($ret = false);
+						}
+					}
+					else
+						return ($ret = false);
+				}
+				finally
+				{
+					if ($ret === false)
+					{
+						# if (\QAutoload::GetDevelopmentMode())
+						# 	qvar_dumpk(["check - \$identity" => $identity, "check - \$log" => $last_login[0], "check ip" => $ip]);
+						# log it !
+						/*
+						file_put_contents("../CheckLogin_log_LoginsLog_returns_false.txt", date("Y-m-d H:i:s") . " - " . php_sapi_name() . " - " . $_SERVER['REQUEST_URI'] . 
+									($argv ? "\n\t\targs=".json_encode($argv, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE).' ' : '') . 
+										"\n\t\tserver=". json_encode($_SERVER, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . 
+										"\n\t\tpost=". json_encode(file_get_contents("php://input"), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . 
+										"\n\t\ttrace=". json_encode((new \Exception())->getTraceAsString(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
+										. "\n\n=============================================================================\n\n", FILE_APPEND);
+						*/
+					}
+				}
+			}
+
+			//qvardump("Check LOGIN IDENTITY", $identity);
+			if ((!$identity->User->Owner) || ((!$identity->User->IsRemoteCallUser) && (!static::Partner_Is_Active($identity->User->Owner))))
+				return false;
+			
+			if ($identity)
+			{
+				# @TEMP @TODO - de-activate non-root logins
+				if (false)
+				{
+					if ($identity->User->Owner->Id != 1)
+					{
+						if ($identity->User->Id)
+							$identity->User->populate('IsRemoteCallUser,UsedToCall');
+						# qvar_dumpk($identity->User);
+						if ((!$identity->User->IsRemoteCallUser) && (!$identity->User->UsedToCall))
+							return false;
+					}
+				}
+				
+				if (!$quick)
+				{
+					# mark last access date
+					$identity->Session->setLast_Access_Date(date('Y-m-d H:i:s'));
+					$identity->Session->save('Last_Access_Date');
+				}
+				
+				return (static::$ActiveLogins[$session_id] = $identity);
+			}
+			else
+				return false;
+		}
+		finally
+		{
+			# \QSecurity_Check::Audit_CheckLogin($identity);
+		}
+	}
+	
 	/**
 	 * Is Logged in
 	 * 
@@ -1079,6 +1223,16 @@ abstract class User_mods_model_ extends \QUser
 	{
 		foreach ($data as $k => $v)
 			static::$$k = $v;
+	}
+	
+	public static function Set_Temporary_Session(string $new_session_id = null)
+	{
+		static::$Temporary_Session = $new_session_id;
+	}
+	
+	public static function Get_Temporary_Session()
+	{
+		return static::$Temporary_Session;
 	}
 
 	/**

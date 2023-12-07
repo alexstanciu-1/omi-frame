@@ -81,6 +81,11 @@ abstract class QSqlTableColumn_frame_ extends QStorageTableColumn
 	 * The blob data type as defined by mysql (other implementations should convert)
 	 *
 	 */
+	const TypeMediumBlob		= 32;
+	/**
+	 * The blob data type as defined by mysql (other implementations should convert)
+	 *
+	 */
 	const TypeLongBlob		= 31;
 	/**
 	 * The enum data type as defined by mysql (other implementations should convert)
@@ -366,6 +371,7 @@ abstract class QSqlTableColumn_frame_ extends QStorageTableColumn
 			case static::TypeEnum:
 			case static::TypeSet:
 			case static::TypeBlob:
+			case static::TypeMediumBlob:
 			case static::TypeLongBlob:
 			case static::TypeTimestamp:
 			case static::TypeTime:

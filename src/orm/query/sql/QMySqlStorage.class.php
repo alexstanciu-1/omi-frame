@@ -930,6 +930,10 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 				{
 					return "BLOB";
 				}
+			case QSqlTableColumn::TypeMediumBlob:
+				{
+					return "MEDIUMBLOB";
+				}
 			case QSqlTableColumn::TypeLongBlob:
 				{
 					return "LONGBLOB";
@@ -1120,6 +1124,10 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 			case "BLOB":
 			{
 				return QSqlTableColumn::TypeBlob;
+			}
+			case "MEDIUMBLOB":
+			{
+				return QSqlTableColumn::TypeMediumBlob;
 			}
 			case "LONGBLOB":
 			{

@@ -48,7 +48,7 @@ abstract class User_mods_model_ extends \QUser
 		. "}"
 	. "}";
 	
-	public static $RegistrationFields = "Email, Username, Password, ActivationCode, Name";
+	public static $RegistrationFields = "Email, Username, Password, ActivationCode, Name, Person.{Name, Firstname, Phone, Address.City.Name}";
 	public static $RegistrationSubject = "Registration email";
 	public static $RegistrationEmailFrom = null;
 	public static $RegistrationEmailBody = null;
@@ -1007,7 +1007,7 @@ abstract class User_mods_model_ extends \QUser
 	 * @param string $tpl
 	 * @return int|boolean
 	 */
-	public static function RecoverPassword($email, $username, $tpl = null, $confirm_url = "recover-password?RecoverCode=")
+	public static function RecoverPassword($email, $confirm_url = "myaccount/recover-password?RecoverCode=", $username = null, $tpl = null)
 	{		
 		// get user
 		$user = static::QueryFirst("Id, Email WHERE Email=? OR Username=?", [$email, $username]);

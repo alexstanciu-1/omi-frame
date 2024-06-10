@@ -33,16 +33,32 @@ define('Q_REMOTE_ADDR', $_SERVER['REMOTE_ADDR']);
 
 \QAutoload::LoadModule(__DIR__ . "/../common-app/model/", false, 'mods_model', "mods");
 
-\QAutoload::LoadModule("code_inst/classes/", false, Q_SAAS_PREFIX, Q_SAAS_PREFIX);
-\QAutoload::LoadModule("code_inst/model/", false, Q_SAAS_PREFIX.'_model', Q_SAAS_PREFIX);
+if (function_exists('q_autoload_layers_callback'))
+{
+	q_autoload_layers_callback(true);
+}
+else
+{
+	\QAutoload::LoadModule("code_inst/classes/", false, Q_SAAS_PREFIX, Q_SAAS_PREFIX);
+	\QAutoload::LoadModule("code_inst/model/", false, Q_SAAS_PREFIX.'_model', Q_SAAS_PREFIX);
+}
 
+if (!is_dir(Q_GENERATED_VIEW_FOLDER))
+	qmkdir(Q_GENERATED_VIEW_FOLDER);
 \QAutoload::AddWatchFolder(Q_GENERATED_VIEW_FOLDER, false, Q_GENERATED_VIEW_FOLDER_TAG, false, "ui_config");
 
 \QAutoload::LoadModule(__DIR__ . "/../common/view/", false, 'omi_view', "omi");
 \QAutoload::LoadModule(__DIR__ . "/../common-app/controller/", false, 'mods_controller', "mods");
 \QAutoload::LoadModule(__DIR__ . "/../common-app/view/", false, 'mods_view', "mods");
 
-\QAutoload::LoadModule("code_inst/view/", false, Q_SAAS_PREFIX.'_view', Q_SAAS_PREFIX);
+if (function_exists('q_autoload_layers_callback'))
+{
+	q_autoload_layers_callback(false);
+}
+else
+{
+	\QAutoload::LoadModule("code_inst/view/", false, Q_SAAS_PREFIX.'_view', Q_SAAS_PREFIX);
+}
 
 \QAutoload::AddMainFolder("code/", "code", "code");
 
@@ -54,7 +70,9 @@ if ((Q_REMOTE_ADDR === dev_ip) || (($_GET['_dev_mode_key_'] ?? '') === sha1(Q_DE
 		\QAutoload::EnableDevelopmentMode(true, true, true);
 
 	else
+	{
 		\QAutoload::EnableDevelopmentMode(true);
+	}
 	
 }
 

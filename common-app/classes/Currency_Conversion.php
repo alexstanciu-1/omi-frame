@@ -6,7 +6,7 @@ class Currency_Conversion
 {
 	public static $BNR_RATES = [];
 	
-	public static $BNRRatesUrl = "http://www.bnr.ro/nbrfxrates.xml";
+	public static $BNRRatesUrl = TF_BNRRatesUrl;
 	
 	/**
 	 * @api.enable

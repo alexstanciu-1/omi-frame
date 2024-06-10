@@ -137,7 +137,7 @@ class QCodeSync2
 	public function resync($files, $changed_or_added, $removed_files, $new_files, bool $full_resync = false, array $generator_changes = null)
 	{
 		$ex_ct = null;
-		
+				
 		ob_start();
 		$this->start_time = microtime(true);
 		
@@ -158,7 +158,7 @@ class QCodeSync2
 			# else if (file_exists(".upgrade_possible_parent_issues.json"))
 			# {
 			#	static::after_upgrade();
-			#	die;
+			#	exit;
 			# }
 			if ($this->upgrage_mode)
 			{
@@ -173,7 +173,7 @@ class QCodeSync2
 				# return;
 				die('FINISH UPGRADE');
 			}
-
+			
 			if (defined('Q_RUN_CODE_NEW_AS_TRAITS') && Q_RUN_CODE_NEW_AS_TRAITS)
 			{
 				$this->full_sync = $full_resync;
@@ -225,6 +225,7 @@ class QCodeSync2
 
 					# first run a sync on the model only !!!
 					# array $files, array $changed_or_added, array $removed_files, array $new_files, bool $sync_sql_meta = false
+					
 					$this->sync_code($model_files ?? [], $model_changed_or_added ?? [], $model_removed_files ?? [], $model_new_files ?? [], true);
 
 					// next generate all the views :-)
@@ -321,16 +322,34 @@ class QCodeSync2
 										$generator_classes_included = true;
 									}
 
-									$gen_ret = \Omi\Gens\Grid::Generate($config);
-									
-									if (isset($gen_ret[0]))
-										$this->process_gen_changes($gen_ret[0]);
-
-									echo "Grid::Generate({$property})<br/>\n";
-
-									$generated_views[$property] = $property;
-									foreach ($prop_views_arr ?: [] as $prop_v)
-										$generated_views[$prop_v] = $prop_v;
+									try
+									{
+										ob_end_flush();
+										ob_end_flush();
+										ob_end_flush();
+										ob_end_flush();
+										
+										echo "Grid::Generate({$property}) | START<br/>\n";
+										ob_end_flush();
+										$gen_ret = \Omi\Gens\Grid::Generate($config);
+										
+										if (isset($gen_ret[0]))
+											$this->process_gen_changes($gen_ret[0]);
+										echo "Grid::Generate({$property}) | DONE<br/>\n";
+	
+										$generated_views[$property] = $property;
+										foreach ($prop_views_arr ?: [] as $prop_v)
+											$generated_views[$prop_v] = $prop_v;
+										ob_end_flush();
+										ob_end_flush();
+										ob_end_flush();
+										ob_end_flush();
+										ob_end_flush();
+									}
+									catch (\Exception $eeex_grid_gen)
+									{
+										echo "Grid::Generate({$property}) | ERROR | {$eeex_grid_gen->getMessage()} | {$eeex_grid_gen->getTraceAsString()}<br/>\n";
+									}
 								}
 							}
 							finally
@@ -339,7 +358,7 @@ class QCodeSync2
 							}
 						}
 					}
-
+					
 					define('Q_SYNC_GENERATED_VIEWS', $generated_views);
 
 					{
@@ -674,7 +693,7 @@ class QCodeSync2
 							{
 								qvar_dumpk($layer.$file, $header_inf);
 								throw new \Exception('The basename of the file, up to the first dot, must be the class\'s short name (without namespace and without the layer\'s tag).'
-										. ' Ex: Class_Name.php, Class_Name.tpl, Class_Name.,form.tpl, Class_Name.url.php');
+										. ' Ex: Class_Name.php, Class_Name.tpl, Class_Name.form.tpl, Class_Name.url.php');
 							}
 
 							$short_class_name = (($p = strrpos($header_inf["class"], "\\")) !== false) ? substr($header_inf["class"], $p + 1) : $header_inf["class"];
@@ -709,7 +728,7 @@ class QCodeSync2
 							if ($header_inf['is_php'])	
 							{
 								if (isset($header_inf['doc_comment']) && strpos($header_inf['doc_comment'], "@class.name") && 
-										($parsed_dc = $this->parse_doc_comment($header_inf['doc_comment'])) && $parsed_dc['class.name'])
+										($parsed_dc = static::parse_doc_comment($header_inf['doc_comment'])) && $parsed_dc['class.name'])
 								{
 									$final_class_name = trim(trim(trim($parsed_dc['class.name'][1]), "* \t\n"));
 								}
@@ -2091,7 +2110,28 @@ class QCodeSync2
 		foreach ($this->cache_types as $class_name => $path)
 		{
 			$cache_path = $cache_folder.qClassToPath($class_name).".type.php";
+			
 			list($cache_type, $cache_has_changes) = QCodeStorage::CacheData($class_name, $cache_path, true);
+			
+			/*
+			if ($class_name === 'Omi\App')
+			{
+				$za_classes = [$class_name => $class_name];
+				$za_classes += class_parents($class_name);
+				# array_unshift($za_classes, $class_name);
+				qvar_dump("QCodeStorage::CacheData({$class_name}, {$cache_path}", 
+						$za_classes, $cache_type->properties['Companies']);
+				
+				foreach ($za_classes as $c)
+				{
+					$refl = new ReflectionClass($c);
+					$props = $refl->hasProperty('Companies') ? $refl->getProperty('Companies') : null;
+					qvar_dump($c, $props, $props ? $props->getDocComment() : null);
+				}
+				
+				die;
+			}
+			*/
 			
 			if ($cache_has_changes)
 			{

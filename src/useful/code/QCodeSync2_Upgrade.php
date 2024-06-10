@@ -317,13 +317,51 @@ trait QCodeSync2_Upgrade
 	
 	public function upgrade_class_file(string $full_class_name, string $layer, string $file, string $layer_tag, array &$toks_cache_methods, string $prev_layer_class_name = null)
 	{
-		$file_tok = \QPHPToken::ParsePHPFile($layer.$file, false, false);
+		list ($file_tok, $class_tok, $new_class_name) = static::upgrade_class_file_parser($layer.$file, $full_class_name, $layer_tag, $toks_cache_methods, $prev_layer_class_name);
+	
+		$bn_file = basename($file);
+		// all ok, save it !
+		$write_to_file_name = null;
+		$full_ext = substr($bn_file, strpos($bn_file, "."));
+		if ($full_ext === '.php')
+			$write_to_file_name = substr($file, 0, -4).".class.php";
+		else if ($full_ext === '.patch.php')
+			$write_to_file_name = substr($file, 0, -strlen($full_ext)).".class.php";
+		else if ($full_ext === '.class.php')
+			return false;
+		else
+		{
+			qvar_dumpk($layer.$file, $full_ext, $write_to_file_name);
+			throw new \Exception('Unexpected extension: '.$full_ext.' in: '.$layer.$file);
+		}
+		
+		$write_to_file_content = (string)$file_tok;
+		$upgrade_path = $this->upgrade_copy_file($layer, $write_to_file_name, $write_to_file_content);
+		/**
+		 *	1. rename it to CLASS_$layer_
+		 *	2. inside it set ** @class.name CLASS *
+		 *	3. patching classes must ` extend ` prev_patched class name if not first
+		 */
+		
+		// update the cache for the next go
+		foreach ($class_tok->methods ?: [] as $m_name => $c_meth)
+			$toks_cache_methods[$full_class_name][$m_name] = $c_meth;
+		
+		$this->analyze_parent_calls($upgrade_path, $write_to_file_name, $write_to_file_content, $full_class_name, $layer, $file, $layer_tag);
+
+		return $new_class_name;
+	}
+	
+	public static function upgrade_class_file_parser(string $file_path, string $full_class_name, string $layer_tag, array &$toks_cache_methods, 
+														string $prev_layer_class_name = null, bool $do_patch_renames = true)
+	{
+		$file_tok = \QPHPToken::ParsePHPFile($file_path, false, false);
 		if (!$file_tok)
-			throw new \Exception('Unable to parse: '.$layer.$file);
+			throw new \Exception('Unable to parse: '.$file_path);
 		
 		$class_tok = $file_tok->findFirstPHPTokenClass();
 		if (!$class_tok)
-			throw new \Exception('Unable to parse and find class in: '.$layer.$file);
+			throw new \Exception('Unable to parse and find class in: '.$file_path);
 		
 		$prev_toks_methods = $toks_cache_methods[$full_class_name];
 		
@@ -349,7 +387,7 @@ trait QCodeSync2_Upgrade
 		{
 			if (($child instanceof \QPHPTokenDocComment) && ($child === $class_tok->docComment))
 			{
-				$parsed_dc = $this->parse_doc_comment((string)$child);
+				$parsed_dc = static::parse_doc_comment((string)$child);
 				if (isset($parsed_dc["class.name"]))
 					$parsed_dc["class.name"][1] = " ".$class_tok->className;
 				else
@@ -477,7 +515,7 @@ trait QCodeSync2_Upgrade
 		{
 			// the order for splice is important !!!
 			if ($class_name_pos === false)
-				throw new \Exception('Class name was not found in tokens: '.$layer.$file);
+				throw new \Exception('Class name was not found in tokens: '.$file_path);
 			
 			array_splice($class_tok->children, $class_name_pos + 1, 0, 
 						[
@@ -502,7 +540,7 @@ trait QCodeSync2_Upgrade
 		{
 			// the order for splice is important !!!
 			if ($doc_comment_pos_before === false)
-				throw new \Exception('Class definition start was not found in tokens: '.$layer.$file);
+				throw new \Exception('Class definition start was not found in tokens: '.$file_path);
 			$doc_comm = "/**\n * @class.name {$class_tok->className}\n ";
 			
 			if ($class_tok->abstract)
@@ -533,7 +571,7 @@ trait QCodeSync2_Upgrade
 				$dump_str .= (is_array($element) ? $element[1] : $element);
 		});
 		
-		if ($patch_renames)
+		if ($do_patch_renames && $patch_renames)
 		{
 			foreach ($patch_renames as $pr_from => $pr_to)
 			{
@@ -541,7 +579,10 @@ trait QCodeSync2_Upgrade
 				$method_str = "\n\t/**\n\t * @##upgraded_patch_rename {$pr_from} => {$pr_to}\n\t */\n\t";
 				$prev_class_meth = $prev_toks_methods[$pr_from];
 				if (!$prev_class_meth)
-					throw new \Exception("Can not find method `{$pr_from}()` to patch in ".$layer.$file);
+				{
+					qvar_dump('$patch_renames', $patch_renames);
+					throw new \Exception("Can not find method `{$pr_from}()` to patch in ".$file_path);
+				}
 				foreach ($prev_class_meth->children as $child)
 				{
 					if ($child instanceof \QPHPTokenCode)
@@ -569,37 +610,7 @@ trait QCodeSync2_Upgrade
 			
 		}
 		
-		// all ok, save it !
-		$write_to_file_name = null;
-		$full_ext = substr(basename($file), strpos(basename($file), "."));
-		if ($full_ext === '.php')
-			$write_to_file_name = substr($file, 0, -4).".class.php";
-		else if ($full_ext === '.patch.php')
-			$write_to_file_name = substr($file, 0, -strlen($full_ext)).".class.php";
-		else if ($full_ext === '.class.php')
-			return false;
-		else
-		{
-			qvar_dumpk($file, $full_ext, $write_to_file_name);
-			throw new \Exception('Unexpected extension: '.$full_ext.' in: '.$layer.$file);
-		}
-		
-		
-		$write_to_file_content = (string)$file_tok;
-		$upgrade_path = $this->upgrade_copy_file($layer, $write_to_file_name, $write_to_file_content);
-		/**
-		 *	1. rename it to CLASS_$layer_
-		 *	2. inside it set ** @class.name CLASS *
-		 *	3. patching classes must ` extend ` prev_patched class name if not first
-		 */
-		
-		// update the cache for the next go
-		foreach ($class_tok->methods ?: [] as $m_name => $c_meth)
-			$toks_cache_methods[$full_class_name][$m_name] = $c_meth;
-		
-		$this->analyze_parent_calls($upgrade_path, $write_to_file_name, $write_to_file_content, $full_class_name, $layer, $file, $layer_tag);
-
-		return $new_class_name;
+		return [$file_tok, $class_tok, $new_class_name];
 	}
 	
 	public function upgrade_copy_file(string $layer, string $file, string $content = null)

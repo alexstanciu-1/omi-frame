@@ -634,7 +634,8 @@ class QApp extends QAppModule
 		$multi_folder = "temp/multi-request/";
 		if (!is_dir($multi_folder))
 			qmkdir($multi_folder);
-		#\QApp::Log([$request_multi_id, $first, static::$MultiCallElements, static::$MultiCallUniqid, static::$MultiCallIndex, static::$MultiCallResponseIndex]);
+		
+		
 
 		if ($request_multi_id)
 		{

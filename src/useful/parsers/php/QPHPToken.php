@@ -2255,8 +2255,6 @@ abstract class QPHPToken
 	
 	public static function ParseHeaderOnly($path, $apply_namespace = false, &$readonly_tokens = null, bool $with_doc_comment = true)
 	{
-		# echo "ParseHeaderOnly::{$path}<br/>\n";
-		
 		if (!file_exists($path))
 			throw new Exception("Missing file: ".$path);
 		

@@ -110,7 +110,7 @@ final class Q_Async
 	{
 		if (!static::$_register_shutdown_done)
 		{
-			register_shutdown_function(function () { static::On_Shutdown(); });
+			# register_shutdown_function(function () { static::On_Shutdown(); });
 			static::$_register_shutdown_done = true;
 		}
 		

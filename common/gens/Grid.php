@@ -713,7 +713,7 @@ class Grid implements IGenerator
 		{
 			// get list selector
 			$config["selector"] = $config["selector:list"] ?: (method_exists($storage_model, "GetEntityForGenerateList") ? $storage_model::GetEntityForGenerateList_Final($view) : $storage_model::GetPropertyListingEntity($view));
-
+			
 			$analyze_query = null;// $storage_model::GetPropertyListingQuery($from);
 			$analyze_start_type = null;
 			$search_str = "";

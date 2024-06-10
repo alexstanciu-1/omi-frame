@@ -131,6 +131,14 @@ class QCodeStorage
 			$doc_comment = $prop->getDocComment();
 			$use_namespace = $prop->getDeclaringClass()->getNamespaceName();
 			
+			/*
+			if (($class === 'Omi\App') && ($name === 'Companies'))
+			{
+				qvar_dump('$doc_comment', get_parent_class($class), $doc_comment, $prop->getDeclaringClass());
+				die;
+			}
+			*/
+			
 			$parse_data = $this::parseDocComment($doc_comment, false, $use_namespace);
 			if (!isset($parse_data["types"]))
 				continue;

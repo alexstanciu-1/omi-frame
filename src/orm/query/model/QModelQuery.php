@@ -455,7 +455,10 @@ class QModelQuery
 								if ($set_columns || ($c_filter_selector === false))
 									$from = array();
 								else
+								{
+									# qvar_dump($types_mngd, $from, $froms, $types_mngd, $idf_name);
 									throw new Exception("Invalid step into: ".$idf_name);
+								}
 							}
 							else
 							{

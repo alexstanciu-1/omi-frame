@@ -182,7 +182,7 @@ trait QCodeSync2_Utility
 		return $ret;
 	}
 	
-	public function parse_doc_comment(string $doc_comment)
+	public static function parse_doc_comment(string $doc_comment)
 	{
 		$doc_comment_inner = substr(trim($doc_comment), 3, -2);
 		
@@ -211,7 +211,7 @@ trait QCodeSync2_Utility
 	{
 		$doc_comment = $class->docComment ? (string)$class->docComment : "/**\n * @class.name {$class->className}\n */";
 		
-		$indexed = $this->parse_doc_comment($doc_comment);
+		$indexed = static::parse_doc_comment($doc_comment);
 		
 		$indexed['class.name'] = ["\n * @class.name", " ".$class->className];
 		

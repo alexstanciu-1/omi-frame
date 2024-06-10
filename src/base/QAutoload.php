@@ -845,12 +845,9 @@ final class QAutoload
 		else
 		{
 			// we need to include all required classes 'manually' as Autoload will not be relayable while in sync
-			self::IncludeClassesInFolder(Q_FRAME_PATH."model/", true);
-			self::IncludeClassesInFolder(Q_FRAME_PATH."model/type/", true);
-			self::IncludeClassesInFolder(Q_FRAME_PATH."useful/code/", true);
-			self::IncludeClassesInFolder(Q_FRAME_PATH."useful/parsers/", true);
-			self::IncludeClassesInFolder(Q_FRAME_PATH."controller/", true);
-
+			static::Include_Parsing_Classes_And_Deps();
+			
+			/*
 			if (PHP_SAPI === 'cli')
 			{
 				# echo "CLI MODE REVIEW\n";
@@ -895,9 +892,10 @@ final class QAutoload
 						}
 						else
 						{
-							echo "<pre>";
-							echo $rc;
-							echo "</pre>";
+							echo "<h2>REMOTE COMPILE RESPONSE (QAutoload::ScanForChanges) | ".\QWebRequest::GetRequestUrl()."</h2>";
+							# echo "<pre>";
+							echo ($rc);
+							# echo "</pre>";
 							exit;
 						}
 					}
@@ -909,7 +907,7 @@ final class QAutoload
 				# die;
 				return false;
 			}
-			
+			*/
 			clearstatcache();
 			
 			$HTTP_X_REQUESTED_WITH = filter_input(INPUT_SERVER, "HTTP_X_REQUESTED_WITH");
@@ -2045,4 +2043,14 @@ final class QAutoload
 		static::$_Debug_Mode = false;
 	}
 	*/
+	
+	public static function Include_Parsing_Classes_And_Deps()
+	{
+		// we need to include all required classes 'manually' as Autoload will not be relayable while in sync
+		static::IncludeClassesInFolder(Q_FRAME_PATH."model/", true);
+		static::IncludeClassesInFolder(Q_FRAME_PATH."model/type/", true);
+		static::IncludeClassesInFolder(Q_FRAME_PATH."useful/code/", true);
+		static::IncludeClassesInFolder(Q_FRAME_PATH."useful/parsers/", true);
+		static::IncludeClassesInFolder(Q_FRAME_PATH."controller/", true);
+	}
 }

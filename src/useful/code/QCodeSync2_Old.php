@@ -117,7 +117,7 @@ trait QCodeSync2_Old
 			throw new \Exception('Missing trait in: '.$layer.$file);
 		$namespace = $file_tok->getNamespace();
 		
-		$doc_comment_info = $class_tok->docComment ? $this->parse_doc_comment((string)$class_tok->docComment) : null;
+		$doc_comment_info = $class_tok->docComment ? static::parse_doc_comment((string)$class_tok->docComment) : null;
 		
 		$class_name = null;
 		if (isset($doc_comment_info['class.name'][1]))

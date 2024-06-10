@@ -2376,7 +2376,9 @@ function qDebugStackInner($args, $with_stack = false, $on_shutdown = false, stri
 			QAutoload::$DebugStacks[] = ob_get_clean();
 		}
 		else
+		{
 			register_shutdown_function("qDebugStackOutput", ob_get_clean());
+		}
 	}
 }
 
@@ -2413,10 +2415,10 @@ function qDSDumpVar($var, $max_depth = 8, &$bag = null, $depth = 0, $accessModif
 			if (strlen($var) > (1024 * 1024))
 			{
 				// very big !
-				echo '"'.preg_replace(['/\\r/us', '/\\n/us'], ["\\r", "\n"], htmlspecialchars(substr($var, 0, 1024*1024))).' [... truncated ...]"';
+				echo '"'.preg_replace(['/\\r/us', '/\\n/us'], ["", "\n"], htmlspecialchars(substr($var, 0, 1024*1024))).' [... truncated ...]"';
 			}
 			else
-				echo '"'.preg_replace(['/\\r/us', '/\\n/us'], ["\\r", "\n"], htmlspecialchars($var)).'"';
+				echo '"'.preg_replace(['/\\r/us', '/\\n/us'], ["", "\n"], htmlspecialchars($var)).'"';
 			echo "</span>";
 			break;
 		}
@@ -4138,7 +4140,7 @@ function q_index_array(string $property = null, $elements = null, bool $as_array
 		throw new \Exception("Import is not supported.");
 }
 
-function q_reset($list = null)
+function q_reset(&$list)
 {
 	if ($list === null)
 		return null;
@@ -5382,3 +5384,21 @@ function q_data_type_blob(\QModelProperty $property = null)
 	else
 		return false;
 }
+
+/**
+ * count function compatible with PHP 7.3
+ * 
+ * @param \Countable $data
+ * @param int $mode
+ * @return int
+ */
+function q_count($data, int $mode = COUNT_NORMAL)
+{
+	if (is_array($data) || ($data instanceof \Countable))
+		return count($data, $mode);
+	else if ($data === null)
+		return 0;
+	else
+		return 1;
+}
+

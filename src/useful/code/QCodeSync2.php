@@ -259,7 +259,7 @@ class QCodeSync2
 							$rc_ru = preg_match("/^([^\\/]+)/uis", $rel_url, $match_ru);
 							$rel_url = $rc_ru ? $match_ru[1] : null;
 						}
-
+						
 						if (($this->full_sync || $rel_url) && ((!defined('Q_DISABLE_BACKEND_GENERATE')) || (!Q_DISABLE_BACKEND_GENERATE)))
 						{
 							# @TODO - Is there a better solution here then to unlock autoload ? issue is that interface_exists is called
@@ -270,7 +270,7 @@ class QCodeSync2
 								$app_type = \QCodeStorage::Get_Cached_Class(Q_DATA_CLASS);
 
 								$generator_classes_included = false;
-
+								
 								foreach ($app_type->properties as $property => $prop_info)
 								{
 									if ($prop_info->isScalar() || (!(

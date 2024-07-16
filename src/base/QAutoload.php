@@ -261,7 +261,11 @@ final class QAutoload
 		if ($set_as_runtime)
 		{
 			self::SetRuntimeFolder($path);
-			if (defined('Q_CODE_DIR'))
+			if (defined('Q_MAIN_FOLDER_WEB_PATH'))
+			{
+				self::$MainFolderWebPath = Q_MAIN_FOLDER_WEB_PATH;
+			}
+			else if (defined('Q_CODE_DIR'))
 			{
 				self::$MainFolderWebPath = BASE_HREF . substr($path, strlen(Q_CODE_DIR));
 			}
@@ -560,9 +564,9 @@ final class QAutoload
 		if (defined('Q_CODE_DIR'))
 		{
 			if ($for)
-				return substr(self::$RuntimeFolder."temp/".$for, strlen(Q_CODE_DIR));
+				return self::$MainFolderWebPath."temp/".$for;
 			else
-				return substr(self::$RuntimeFolder."temp/", strlen(Q_CODE_DIR));
+				return self::$MainFolderWebPath."temp/";
 		}
 		else
 		{
@@ -847,7 +851,6 @@ final class QAutoload
 			// we need to include all required classes 'manually' as Autoload will not be relayable while in sync
 			static::Include_Parsing_Classes_And_Deps();
 			
-			/*
 			if (PHP_SAPI === 'cli')
 			{
 				# echo "CLI MODE REVIEW\n";
@@ -875,6 +878,7 @@ final class QAutoload
 						CURLOPT_RETURNTRANSFER => 1,
 						CURLOPT_FOLLOWLOCATION => 1,
 					]);
+					
 					$rc = curl_exec($curl);
 					
 					if ($rc === false)
@@ -892,7 +896,7 @@ final class QAutoload
 						}
 						else
 						{
-							echo "<h2>REMOTE COMPILE RESPONSE (QAutoload::ScanForChanges) | ".\QWebRequest::GetRequestUrl()."</h2>";
+							echo "<h2>REMOTE COMPILE RESPONSE (QAutoload::ScanForChanges) | {$req_url}</h2>";
 							# echo "<pre>";
 							echo ($rc);
 							# echo "</pre>";
@@ -907,7 +911,7 @@ final class QAutoload
 				# die;
 				return false;
 			}
-			*/
+			
 			clearstatcache();
 			
 			$HTTP_X_REQUESTED_WITH = filter_input(INPUT_SERVER, "HTTP_X_REQUESTED_WITH");
@@ -1087,7 +1091,7 @@ final class QAutoload
 						if (empty($files_state[$fs_lyr]))
 							unset($files_state[$fs_lyr]);
 					}
-					
+										
 					// changed files : $changed
 					// removed files : $files_state
 					if (((!$full_resync) && (!$generator_changes) && $changed && (!$new) && (!$files_state) && $changed[Q_FRAME_PATH] && (count($changed) === 1)) 

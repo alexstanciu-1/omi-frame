@@ -284,10 +284,12 @@
 		</load>
 	</index>
 
+	<!--
 	<url tag="lang">
 		<get param.0="lang" noprefix><?= ($lang === \QModel::GetDefaultLanguage_Dim()) ? "" : $lang; ?></get>
 		<load><?php  ?></load>
 	</url>
+	-->
 	
 	<url tag="p-adminitem">
 		<get param.0="class"><?= urlencode($class) ?></get>

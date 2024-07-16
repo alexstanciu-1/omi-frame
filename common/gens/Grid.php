@@ -756,10 +756,10 @@ class Grid implements IGenerator
 									$o = &$obinf;
 									if (!$vv["_idf"])
 									{
-										# if (\QAutoload::GetDevelopmentMode())
-										#	qvar_dumpk($analyze_query, $vv, $order_by_info);
+										if (\QAutoload::GetDevelopmentMode())
+											qvar_dumpk($analyze_query, $vv, $order_by_info);
 
-										throw new \Exception("Idf not found !");
+										throw new \Exception("QQueryAnalyzer::Analyze :: ORDER BY :: Idf not found !");
 									}
 									end($vv["_idf"]);
 									$last_k = key($vv["_idf"]);

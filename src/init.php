@@ -95,13 +95,14 @@ if (defined('Q_CODE_DIR'))
 		
 	define("Q_FRAME_BREL", substr(Q_FRAME_BPATH, strlen(Q_CODE_DIR)));
 	
-	if (Q_CODE_DIR !== Q_RUNNING_PATH)
+	if (!defined('Q_APP_REL'))
 	{
-		define("Q_APP_REL", BASE_HREF . substr(Q_RUNNING_PATH, strlen(Q_CODE_DIR)));
+		if (Q_CODE_DIR !== Q_RUNNING_PATH)
+			define("Q_APP_REL", BASE_HREF . substr(Q_RUNNING_PATH, strlen(Q_CODE_DIR)));
+		else
+			define("Q_APP_REL", BASE_HREF);
 	}
-	else
-		define("Q_APP_REL", BASE_HREF);
-	
+		
 	define("Q_REQ_REL", substr($_SERVER["REQUEST_URI"], strlen(Q_APP_REL)));
 }
 else
@@ -109,7 +110,8 @@ else
 	define("Q_FRAME_REL", substr(Q_FRAME_PATH, strlen(Q_RUNNING_PATH) - strlen(BASE_HREF)));
 
 	define("Q_FRAME_BREL", substr(Q_FRAME_BPATH, strlen(Q_RUNNING_PATH) - strlen(BASE_HREF)));
-	define("Q_APP_REL", substr(Q_RUNNING_PATH, strlen(Q_RUNNING_PATH) - strlen(BASE_HREF)));
+	if (!defined('Q_APP_REL'))
+		define("Q_APP_REL", substr(Q_RUNNING_PATH, strlen(Q_RUNNING_PATH) - strlen(BASE_HREF)));
 	define("Q_REQ_REL", substr($_SERVER["REQUEST_URI"], strlen(Q_APP_REL)));
 }
 

@@ -23,27 +23,6 @@ abstract class Request_Log_mods_model_ extends \QModel
 	 */
 	protected $Id;
 	/**
-	 * @storage.oneToMany Request
-	 * 
-	 * @var Request_Log_Trace[]
-	 */
-	protected $Traces;
-	
-	/**
-	 * @storage.type CHAR(26)
-	 * @storage.index
-	 * 
-	 * @var string
-	 */
-	protected $Remote_RId;
-	/**
-	 * @storage.type VARCHAR(64)
-	 * @storage.index
-	 * 
-	 * @var string
-	 */
-	protected $Remote_Idf;
-	/**
 	 * @storage.index
 	 * 
 	 * @var datetime
@@ -62,6 +41,12 @@ abstract class Request_Log_mods_model_ extends \QModel
 	 */
 	protected $Timestamp_ms_end;
 	/**
+	 * @storage.index
+	 * 
+	 * @var float
+	 */
+	protected $Duration;
+	/**
 	 * @var boolean
 	 */
 	protected $Is_Error;
@@ -72,8 +57,9 @@ abstract class Request_Log_mods_model_ extends \QModel
 	 */
 	protected $Method;
 	/**
-	 * @storage.type CHAR(16)
+	 * 
 	 * @storage.index
+	 * @storage.type CHAR(16)
 	 * 
 	 * @var string
 	 */
@@ -82,6 +68,10 @@ abstract class Request_Log_mods_model_ extends \QModel
 	 * @var boolean
 	 */
 	protected $Is_Ajax;
+	/**
+	 * @var boolean
+	 */
+	protected $Is_Fast_Call;
 	/**
 	 * @storage.index
 	 * 
@@ -103,8 +93,8 @@ abstract class Request_Log_mods_model_ extends \QModel
 	 */
 	protected $Session_Id;
 	/**
-	 * @storage.type TEXT
-	 * @storage.compressed
+	 * @storage.index
+	 * @storage.type VARCHAR(16380)
 	 * 
 	 * @var string
 	 */
@@ -137,36 +127,88 @@ abstract class Request_Log_mods_model_ extends \QModel
 	 * @var string
 	 */
 	protected $Tags;
-	
-	public static function Log_Request()
+	/**
+	 * @storage.type LONGTEXT
+	 * 
+	 * @var string
+	 */
+	protected $Traces;
+	/**
+	 * @storage.oneToMany Request
+	 * 
+	 * @var Request_Log_Trace[]
+	 */
+	protected $Traces_List;
+
+	public static function Get_Current_Request()
 	{
-		if (defined('Q_DISABLE_Log_Request') && Q_DISABLE_Log_Request)
-			return;
+		return static::$Current_Request;
+	}
+	
+	public function log()
+	{
+		return static::Log_Request($this);
+	}
+
+	public static function Log_Request(Request_Log $req_log = null)
+	{
+		if (($req_log === null) && static::$Current_Request)
+			return false; # already started
 		
-		$req = static::$Current_Request = new static;
-		$req->Date = date("Y-m-d H:i:s", $_SERVER['REQUEST_TIME_FLOAT']);
-		$req->Method = $_SERVER['REQUEST_METHOD'];
-		$req->IP_v4 = $_SERVER['REMOTE_ADDR'];
-		$req->Is_Ajax = \QWebRequest::IsAjaxRequest();
-		# $req->Is_Fast_Call = ($_POST["__qFastAjax__"] || $_GET["__qFastAjax__"]);
-		
-		$req->Timestamp_ms = $_SERVER['REQUEST_TIME_FLOAT'];
-		$req->Session_Id = session_id() ?: null;
-		
-		$req->Request_URI = parse_url($_SERVER['SCRIPT_URI'], PHP_URL_PATH);
-		$req->Cookies = $_SERVER['HTTP_COOKIE'];
-		$req->User_Agent = $_SERVER['HTTP_USER_AGENT'];
-		
-		$req->HTTP_GET = $_SERVER['REQUEST_URI']; # (!empty($_GET)) ? json_encode($_GET, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_LINE_TERMINATORS | JSON_INVALID_UTF8_SUBSTITUTE) : null;
-		#  php://input is a read-only stream that allows you to read raw data from the request body. php://input is not available with enctype="multipart/form-data". 
-		$req->HTTP_POST = file_get_contents('php://input'); # (!empty($_POST)) ? json_encode($_POST, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_LINE_TERMINATORS | JSON_INVALID_UTF8_SUBSTITUTE) : null;
-		$req->HTTP_FILES = (!empty($_FILES)) ? json_encode($_FILES, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_LINE_TERMINATORS | JSON_INVALID_UTF8_SUBSTITUTE) : null;
+		if ($req_log)
+		{
+			$req = $req_log;
+			if (($req->HTTP_POST !== null) && (!is_string($req->HTTP_POST)))
+				$req->HTTP_POST = json_encode($req->HTTP_POST, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_LINE_TERMINATORS | JSON_INVALID_UTF8_SUBSTITUTE);
+			if (($req->HTTP_FILES !== null) && (!is_string($req->HTTP_FILES)))
+				$req->HTTP_FILES = json_encode($req->HTTP_FILES, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_LINE_TERMINATORS | JSON_INVALID_UTF8_SUBSTITUTE);
+			if (($req->Traces !== null) && (!is_string($req->Traces)))
+				$req->Traces = json_encode($req->Traces, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_LINE_TERMINATORS | JSON_INVALID_UTF8_SUBSTITUTE);
+		}
+		else
+		{
+			$req = static::$Current_Request = new static;
+			$req->_request_time = $_SERVER['REQUEST_TIME_FLOAT'];
+			$req->_log_start_time = microtime(true);
+			$req->Date = date("Y-m-d H:i:s", $_SERVER['REQUEST_TIME_FLOAT']);
+			$req->Method = $_SERVER['REQUEST_METHOD'];
+			$req->IP_v4 = $_SERVER['REMOTE_ADDR'];
+			$req->Is_Ajax = \QWebRequest::IsAjaxRequest();
+			$req->Is_Fast_Call = ($_POST["__qFastAjax__"] || $_GET["__qFastAjax__"]);
+
+			$req->Request_URI = parse_url($_SERVER['SCRIPT_URI'], PHP_URL_PATH);
+			$req->Cookies = $_SERVER['HTTP_COOKIE'];
+			$req->User_Agent = $_SERVER['HTTP_USER_AGENT'];
+
+			$req->HTTP_GET = $_SERVER['REQUEST_URI']; # (!empty($_GET)) ? json_encode($_GET, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_LINE_TERMINATORS | JSON_INVALID_UTF8_SUBSTITUTE) : null;
+			$req->HTTP_POST = (!empty($_POST)) ? json_encode($_POST, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_LINE_TERMINATORS | JSON_INVALID_UTF8_SUBSTITUTE) : null;
+			$req->HTTP_FILES = (!empty($_FILES)) ? json_encode($_FILES, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_LINE_TERMINATORS | JSON_INVALID_UTF8_SUBSTITUTE) : null;
+			
+			$cwd = getcwd();
+			
+			register_shutdown_function(function () use ($cwd, $req)
+			{
+				# some dir bug for register_shutdown_function
+				chdir($cwd);
+				
+				$req->setDuration(microtime(true) - $_SERVER['REQUEST_TIME_FLOAT']);
+
+				if (isset($req->_dbg_traces) && ($dbg_traces = $req->_dbg_traces)) {
+					$req->Traces = json_encode($dbg_traces, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_LINE_TERMINATORS | JSON_INVALID_UTF8_SUBSTITUTE);
+					$req->db_save('Duration,Traces');
+				}
+				else {
+					$req->db_save('Duration');
+				}
+			});
+		}
 		
 		$app = \QApp::NewData();
 		$app->Request_Logs = new \QModelArray();
 		$app->Request_Logs[] = $req;
-		$app->db_save('Request_Logs.*');
-				
+		$app->db_save('Request_Logs.{*,Traces}');
+		
+		return true;
 		/*
 		1. upper level request log
 		ajax ... what's being called ... etc
@@ -178,6 +220,16 @@ abstract class Request_Log_mods_model_ extends \QModel
 		5. API exec log
 		 */
 		
+	}
+	
+	public static function Append_Trace($data)
+	{
+		if (!static::$Current_Request)
+			return false; # not started yet
+		
+		if (!isset(static::$Current_Request->_dbg_traces))
+			static::$Current_Request->_dbg_traces = [];
+		static::$Current_Request->_dbg_traces[] = $data;
 	}
 	
 	/**
@@ -195,20 +247,20 @@ abstract class Request_Log_mods_model_ extends \QModel
 				. "??Id?<AND[Id=?]"
 				. "??Id_IN?<AND[Id IN (?)]"
 
-				. "??Is_Ajax?<AND[Is_Ajax IN (?)]"
+				. "??IP_v4?<AND[IP_v4=?]"
 				. "??QINSEARCH_IP_v4?<AND[(IP_v4=?)]"
 
-				. "??IP_v4?<AND[IP_v4=?]"
+				. "??Request_URI?<AND[Request_URI LIKE (?)]"
+				. "??QINSEARCH_Request_URI?<AND[Request_URI LIKE (?)]"
+				
+				. "??User_Agent?<AND[User_Agent LIKE (?)]"
+				. "??QINSEARCH_User_Agent?<AND[User_Agent LIKE (?)]"
+
+				. "??Is_Ajax?<AND[Is_Ajax IN (?)]"
 				. "??QINSEARCH_Is_Ajax?<AND[Is_Ajax IN(?)]"
 				
 				. "??Session_Id?<AND[Session_Id=?]"
 				. "??QINSEARCH_Session_Id?<AND[Session_Id IN(?)]"
-				
-				. "??Remote_Idf?<AND[Remote_Idf LIKE(?)]"
-				. "??QINSEARCH_Remote_Idf?<AND[Remote_Idf LIKE(?)]"
-				
-				. "??Remote_RId?<AND[Remote_RId=?]"
-				. "??QINSEARCH_Remote_RId?<AND[Remote_RId=?]"
 				
 				. "??HTTP_GET?<AND[HTTP_GET LIKE (?)]"
 				. "??QINSEARCH_HTTP_GET?<AND[HTTP_GET LIKE (?)]"

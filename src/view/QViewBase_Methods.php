@@ -518,7 +518,7 @@ trait QViewBase_Methods
 	 */
 	public static function ApiDynamic_Ctrl(string $dynamic_name, string $method, array $args = null)
 	{
-		if (!Q_IS_TFUSE)
+		if (defined('VF_REL_PATH'))
 		{
 			# only allowed to do if logged
 			list ($logged_in_user_id /*, $logged_in_user_owner*/ )  = \Omi\User::Quick_Check_Login(false);

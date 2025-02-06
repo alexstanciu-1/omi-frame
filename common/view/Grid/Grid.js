@@ -1,6 +1,4 @@
 
-/* global FILTER_VALIDATE_IP */
-
 QExtendClass("Omi\\View\\Grid", "omi", {
 	
 	isGrid : true,
@@ -21,6 +19,12 @@ QExtendClass("Omi\\View\\Grid", "omi", {
 		this.initWysiwyg();
 		
 		this.changeTab();
+		
+		var $scroll_on = document.querySelector('.js-omi-add-scroll-event');
+		
+		if ($scroll_on) {
+			$scroll_on.addEventListener('scroll', debounce(this.scroll, 500, null, this));
+		}
 
 		return $super;
 	},
@@ -136,12 +140,39 @@ QExtendClass("Omi\\View\\Grid", "omi", {
 			$this.bindDatepickr(datepickr_jq);
 		}
 		
-		this.$(".flatpickr").flatpickr({
-				// dateFormat: 'd-m-Y'
-				allowInput: true,
-				static: true,               // @INFO: position the element inside a wrapper .flatpickr-wrapper and next to input
-				enableTime: true,
-			});
+		var flatpickers = this.$(".flatpickr");
+		if (flatpickers)
+		{
+			for (var i = 0; i < flatpickers.length; i++)
+			{
+				var flatpicker_jq = jQuery(flatpickers[i]);
+				
+				var $date_format = flatpicker_jq.data('format');
+				
+				var $date = flatpickers[i].getAttribute('value');
+				
+				var $flatpickr_options = {
+					// dateFormat: 'd-m-Y'
+					allowInput: true,
+					static: true,               // @INFO: position the element inside a wrapper .flatpickr-wrapper and next to input
+					// enableTime: true,
+					// appendTo: jQuery('.qc-popup .js-popup-container .qc-xg-item')[0],
+					// altInput: true, 
+					// altFormat: 'd-m-Y',
+					// onReady: function (selectedDates, dateStr, instance) {
+					//     instance.calendarContainer.classList.add("qSkipHideOnClickAway");
+					// }
+				}
+				
+				if ($date_format)
+					$flatpickr_options.dateFormat = $date_format;
+				
+				if ($date)
+					$flatpickr_options.defaultDate = new Date($date);
+
+				flatpicker_jq.flatpickr($flatpickr_options);
+			}
+		}
 	},
 
 	getReferenceFull : function (property, context)
@@ -476,7 +507,7 @@ QExtendClass("Omi\\View\\Grid", "omi", {
 		return $data;
 	},
 
-	doOnException : function (jqXHR, textStatus, errorThrown)
+	doOnException : function (jqXHR, textStatus, errorThrown, hide_exception)
 	{
 		var $ex = ((typeof(errorThrown) === "object") && errorThrown.__cust__) ? errorThrown : null;
 		if (!$ex)
@@ -494,7 +525,9 @@ QExtendClass("Omi\\View\\Grid", "omi", {
 			{
 			}
 		}
-		this.onexception($ex, jqXHR, textStatus, errorThrown);
+		
+		if (!hide_exception)
+			this.onexception($ex, jqXHR, textStatus, errorThrown);
 	},
 	
 	onexception : function($ex, jqXHR, textStatus, errorThrown)
@@ -526,7 +559,7 @@ QExtendClass("Omi\\View\\Grid", "omi", {
 		return this.$('.qc-main-tabs-panel .qc-tab-itm>.jx-tab.active').data('controls');
 	},
 
-	doSubmit : function (form, sender, forceAjax, callbackOnSuccess, callbackOnError)
+	doSubmit : function (form, sender, forceAjax, callbackOnSuccess, callbackOnError, hide_exception)
 	{
 		var grid_props = this.getProperties();
 		var callAjax = (forceAjax || (grid_props && grid_props.processAction && (grid_props.processAction === 'ajax')));
@@ -671,7 +704,7 @@ QExtendClass("Omi\\View\\Grid", "omi", {
 				{
 					callbackOnError.apply(this, [sender, jqXHR, textStatus, errorThrown]);
 				}
-				$this.doOnException(jqXHR, textStatus, errorThrown);
+				$this.doOnException(jqXHR, textStatus, errorThrown, hide_exception);
 			},
 			null,
 			null,
@@ -680,7 +713,7 @@ QExtendClass("Omi\\View\\Grid", "omi", {
 		);
 	},
 
-	quickCall : function (method, params, onSuccessCallback, onSuccessCallbackParams, onErrorCallback, force, skipLoader)
+	quickCall : function (method, params, onSuccessCallback, onSuccessCallbackParams, onErrorCallback, force, skipLoader, hide_exception)
 	{
 		var $this = this;
 		if (this._in_quick_call && !force)
@@ -703,7 +736,8 @@ QExtendClass("Omi\\View\\Grid", "omi", {
 			if (!skipLoader)
 				$this.unsetLoader();
 
-			$this.doOnException(jqXHR, textStatus, errorThrown);
+			$this.doOnException(jqXHR, textStatus, errorThrown, hide_exception);
+			
 			if (onErrorCallback)
 				onErrorCallback(jqXHR, textStatus, errorThrown);
 		});
@@ -974,10 +1008,13 @@ QExtendClass("Omi\\View\\Grid", "omi", {
 		this.markUnusedPopupProps(form);
 
 		// Need to clear other errors before showing new one.
-		jQuery(".qc-validation-alert").removeAttr("style");
+		jQuery(".qc-validation-alert").addClass("hidden");
 
+		// value=\"2\" => means delete
+		var $hidden_inputs = form.find(".js-itm .js-rm-flag input[type=hidden][name][value=\"2\"]").closest('.js-itm').find(".q-mandatory");
 		// check first mandatory data and after check the rest
-		var mandatory_itms_list = form.find(".q-mandatory");
+		var mandatory_itms_list = form.find(".q-mandatory").not($hidden_inputs);
+		
 		var valid_data = true;
 		
 		if (mandatory_itms_list.length > 0)
@@ -1147,7 +1184,7 @@ QExtendClass("Omi\\View\\Grid", "omi", {
 						'<div class="fixed inset-0 transition-opacity">' +
 							'<div class="absolute inset-0 bg-gray-500 opacity-75"></div>' +
 						'</div>' +
-						'<div class="inline-block align-top bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all w-1/2 min-h-screen sm:p-8 js-popup-container qHideOnClickAway" role="dialog" aria-modal="true" aria-labelledby="modal-headline"">' +
+						'<div class="inline-block align-top bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all w-1/2 min-h-screen sm:p-8 relative js-popup-container qHideOnClickAway" role="dialog" aria-modal="true" aria-labelledby="modal-headline"">' +
 							resp +
 							'<a href="javascript: void(0)" class="inline-flex justify-center w-full rounded-md border border-gray-300 px-4 py-2 bg-white text-base leading-6 font-medium text-gray-700 shadow-sm hover:text-gray-500 focus:outline-none focus:border-blue-300 focus:shadow-outline-blue transition ease-in-out duration-150 sm:text-sm sm:leading-5 jx-close-modal">' + _L("Close") + '</a>' +
 						'</div>' +
@@ -1156,14 +1193,33 @@ QExtendClass("Omi\\View\\Grid", "omi", {
 		}
 		else
 		{
-			var new_jq = jQuery('<div class="qc-popup qc-data-expand-popup jx-modal qHideOnClickAway-remove qHideOnClickAway-parent">' +
-			'<div class="popup-wrapper jx-modal-content">' +
-					'<div class="popup-container js-popup-container qHideOnClickAway">' +
-						resp +
-						'<a href="javascript: void(0)" class="close-trigger popup-close jx-close-modal">' + _L("Close") + '</a>' +
-					'</div>' +
-				'</div>' +
-			'</div>');
+      if (true)
+      {
+  			var new_jq = jQuery('<div class="qc-popup fixed z-30 inset-0 overflow-y-auto jx-modal qHideOnClickAway-remove qHideOnClickAway-parent">' +
+  				'<div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0 jx-modal-content is-visible">' +
+  					'<div class="fixed inset-0 transition-opacity">' +
+  						'<div class="absolute inset-0 bg-gray-500 opacity-75"></div>' +
+  					'</div>' +
+  					'<!-- This element is to trick the browser into centering the modal contents. -->' +
+  					'<span class="hidden sm:inline-block sm:align-middle sm:h-screen"></span>&#8203;'+
+  						'<div class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle ' + $widthClass +  ' sm:w-full sm:p-8 relative js-popup-container qHideOnClickAway" role="dialog" aria-modal="true" aria-labelledby="modal-headline"">' +
+  							resp +
+  							'<a href="javascript: void(0)" class="inline-flex justify-center w-full rounded-md border border-gray-300 px-4 py-2 bg-white text-base leading-6 font-medium text-gray-700 shadow-sm hover:text-gray-500 focus:outline-none focus:border-blue-300 focus:shadow-outline-blue transition ease-in-out duration-150 sm:text-sm sm:leading-5 jx-close-modal">' + _L("Close") + '</a>' +
+  						'</div>' +
+  					'</div>' +
+  				'</div>');
+         }
+         else
+         {
+            var new_jq = jQuery('<div class="qc-popup qc-data-expand-popup jx-modal qHideOnClickAway-remove qHideOnClickAway-parent">' +
+      			'<div class="popup-wrapper jx-modal-content">' +
+      					'<div class="popup-container js-popup-container qHideOnClickAway">' +
+      						resp +
+      						'<a href="javascript: void(0)" class="close-trigger popup-close jx-close-modal">' + _L("Close") + '</a>' +
+      					'</div>' +
+      				'</div>' +
+      			'</div>');
+         }
 		}
 	
 		var resp_jq = new_jq.find(".js-popup-container").children();
@@ -1194,6 +1250,9 @@ QExtendClass("Omi\\View\\Grid", "omi", {
 			initCustomDropdowns(new_jq);
 		
 		inputsHasValues();
+        
+        if (initDatepicker)
+            initDatepicker();
 		
 		return new_jq;
 	},
@@ -1277,6 +1336,7 @@ QExtendClass("Omi\\View\\Grid", "omi", {
 
 		var form_grp_jq = sender_jq.closest(".js-form-grp");
 		form_grp_jq.removeClass("error");
+		form_grp_jq.find('.qc-validation-alert').hide();
 	},
 
 	showSuccessBlock : function (sender_jq)
@@ -1284,7 +1344,7 @@ QExtendClass("Omi\\View\\Grid", "omi", {
 		if (!sender_jq.attr("q-valid"))
 			return;
 
-		//this.hideErrorBlock(sender_jq);
+		this.hideErrorBlock(sender_jq);
 		var form_grp_jq = sender_jq.closest(".js-form-grp");
 		form_grp_jq.addClass("success").removeClass("error");
 	},
@@ -1304,7 +1364,7 @@ QExtendClass("Omi\\View\\Grid", "omi", {
 		var dd_jq = sender_jq.closest(".qc-dd");
 		var in_dropdown = (dd_jq.length > 0);
 
-		this.filterErrorBlocks(sender_jq, value, form_grp_jq);
+		this.filterErrorBlocks(sender_jq, value, form_grp_jq, true);
 
 		// we need to display the tab with the invalid data
 		var tabContent = sender_jq.closest(".tab-content");
@@ -1534,6 +1594,36 @@ QExtendClass("Omi\\View\\Grid", "omi", {
 			// do quick search
 			this.doQuickSearch();
 		}
+		// start image uploader
+		else if (sender_jq.hasClass('q-multiple-images-uploader'))
+		{
+			var $add_button_jq = sender_jq.closest('.qc-list').find('.qc-collection-add');
+			this._images_uploader_index_ = (sender.files.length > 0) ? 0 : null;
+			
+			var $files_too_big = [];
+			var $files_too_big_str = "";
+			
+			for (var $i = 0; $i < sender.files.length; $i++)
+			{
+				if (window._q_maximum_upload_size_ && (window._q_maximum_upload_size_ > 0) && 
+						(sender.files[$i].size > window._q_maximum_upload_size_))
+				{
+					// console.log(sender.files[$i].name);
+					// alert(sender.files[$i].name + " / " + sender.files[$i].size + " / " + window._q_maximum_upload_size_);
+					// alert("File too big: " + sender.files[$i].name);
+					$files_too_big.push(sender.files[$i]);
+					$files_too_big_str += sender.files[$i].name + "\n";
+				}
+				
+				$add_button_jq[0].click();
+			}
+			
+			if ($files_too_big.length > 0)
+			{
+				alert("These files are too big:\n\n" + $files_too_big_str);
+			}
+		}
+		// end image uploader
 		
 		if (sender === undefined)
 		{
@@ -1551,12 +1641,24 @@ QExtendClass("Omi\\View\\Grid", "omi", {
 	oninput: function(sender, sender_id, event)
 	{
 		var sender_jq = jQuery(sender);
-		
+
 		if (sender_jq.hasClass("js-search-field"))
 		{
 			// keep in sync with advanced search
 			this.syncWithAdvancedSearch(sender_jq);
 
+			// do quick search
+			this.doQuickSearch();
+		}
+		else if (sender_jq.hasClass('js-srch-handle'))
+		{
+			var $hidden_name = sender_jq.data('srch-handle');
+			var $srch_hidden = this.$('.js-srch-hidden[name="' + $hidden_name + '"]');
+			// alert(sender_jq.val());
+			$srch_hidden.val(sender_jq.val());
+			// $srch_hidden.change();
+			// keep in sync with advanced search
+			this.syncWithAdvancedSearch($srch_hidden);
 			// do quick search
 			this.doQuickSearch();
 		}
@@ -1659,8 +1761,8 @@ QExtendClass("Omi\\View\\Grid", "omi", {
 	},
 
 	onclick: function(sender, sender_id, event)
-	{	
-		//alert(arguments.callee.caller);
+	{
+		// alert(arguments.callee.caller);
 		// do here the actions for the right click
 		if (event.which === 3)
 		{	
@@ -1669,7 +1771,7 @@ QExtendClass("Omi\\View\\Grid", "omi", {
 
 		var $this = this;
 		var sender_jq = jQuery(sender);
-		
+
 		var $js_click = sender.classList.contains("js-click") ? sender : (sender.closest(".js-click") || null);
 		// if the sender has the class js order by
 		if ($js_click)
@@ -1684,7 +1786,7 @@ QExtendClass("Omi\\View\\Grid", "omi", {
 			this.js_action_prepare_args($args);
 			
 			$args.unshift($js_click);
-			
+						
 			if ((!$action) || (typeof($action) !== 'string'))
 				console.error('missing action');
 			else
@@ -1694,29 +1796,29 @@ QExtendClass("Omi\\View\\Grid", "omi", {
 				this[$action](...$args);
 			}
 		}
-		else if (sender_jq.hasClass("js-order-by"))
+		else if (sender_jq.closest(".js-order-by").length > 0)
 		{
-			var $orderData = sender_jq.data("order");
+			var $sendeJq = sender_jq.closest(".js-order-by");
+			var $orderData = $sendeJq.data("order");
 			var correspFieldJq = this.$(".js-oby-field[oby-indx='" + $orderData + "']");
 
-			if (sender_jq.hasClass("asc"))
+			if ($sendeJq.hasClass("asc"))
 			{
-				sender_jq.removeClass("asc");
-				sender_jq.addClass("desc");
+				$sendeJq.removeClass("asc");
+				$sendeJq.addClass("desc");
 				
 				correspFieldJq.val('DESC');
 			}
-			else if (sender_jq.hasClass("desc"))
+			else if ($sendeJq.hasClass("desc"))
 			{
-				sender_jq.removeClass("desc");
+				$sendeJq.removeClass("desc");
 				correspFieldJq.val('ASC');
 			}
 			else
 			{
-				sender_jq.addClass("asc");
+				$sendeJq.addClass("asc");
 				correspFieldJq.val('ASC');
 			}
-
 
 			// sync with advanced search
 			this.syncWithAdvancedSearch(correspFieldJq);
@@ -1769,6 +1871,8 @@ QExtendClass("Omi\\View\\Grid", "omi", {
 		}
 		else if (this.hasClass('qc-submit-btn', sender))
 		{
+			event.preventDefault();
+			
 			this.doSubmit(jQuery(this.$('.xg-form')[0]), sender);
 			return;
 		}
@@ -1798,6 +1902,7 @@ QExtendClass("Omi\\View\\Grid", "omi", {
 			var master_ctrl = (popup_jq[0] && popup_jq[0]._masterCtrl) ? popup_jq[0]._masterCtrl : null;
 			if (master_ctrl)
 				master_ctrl.trigger("beforePopupSave", {"sender" : sender});
+			
 			this.doSubmit(jQuery(this.$('.xg-form')[0]), sender, true, function (sender, resp) {
 				
 				if (master_ctrl)
@@ -1876,6 +1981,22 @@ QExtendClass("Omi\\View\\Grid", "omi", {
 		else if (this.hasClass("qc-ref-ctrl-new-full", sender) || this.hasClass("qc-ref-ctrl-new-full", sender_jq.parent()[0]))
 		{
 			var $elem = sender_jq.hasClass('qc-ref-ctrl-new-full') ? sender_jq : sender_jq.parent();
+			
+			var $isSidebar = false;
+			if ($elem.hasClass('is-sidebar'))
+				$isSidebar = true;
+			
+			var $widthClass = null;
+			if ($elem.data('width-class'))
+				$widthClass = $elem.data('width-class');
+			
+			var $saveOnDropdown = true;
+			if ($elem.hasClass('js-save-no-dropdown'))
+				$saveOnDropdown = false;
+			
+			var $pageRefresh = false;
+			if ($elem.hasClass('jsPageRefresh'))
+				$pageRefresh = true;
 
 			if ($elem[0]._in_process)
 				return;
@@ -1903,22 +2024,33 @@ QExtendClass("Omi\\View\\Grid", "omi", {
 					if (dd_jq && dd_jq.length)
 					{
 						var dd_id = dd_jq.attr("id");
+						
 						if (!dd_id)
 						{
 							dd_id = uniqid();
 							dd_jq.attr("id", dd_id);
 						}
+						
+						if (!dd_id)
+							console.error('Unable to find or setup a id for the dropdown.');
 					}
 					
-					if (!dd_id)
-						console.error('Unable to find or setup a id for the dropdown.');
+					// setup popup | build popup
+					var new_jq = $this.setupPopup(resp, null, $isSidebar, $widthClass);
 					
-					var new_jq = $this.setupPopup(resp);
 					var $save_btn = new_jq.find(".qc-popup-submit-btn");
 					$save_btn.removeClass("qc-popup-submit-btn");
+					
 					$save_btn.addClass("qc-dropdown-popup-submit-btn");
+					if (!$saveOnDropdown)
+						$save_btn.addClass('jsSaveNoDropdown');
+					
+					if ($pageRefresh)
+						$save_btn.addClass('jsPageRefresh');
+					
 					if (dd_id)
 						$save_btn.data("dropdown-id", dd_id);
+					
 					$this.trigger("afterPopupAdd", {"control" : this, "sender" : $elem[0], "popup" : new_jq});
 				});
 			}
@@ -1942,18 +2074,30 @@ QExtendClass("Omi\\View\\Grid", "omi", {
 		}
 
 		else if (this.hasClass('qc-dropdown-popup-submit-btn', sender))
-		{
-			var dd_id = sender_jq.data("dropdown-id");
-			if (!dd_id)
+		{			
+			var $saveOnDropdown = true;
+			if (sender_jq.hasClass('jsSaveNoDropdown'))
+				$saveOnDropdown = false;
+			
+			var $pageRefresh = false;
+			if (sender_jq.hasClass('jsPageRefresh'))
+				$pageRefresh = true;
+			
+			var dd_jq = null;
+			if ($saveOnDropdown)
 			{
-				alert("dropdown id not found!");
-				return;
-			}
-			var dd_jq = jQuery("#" + dd_id);
-			if (dd_jq.length === 0)
-			{
-				alert("dropdown not found!");
-				return;
+				var dd_id = sender_jq.data("dropdown-id");
+				if (!dd_id)
+				{
+					alert("dropdown id not found!");
+					return;
+				}
+				var dd_jq = jQuery("#" + dd_id);
+				if (dd_jq.length === 0)
+				{
+					alert("dropdown not found!");
+					return;
+				}
 			}
 			
 			var $button_form = sender_jq.closest("form");
@@ -1962,7 +2106,8 @@ QExtendClass("Omi\\View\\Grid", "omi", {
 				$button_form = sender_jq.closest(".js-popup-container").find('form');
 			}
 			
-			this.doDropdownPopupSubmit($button_form, sender, dd_jq);
+			this.doDropdownPopupSubmit($button_form, sender, dd_jq, $pageRefresh);
+			
 			return;
 		}
 
@@ -2056,6 +2201,8 @@ QExtendClass("Omi\\View\\Grid", "omi", {
 		//else if (this.hasClass("qc-collection-more", sender))
 		else if (sender_jq.closest(".qc-collection-more").length > 0)
 		{
+			// avoid a submit
+			event.preventDefault();
 			this.showMore(sender);
 		}
 		else if (sender_jq.hasClass("qc-export-excel") || sender_jq.hasClass("qc-export-pdf") || 
@@ -2101,11 +2248,64 @@ QExtendClass("Omi\\View\\Grid", "omi", {
 		}
 	},
 	
+	scroll: function (event) {
+		// trigger showMore when close to the bottom
+		
+		var $show_more_dom = this.$('.qc-collection-more');
+		if ($show_more_dom.data('hasMoreItems') === false) {
+			console.log('hasMoreItems: ', $show_more_dom.data('hasMoreItems'));
+			return;
+		}
+		
+		const $space_left_to_scroll = event.target.scrollTopMax - event.target.scrollTop;
+		const $viewport_height = event.target.clientHeight;
+		
+		const $elements = this.$('.qc-main-list .qc-xg-item');
+		var $max_elem_height = 0;
+		for (var $i = 0; $i < $elements.length; $i++) {
+			$max_elem_height = Math.max($max_elem_height, jQuery($elements[0]).outerHeight(true));
+		}
+		
+		if ($max_elem_height < 20)
+			// ensure a minimum value
+			$max_elem_height = 20;
+		
+		// we want elements preparted as much as a viewport can handle plus one
+		var $desired_available_elements = Math.ceil($viewport_height / $max_elem_height) + 1;
+		
+		
+		// I want to have X elements ready on the scroll
+		var $estimated_elements_hidden = Math.floor($space_left_to_scroll / $max_elem_height);
+		var $more_is_needed = $estimated_elements_hidden < $desired_available_elements;
+
+		/*
+		console.log('$space_left_to_scroll: ' + $space_left_to_scroll);
+		console.log('$viewport_height: ' + $viewport_height);
+		console.log('$max_elem_height: ' + $max_elem_height);
+		console.log('$desired_available_elements: ' + $desired_available_elements);
+		console.log('$estimated_elements_hidden: ' + $estimated_elements_hidden);
+		console.log('$more_is_needed: ' + $more_is_needed);
+
+		console.log('$max_elem_height: ' + $max_elem_height);
+		console.log('event.target: ', event.target);
+		console.log('window.scrollY: ' + window.scrollY);
+		console.log('scrollHeight: ' + event.target.scrollHeight);
+		// console.log('scrollLeft: ' + event.target.scrollLeft);
+		console.log('scrollTop: ' + event.target.scrollTop);
+		console.log('scrollTopMax: ' + event.target.scrollTopMax);
+		// console.log('scrollWidth: ' + event.target.scrollWidth);
+		console.log('---------------------------------------------------------');
+		*/
+		if ($more_is_needed && ($show_more_dom.length > 0) && ($show_more_dom.data('hasMoreItems') !== false)) {
+			this.showMore($show_more_dom[0]);
+		}
+	},
+	
 	get_checked_data : function ($jq_context)
 	{
 		if (!$jq_context)
 			$jq_context = this.$('.xg-form');
-			
+
 		var pickers = $jq_context.find(".js-itms-table td.qc-chk-cell");
 		
 		var $ret = null;
@@ -2312,8 +2512,10 @@ QExtendClass("Omi\\View\\Grid", "omi", {
 			sender.setAttribute("data-offset", data_offset + data_length);
 			obj_form_vars_path_index.data("next-crt-no", response[1]);
 
-			if (!response[2])
+			if (!response[2]) {
 				jQuery(sender).hide();
+				jQuery(sender).data('hasMoreItems', false);
+			}
 		}]);
 	},
 
@@ -3036,6 +3238,31 @@ jQuery(document).ready(function () {
 		var jq = jQuery(this);
 		jq.closest(".js-paginator").find(".js-start-limit").val(jq.data("start"));
 		jq.trigger("afterSetupLimit");
+	});
+	
+	jQuery('body').on('click', '.js-delete-item', function()
+	{
+		if (confirm('Are you sure you want to delete this item!'))
+		{
+			var $id = jQuery(this).data('id');
+			var $model = jQuery(this).data('model');
+			var ctrl_jq = jQuery(this).closest(".omi-control");
+			
+			omi.api(ctrl_jq.attr('q-ctrl') + '::DeleteItemFromList', [$id], 
+				// success
+				function(resp)
+				{
+					console.log(resp);
+					// reload page
+					window.location.reload();
+				}, 
+
+				// fail
+				function(jqXHR, textStatus, errorThrown)
+				{
+				}
+			);
+		}
 	});
 
 	var nav_dd = $('#-nav-dd').not(".navigation-blocked");

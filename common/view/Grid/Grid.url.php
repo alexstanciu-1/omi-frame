@@ -10,8 +10,28 @@
 		$dataClass = \QApp::GetDataClass();
 
 		static::$_USE_SECURITY_FILTERS = $dataClass::$_USE_SECURITY_FILTERS;
+		$this->grid_params = [];
+		$url_chunks = preg_split("/\\&/uis", $_SERVER['QUERY_STRING'], -1, PREG_SPLIT_NO_EMPTY);
+		foreach ($url_chunks as $url_chk)
+		{
+			list ($uc_key, $uc_val) = preg_split("/\\=/uis", $url_chk, 2, PREG_SPLIT_NO_EMPTY);
+			$uc_key_parts = preg_split("/(\\]?\\[)/uis", rtrim(urldecode($uc_key), "]"), -1, PREG_SPLIT_NO_EMPTY);
+			$c_uc_key_parts = count($uc_key_parts);
+			
+			if ($c_uc_key_parts === 1)
+				$this->grid_params[$uc_key] = urldecode($uc_val);
+			else
+			{
+				$uc_arr_ref = &$this->grid_params[$uc_key_parts[0]];
+				for ($uc_i = 1; $uc_i < $c_uc_key_parts; $uc_i++)
+					$uc_arr_ref = &$uc_arr_ref[$uc_key_parts[$uc_i]];
+				$uc_arr_ref = urldecode($uc_val);
+				unset($uc_arr_ref);
+			}
+		}
 		
-		$this->grid_params = filter_var_array($_GET); # we use $_GET in case the controller adds more stuff
+		# OLD WAY - broken in case of `.` or space in name ... etc
+		# $this->grid_params = filter_var_array($_GET); # we use $_GET in case the controller adds more stuff
 		
 		if ($this->grid_params && is_array($this->grid_params))
 		{
@@ -54,10 +74,20 @@
 			$this->inExport = true;
 
 			$this->grid_mode = $testResult;
-			
-			$this->grid_params["LIMIT"] = [0, $this->get_export_limit($url->current( +1 ))];
-			
-			$this->setupGrid("list", $this->grid_id, $this->grid_params);
+
+			$remaining_url_chunks = \QUrl::$Requested->getFromCurrent();
+			if (isset($remaining_url_chunks[2]) && $remaining_url_chunks[2])
+			{
+				$url_id = $remaining_url_chunks[2];
+				$this->grid_mode = 'view';
+				$this->grid_params["LIMIT"] = [0, $this->get_export_limit($url->current( +1 ))];
+				$this->setupGrid("view", ($this->grid_id = $url_id), $this->grid_params);
+			}
+			else
+			{
+				$this->grid_params["LIMIT"] = [0, $this->get_export_limit($url->current( +1 ))];
+				$this->setupGrid("list", $this->grid_id, $this->grid_params);
+			}
 			
 			$url->next();
 			
@@ -75,6 +105,15 @@
 				$this->exportPdf();
 				die();
 
+				?>
+			</load>
+		</url>
+		<url tag='pdf-test'>
+			<get translate="pdf-test" />
+			<load>
+				<?php
+					$this->test_pdf();
+					die();
 				?>
 			</load>
 		</url>

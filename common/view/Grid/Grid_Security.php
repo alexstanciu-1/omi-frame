@@ -37,7 +37,7 @@ trait Grid_Security
 	 */
 	public function init($recursive = true)
 	{
-        if (file_exists(Q_FRAME_BPATH . "gens/control/Grid/css/skin.css"))
+		if (file_exists(Q_FRAME_BPATH . "gens/control/Grid/css/skin.css"))
 			$this->addCss(\QApp::GetWebPath( Q_FRAME_BPATH . "gens/control/Grid/css/skin.css" ));
 		if (file_exists(QGEN_ConfigDirBase."/css/skin.css"))
 		{
@@ -57,9 +57,23 @@ trait Grid_Security
 		if (!class_exists($ctrl))
 			return;
 
-		
-		// $label = ($ctrl == "Omi\VF\View\Customers") ? _L("New") : _L("Enter");
 		$label = _L("New");
+		
+		if (defined('Q_IS_H2B') && Q_IS_H2B)
+		{
+		?>
+			<div class="qc-dropdown-actions dropdown no-border">
+				<span class='qc-ref-edit-wr block'<?= $selectedItm ? '' : ' style="display: none;"' ?>>
+					<a data-ctrl='<?= $ctrl ?>' class="qc-ref-ctrl-edit-full mt-1 cursor-pointer bg-indigo-600 px-4 py-3 rounded-md text-white font-medium text-sm" title="Edit">Edit</a>
+				</span>
+				<span class='qc-ref-add-wr block'>
+					<a data-ctrl='<?= $ctrl ?>' class="cursor-pointer mt-1 bg-indigo-600 px-4 py-3 rounded-md text-white font-medium qc-ref-ctrl-new-full address-controls"><?= $label ?></a>
+				</span>
+			</div>
+		<?php
+		}
+		else
+		{
 		?>
 		<ul class="buttons-group t-tooltip qc-dropdown-actions css-dropdown-actions">
 			<li>
@@ -84,8 +98,8 @@ trait Grid_Security
 			</li>
 		</ul>
 		<?php
+		}
 	}
-	
 	
 	/**
 	 * @api.enable
@@ -102,6 +116,7 @@ trait Grid_Security
 		$grid->grid_mode = $grid_mode;
 		$grid->grid_id = $id;
 		$grid->grid_params = $params;
+
 		$grid->setupGrid($grid->grid_mode, $grid->grid_id, $grid->grid_params);
 		
 		if (isset($params["full_data"]))
@@ -143,18 +158,74 @@ trait Grid_Security
 			$populate_sel = qJoinSelectors(\Omi\App::GetEntityForGenerateForm($params['from']), \Omi\App::GetFormEntity($params['from']));
 			$grid->data->populate(qImplodeEntity($populate_sel));
 		}
-        
-        $grid->_is_popup_ = true;
-        $grid->settings['_is_popup_'] = true;
+
+	        $grid->_is_popup_ = true;
+	        $grid->settings['_is_popup_'] = true;
 		
 		$grid->setArguments([$grid->settings, $grid->data, $grid->grid_params, $grid_mode, $id], "renderForm");
-			
+
 		if (($grid_mode === 'edit') || ($grid_mode === 'add'))
 			$grid->setRenderMethod("renderForm");
 		else if ($grid_mode === 'list')
 			$grid->setRenderMethod("renderList");
 		
 		$grid->render();
+	}
+	
+	/**
+	 * @api.enable
+	 * 
+	 * @param string $grid_mode
+	 * @param int|null $id
+	 * @param array $params
+	 */
+	public static function Render_Method(string $method, string $grid_mode, $id = null, $params = [], Grid $grid = null)
+	{
+		if (!$grid)
+		{
+			$gridCls = get_called_class();
+			$grid = new $gridCls();
+		}
+		
+		$grid->grid_mode = $grid_mode;
+		$grid->grid_id = $id;
+		$grid->grid_params = $params;
+		
+		$grid->setupGrid($grid->grid_mode, $grid->grid_id, $grid->grid_params);
+		
+		if (isset($params["full_data"]))
+		{
+			// we overwrite ... 
+			if (($grid->grid_mode === 'add') || (!$id))
+				$grid->data = $params["full_data"];
+			else if ($id) // can be edit/view/delete
+			{
+				# we need to fix it back !
+				$grid->grid_mode = $grid_mode;
+				$grid->grid_id = $id;
+				if ((!$grid->data) || qis_array($grid->data)) # ugly fix !
+				{
+					$grid->data = $params["full_data"];
+					if ($grid->data->Id) # ugly fix !
+						$grid->data->populate($grid->data::GetModelEntity());
+				}
+				else
+				{
+					// @TODO merge the data deeper (in the future ?!)
+					foreach ($params["full_data"] ?: [] as $k => $v)
+						$grid->data->{$k} = $v;
+				}
+			}
+		}
+		
+		# $grid->_is_popup_ = true;
+		# $grid->settings['_is_popup_'] = true;
+		
+		$grid->setArguments([$grid->settings, $grid->data, $grid->grid_params, $grid_mode, $id], $method);
+	
+		ob_start();
+		$grid->render();
+		return ob_get_clean();
 	}
 	
 	/**
@@ -169,6 +240,9 @@ trait Grid_Security
 			if (!$data || (count($data) === 0))
 				throw new \Exception("No data submitted!");
 			static::BeforeProcessData($data);
+			
+			if (is_array($data))
+				static::FormSubmit_extract_misc_json($data);
 			static::BeforeProcessFiles($_FILES);
 
 			$grid = self::GetLoadedGrid($grid_data);

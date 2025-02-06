@@ -2709,7 +2709,7 @@ trait QModel_Methods
 	
 	public static function GetDefaultLanguage_Dim()
 	{
-		return (static::$DimsDef && static::$DimsDef["lang"]) ? reset(static::$DimsDef["lang"]) : (\QApp::$DefaultLanguage_Dim ?: static::$Language_Dim);
+		return (static::$DimsDef && static::$DimsDef["lang"]) ? reset(static::$DimsDef["lang"]) : (\QApp::$DefaultLanguage_Dim ?: \QApp::$Language_Dim);
 	}
 	
 	/**

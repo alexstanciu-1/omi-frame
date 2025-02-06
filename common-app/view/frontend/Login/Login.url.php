@@ -10,10 +10,14 @@
 					$login = \QApi::Call("Omi\\User::Login", $user_or_email, $password);
 					
 					$this->error = $login;
-
+					
 					if (($login === true) || ($login instanceof \QUser))
 					{
-						if ($url->current() === "login")
+						if (isset($_GET['_after_login_']))
+						{
+							header("Location: " . $_GET['_after_login_']);
+						}
+						else if ($url->current() === "login")
 							header("Location: " . dirname(\QWebRequest::GetRequestFullUrl(false)));
 						else
 							header("Location: " . \QWebRequest::GetRequestFullUrl(true));

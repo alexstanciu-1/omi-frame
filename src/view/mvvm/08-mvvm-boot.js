@@ -14,8 +14,9 @@ else
 		interactive - Has loaded enough and the user can interact with it
 		complete - Fully loaded */
 
-		if ((document.readyState === "loaded") || (document.readyState === "interactive") || (document.readyState === "complete"))
-			omi.InitGlobal(omi);
+		if ((document.readyState === "loaded") || (document.readyState === "interactive") || (document.readyState === "complete")) {
+			omi.InitGlobal(omi);	
+		}
 	});
 
 /**
@@ -23,7 +24,7 @@ else
  */
 omi._setup = {
 	// the events we will be registering to
-	events: ["click", "dblclick", "submit", "input", "change", "focus", "focusin", "focusout", "DOMFocusIn", "mouseover", "select", "keyup", "keydown"],
+	events: ["click", "dblclick", "submit", "input", "change", "focus", "focusin", "focusout", "DOMFocusIn", "mouseover", "select", "keyup", "keydown", "scroll"],
 	delay_timeout: 500, // min time in ms between retries
 	delay_retry_timeout: 50 // time between rechecks 
 };
@@ -49,5 +50,4 @@ if (omi._setup.events)
 		window.addEventListener(event, omi.handleEvent, ((event === "focus") || (event === "focusin") || (event === "focusout")));
 	}
 }
-
 

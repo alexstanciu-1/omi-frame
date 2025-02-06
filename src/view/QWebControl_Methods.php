@@ -252,4 +252,9 @@ trait QWebControl_Methods
 	{
 		$this->renderMethod = $renderMethod;
 	}
+	
+	public function initController(QUrl $url = null, $parent = null)
+	{
+		
+	}
 }

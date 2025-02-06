@@ -24,7 +24,10 @@
 
 			if (!$this->userIsLoggedIn && !$isSpecialUrl)
 			{
-				header("Location: " . \QWebRequest::GetBaseHref().$this->getUrlForTag("login"));
+				$redirect_to = \QWebRequest::GetRequestFullUrl(true);
+				$login_url = \QWebRequest::GetBaseHref().$this->getUrlForTag("login");
+				
+				header("Location: " . $login_url . "?_after_login_=".rawurlencode($redirect_to));
 				die();
 			}
 			
@@ -64,7 +67,6 @@
 		
 		if (defined('Q_SETUP_SUB_DOMAIN_URL') && Q_SETUP_SUB_DOMAIN_URL)
 			static::Setup_Sub_Sub_Domain();
-		
 	?>
 	
 	<!-- LOGIN =============================================================== -->
@@ -98,27 +100,32 @@
 				$remember = (filter_input(INPUT_POST, 'remember') == 'on');
 				if (($user_or_email = trim(filter_input(INPUT_POST, "user"))) && ($password = trim(filter_input(INPUT_POST, "pass"))))
 				{
-					$users = QQuery("Users.{Id, Active, Confirmed_Activation, Type WHERE (Username=? OR Email=?) AND Password=MD5(?) ORDER BY Active DESC}", [$user_or_email, $user_or_email, $password])->Users;
+					$users = QQuery("Users.{Id, Active, Confirmed_Activation, Type WHERE (Username=? OR Email=?) AND Password=MD5(?) ORDER BY Active DESC}", 
+									[$user_or_email, $user_or_email, $password])->Users;
 					
-					if ($users && (count($users) == 1))
-						$user = $users[0];
+					if ($users && (q_count($users) == 1))
+						$user = q_reset($users);
 					
-					# if ($user && ($user->Confirmed_Activation) || ($user->Type == 'H2B_Superadmin'))
+					if (defined('Q_IS_H2B') && Q_IS_H2B && !$user)
+						$error = 'Username sau parola sunt gresite!';
+					else if ((defined('Q_IS_H2B') && Q_IS_H2B) ? ($user && ($user->Confirmed_Activation) || ($user->Type == 'H2B_Superadmin')) : true)
 					{
 						$login = \QApi::Call("Omi\\User::Login", $user_or_email, $password, null, $remember);
-						
 						if (($login === true) || ($login instanceof \QUser))
-						{						
-							// if we don't have url current then we are in backend/
-							//$_SESSION['show_message'] = true;
-							header("Location: ".($url->current() ? dirname(\QWebRequest::GetRequestFullUrl(true)) : \QWebRequest::GetRequestFullUrl(true)));
+						{	
+							if (isset($_GET['_after_login_']))
+							{
+								header("Location: " . $_GET['_after_login_']);
+							}
+							else
+								header("Location: ".($url->current() ? dirname(\QWebRequest::GetRequestFullUrl(true)) : \QWebRequest::GetRequestFullUrl(true)));
 							die();
 						}
 
 						$error = $login;
 					}
-					# else
-					#	$error = "Contul trebuie activat accesand link-ul de activare din email!";
+					else if (defined('Q_IS_H2B') && Q_IS_H2B)
+						$error = "Contul trebuie activat accesand link-ul de activare din email!";
 				}
 				else
 					$error = "Username and password are mandatory!";
@@ -236,7 +243,7 @@
 				# die;
 			}
 		
-			$this->webPage->content = new \Omi\View\UserCreateAccount();
+			$this->webPage->content = new \Omi\App\View\UserCreateAccount();
 			$this->webPage->content->setArguments([true], "render");
 			
 			// add the control
@@ -253,7 +260,7 @@
 	<url tag="termsandconsitions">
 		<get translate="terms-and-conditions" />
 		<load><?php 
-			$this->webPage->content = new \Omi\View\TermsAndConditions();
+			$this->webPage->content = new \Omi\App\View\TermsAndConditions();
 			$this->webPage->content->setArguments([true], "render");
 		
 			return $this->webPage->content;
@@ -263,7 +270,7 @@
 	<url tag="privacypolicy">
 		<get translate="privacy-policy" />
 		<load><?php 
-			$this->webPage->content = new \Omi\View\PrivacyPolicy();
+			$this->webPage->content = new \Omi\App\View\PrivacyPolicy();
 			$this->webPage->content->setArguments([true], "render");
 		
 			return $this->webPage->content;		
@@ -295,7 +302,6 @@
 		<get param.0="class"><?= urlencode($class) ?></get>
 		<test><?= $url->current() ?></test>
 		<load><?php
-		
 			return $this->processAdminUrl($url, $testResult);
 		?></load>
 	</url>

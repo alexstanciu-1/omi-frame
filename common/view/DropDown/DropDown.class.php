@@ -8,8 +8,6 @@ namespace Omi\View;
  */
 abstract class DropDown_omi_view_ extends \QWebControl
 {
-	
-	
 	public $noItemCaption = "Select";
 
 	public $queryFrom = null;
@@ -34,6 +32,13 @@ abstract class DropDown_omi_view_ extends \QWebControl
 		
 		$items = null;
 		
+		$xg_form_data = null;
+		if (isset($binds['_xg_form_data_']))
+		{
+			 parse_str($binds['_xg_form_data_'], $xg_form_data);
+			 unset($binds['_xg_form_data_']);
+		}
+		
 		# qvar_dumpk($binds);
 		# throw new \Exception('ex');
 		if (isset($binds['WHR_Search']) && is_string($binds['WHR_Search']))
@@ -43,7 +48,7 @@ abstract class DropDown_omi_view_ extends \QWebControl
 		
 		if ($binds["@CALL"])
 		{
-			if (!Q_IS_TFUSE)
+			if (defined('VF_REL_PATH'))
 			{
 				# only allowed to do if logged
 				list ($logged_in_user_id /*, $logged_in_user_owner*/ )  = \Omi\User::Quick_Check_Login(false);
@@ -57,7 +62,7 @@ abstract class DropDown_omi_view_ extends \QWebControl
 			$api_enabled = $method_reflection ? $method_reflection->api["enable"] : false;
 			
 			if ($api_enabled)
-				$items = $call_class_name::$call_method_name($from, $selector, $binds);
+				$items = $call_class_name::$call_method_name($from, $selector, $binds, $xg_form_data);
 			else
 				throw new \Exception("Access denied to: ".$binds["@CALL"]);
 		}

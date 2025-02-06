@@ -27,6 +27,8 @@ define('Q_REMOTE_ADDR', $_SERVER['REMOTE_ADDR']);
 # @TODO
 # 1. some kind of setup to save some info in CODE
 # 2. mysql setup @ => sudo mysql -e "CREATE USER 'alex'@'localhost' IDENTIFIED BY 'Palm25tree\!';"
+if (!defined('Q_MAIN_CODE_DIR'))
+	define('Q_MAIN_CODE_DIR', 'code_inst/');
 
 \QAutoload::LoadModule(__DIR__ . "/../common/gens/", false, 'omi', "omi");
 \QAutoload::LoadModule(__DIR__ . "/../common/util/", false, 'omi_util', "omi");
@@ -39,8 +41,8 @@ if (function_exists('q_autoload_layers_callback'))
 }
 else
 {
-	\QAutoload::LoadModule("code_inst/classes/", false, Q_SAAS_PREFIX, Q_SAAS_PREFIX);
-	\QAutoload::LoadModule("code_inst/model/", false, Q_SAAS_PREFIX.'_model', Q_SAAS_PREFIX);
+	\QAutoload::LoadModule(Q_MAIN_CODE_DIR . "classes/", false, Q_SAAS_PREFIX, Q_SAAS_PREFIX);
+	\QAutoload::LoadModule(Q_MAIN_CODE_DIR . "model/", false, Q_SAAS_PREFIX.'_model', Q_SAAS_PREFIX);
 }
 
 if (!is_dir(Q_GENERATED_VIEW_FOLDER))
@@ -51,13 +53,13 @@ if (!is_dir(Q_GENERATED_VIEW_FOLDER))
 \QAutoload::LoadModule(__DIR__ . "/../common-app/controller/", false, 'mods_controller', "mods");
 \QAutoload::LoadModule(__DIR__ . "/../common-app/view/", false, 'mods_view', "mods");
 
-if (function_exists('q_autoload_layers_callback'))
-{
+if (function_exists('q_autoload_layers_callback')) {
 	q_autoload_layers_callback(false);
 }
-else
-{
-	\QAutoload::LoadModule("code_inst/view/", false, Q_SAAS_PREFIX.'_view', Q_SAAS_PREFIX);
+else {
+	if (is_dir(Q_MAIN_CODE_DIR . "controller/"))
+		\QAutoload::LoadModule(Q_MAIN_CODE_DIR . "controller/", false, Q_SAAS_PREFIX.'_controller', Q_SAAS_PREFIX);
+	\QAutoload::LoadModule(Q_MAIN_CODE_DIR . "view/", false, Q_SAAS_PREFIX.'_view', Q_SAAS_PREFIX);
 }
 
 \QAutoload::AddMainFolder("code/", "code", "code");

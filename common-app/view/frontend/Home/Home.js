@@ -10,7 +10,7 @@ jQuery(document).ready(function ()
 		var $thisJq = jQuery(this);
 		var $propertyId = $thisJq.data('property');
 
-		omi.api("Omi\\TFS\\View\\Properties::RequiresVerification", [$propertyId], 
+		omi.api("Omi\\App\\View\\Properties::RequiresVerification", [$propertyId], 
 			// success
 			function(resp)
 			{

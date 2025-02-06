@@ -33,4 +33,5 @@
 			<a class="fa fa-download qc-in-view-download" target="_blank" href="{{Q_APP_REL . $data->getFullPath_URL_Escaped('<?= $property ?>')}}"></a>
 		@endif
 	<?php endif; ?></span>
-<?php endif; ?>
+<?php endif;
+if (!$_is_password) : ?><input type='hidden' name-x="{{<?= $_data_property ?>}}" value='{{<?= $_data_value ?>}}' /><?php endif;

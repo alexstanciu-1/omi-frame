@@ -739,9 +739,6 @@ function qbMakeCtrlRequest(url, req_method, ctrl, ctrl_id, meth_class, method_na
 								{
 									var decoded_error_json = q_devmode_handle_ajax(jqXHR, textStatus, errorThrown);
 									
-									// console.log(jqXHR.responseText);
-									
-									
 									if (decoded_error_json && decoded_error_json.EXCEPTION)
 										errorThrown = decoded_error_json.EXCEPTION;
 									
@@ -2557,10 +2554,10 @@ function _L($text)
 // be triggered. The function will be called after it stops being called for
 // N milliseconds. If `immediate` is passed, trigger the function on the
 // leading edge, instead of the trailing.
-function debounce(func, wait, immediate) {
+function debounce(func, wait, immediate, $this) {
 	var timeout;
 	return function() {
-		var context = this, args = arguments;
+		var context = $this ? $this : this, args = arguments;
 		clearTimeout(timeout);
 		timeout = setTimeout(function() {
 			timeout = null;

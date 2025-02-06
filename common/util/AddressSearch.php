@@ -35,7 +35,7 @@ class AddressSearch extends \QModel
 		{
 			$query = str_replace("%", " ", $query);
 			
-			$appOwnerCuntryCode = (defined('APP_OWNER_COUNTRY_CODE') ? APP_OWNER_COUNTRY_CODE : 'RO');
+			$appOwnerCuntryCode = $binds['country_code'] ?: ((defined('APP_OWNER_COUNTRY_CODE') ? APP_OWNER_COUNTRY_CODE : 'RO'));
 
 			if (!($country = QQuery("Countries.{Code, Name WHERE Code=?}", $appOwnerCuntryCode)->Countries[0]))
 				throw new \Exception("Country not found: ".$appOwnerCuntryCode);

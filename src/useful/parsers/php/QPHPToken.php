@@ -2478,7 +2478,7 @@ abstract class QPHPToken
 					if (!$stat)
 					{
 						# qvar_dumpk($tokens);
-						throw new Exception("Parse error");
+						throw new Exception("Parse error @" . $path);
 					}
 					
 					$has_opener = false;

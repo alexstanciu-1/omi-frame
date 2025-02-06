@@ -105,6 +105,12 @@ function QQuery($query, $binds = null, QIModel $from = null, &$dataBlock = null,
 	return QModelQuery::BindQuery($query, $binds, $from, $dataBlock, $skip_security, $filter_selector, false, $storage);
 }
 
+function QQuery_redundant_objs($query, $binds = null, QIModel $from = null, $skip_security = true, $filter_selector = null, \QIStorage $storage = null)
+{
+	$dataBlock = false;
+	return QModelQuery::BindQuery($query, $binds, $from, $dataBlock, $skip_security, $filter_selector, false, $storage);
+}
+
 function QQuery_By_Id(string $collection, int $id, string $selector = "Id", QIModel $from = null, &$dataBlock = null, $skip_security = true, $filter_selector = null, \QIStorage $storage = null)
 {
 	$query = $collection.".{{$selector} WHERE Id=? LIMIT 1}";
@@ -1039,7 +1045,7 @@ function execQB($filter = null, $instance = null, $explicit_fast_call = false)
 		if (($class !== "QApi") && (!qIsA($class, "QIModel")) && (!qIsA($class, "QViewBase")))
 			throw new Exception("You may only call a QIModel or a QViewBase. You have called a `{$class}`");
 			
-		if ((!Q_IS_TFUSE) && (!q_allowed_calls_without_login($class, $method)))
+		if (defined('VF_REL_PATH') && (!q_allowed_calls_without_login($class, $method)))
 		{
 			# only allowed to do if logged
 			list ($logged_in_user_id /*, $logged_in_user_owner*/ )  = \Omi\User::Quick_Check_Login(false);
@@ -1338,7 +1344,7 @@ function extractQbRequest($data, &$parent = null, $key = null, $f_name = null, $
 				}
 				else if (!$is_QFile)
 				{
-					if ((!Q_IS_TFUSE) && ($parent instanceof QIModel))
+					if ((defined('VF_REL_PATH')) && ($parent instanceof QIModel))
 						return (($handleU_ret = $parent->handleUpload($key, $params)) !== QUndefined()) ? $handleU_ret : $params;
 					else
 						return $params;
@@ -1526,7 +1532,7 @@ function extractQbRequest($data, &$parent = null, $key = null, $f_name = null, $
 			$params->Path = $file_path;
 			
 			$params->_upload = $file_params;
-			if (!Q_IS_TFUSE)
+			if (defined('VF_REL_PATH'))
 				$params->handleUpload($key, $params->_upload);
 		}
 
@@ -4140,6 +4146,12 @@ function q_index_array(string $property = null, $elements = null, bool $as_array
 		throw new \Exception("Import is not supported.");
 }
 
+/**
+ * reset() function compatible with PHP 7.3
+ * 
+ * @param QModelArray $list
+ * @return type
+ */
 function q_reset(&$list)
 {
 	if ($list === null)
@@ -4163,6 +4175,11 @@ function q_reset(&$list)
 		}
 		*/
 		return $list->reset();
+	}
+	else if (is_object($list))
+	{
+		foreach ($list as $prop_val)
+			return $prop_val;
 	}
 	else
 		return reset($list);
@@ -5402,3 +5419,12 @@ function q_count($data, int $mode = COUNT_NORMAL)
 		return 1;
 }
 
+function q_get_class($object)
+{
+	if ($object === null)
+		return null;
+	else if (is_object($object))
+		return get_class($object);
+	else
+		return false;
+}

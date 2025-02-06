@@ -117,6 +117,10 @@ class QCodeSync2
 	 * @var array
 	 */
 	protected $modified_gens = [];
+	/**
+	 * @var array
+	 */
+	protected $class_to_info = [];
 	
 	public function init()
 	{
@@ -259,7 +263,7 @@ class QCodeSync2
 							$rc_ru = preg_match("/^([^\\/]+)/uis", $rel_url, $match_ru);
 							$rel_url = $rc_ru ? $match_ru[1] : null;
 						}
-						
+
 						if (($this->full_sync || $rel_url) && ((!defined('Q_DISABLE_BACKEND_GENERATE')) || (!Q_DISABLE_BACKEND_GENERATE)))
 						{
 							# @TODO - Is there a better solution here then to unlock autoload ? issue is that interface_exists is called
@@ -268,9 +272,9 @@ class QCodeSync2
 							{
 
 								$app_type = \QCodeStorage::Get_Cached_Class(Q_DATA_CLASS);
-
-								$generator_classes_included = false;
 								
+								$generator_classes_included = false;
+
 								foreach ($app_type->properties as $property => $prop_info)
 								{
 									if ($prop_info->isScalar() || (!(
@@ -278,6 +282,7 @@ class QCodeSync2
 											)))
 									{
 										# there is no data type that can be used
+										echo "Grid::SKIPPING::{$property}\n";
 										continue;
 									}
 
@@ -691,9 +696,10 @@ class QCodeSync2
 							
 							if (($header_inf['class'] !== $short_file_name) && ($header_inf['class'] !== $short_file_name."_".$layer_tag."_"))
 							{
-								qvar_dumpk($layer.$file, $header_inf);
+								$expected_class_name = $short_file_name."_".$layer_tag."_";
+								qvar_dumpk(['$layer_tag' => $layer_tag, $layer.$file, $header_inf]);
 								throw new \Exception('The basename of the file, up to the first dot, must be the class\'s short name (without namespace and without the layer\'s tag).'
-										. ' Ex: Class_Name.php, Class_Name.tpl, Class_Name.form.tpl, Class_Name.url.php');
+										. ' Ex: Class_Name.php, Class_Name.tpl, Class_Name.form.tpl, Class_Name.url.php . OR Expected class name: ' . $expected_class_name);
 							}
 
 							$short_class_name = (($p = strrpos($header_inf["class"], "\\")) !== false) ? substr($header_inf["class"], $p + 1) : $header_inf["class"];
@@ -828,6 +834,8 @@ class QCodeSync2
 						
 						# if ($this->full_sync)
 						$this->info_by_class[$full_class_name]['files'][$header_inf['layer']][$header_inf['tag']] = $header_inf;
+						$this->class_to_info[($header_inf['namespace'] ? $header_inf['namespace']."\\" : '').$header_inf['class']] = $header_inf;
+						
 						# else 
 						if (!$this->full_sync)
 						{
@@ -898,7 +906,7 @@ class QCodeSync2
 	 * @throws \Exception
 	 */
 	function sync_code__pre_compile()
-	{		
+	{
 		$this->autoload = [];
 		$this->autoload_for_sync = [];
 		
@@ -993,13 +1001,6 @@ class QCodeSync2
 			}
 			
 			echo "PRE COMPILE :: {$full_class_name}<br/>\n";
-			/*if ($full_class_name === 'Registration_Request')
-			{
-				$toks = \QPHPToken::ParsePHPFile("/home/alex/public_html/orm/~includes/omi-mods-travel/model/Registration_Request.class.php");
-				qvar_dumpk($toks->getNamespace());
-				qvar_dumpk('namespace fail', $info);
-				die;
-			}*/
 			
 			if (!$this->full_sync)
 			{
@@ -1206,7 +1207,6 @@ class QCodeSync2
 		}
 		
 		\QAutoload::SetAutoloadArray($this->autoload_for_sync);
-		
 	}
 	
 	function sync_code__compile_02()
@@ -1950,8 +1950,10 @@ class QCodeSync2
 		do
 		{
 			$data = $this->info_by_class[$for_class];
-			if (!isset($data['files']))
+			if (!isset($data['files'])) {
+				qvar_dump('$header_inf', $header_inf, '$this->class_to_info[$for_class]', $this->class_to_info[$for_class], $this->class_to_info);
 				throw new \Exception('Missing any data for class: '.$for_class);
+			}
 			$c_df = count($data['files']);
 			if ($c_df < 1)
 				throw new \Exception('Missing layers for class: '.$for_class);
@@ -1972,6 +1974,9 @@ class QCodeSync2
 			
 			# continue with the extended class
 			$for_class = $data['extends'];
+			if ($for_class && ($tmp_inf = $this->class_to_info[$for_class] ?? null) && isset($tmp_inf['class_full'])) {
+				$for_class = $tmp_inf['class_full'];
+			}
 			$include_layer = true;
 			if ($accepted_layers === null)
 				# after the first entry we need to know the layers
@@ -2113,26 +2118,6 @@ class QCodeSync2
 			
 			list($cache_type, $cache_has_changes) = QCodeStorage::CacheData($class_name, $cache_path, true);
 			
-			/*
-			if ($class_name === 'Omi\App')
-			{
-				$za_classes = [$class_name => $class_name];
-				$za_classes += class_parents($class_name);
-				# array_unshift($za_classes, $class_name);
-				qvar_dump("QCodeStorage::CacheData({$class_name}, {$cache_path}", 
-						$za_classes, $cache_type->properties['Companies']);
-				
-				foreach ($za_classes as $c)
-				{
-					$refl = new ReflectionClass($c);
-					$props = $refl->hasProperty('Companies') ? $refl->getProperty('Companies') : null;
-					qvar_dump($c, $props, $props ? $props->getDocComment() : null);
-				}
-				
-				die;
-			}
-			*/
-			
 			if ($cache_has_changes)
 			{
 				if (!$cache_type)
@@ -2152,7 +2137,7 @@ class QCodeSync2
 		
 		$js_paths = [];
 		$css_paths = [];
-				
+
 		if (!$this->model_only_run)
 		{
 			foreach ($this->info_by_class as $full_class_name => $info)
@@ -2732,6 +2717,14 @@ class QCodeSync2
 							else
 								$files['status'] = null;
 						}
+					}
+				}
+			}
+			
+			foreach ($this->info_by_class as $inf_by_c) {
+				foreach ($inf_by_c['files'] ?? [] as $tags_inf) {
+					if (($header_inf = $tags_inf['php']) ?? false) {
+						$this->class_to_info[($header_inf['namespace'] ? $header_inf['namespace']."\\" : '').$header_inf['class']] = $header_inf;
 					}
 				}
 			}

@@ -40,7 +40,7 @@ class QApi_frame_
 		if (!method_exists($class_name, $method))
 			throw new Exception("Method `{$class_name}::{$method}` was not found");
 		
-		if ((!Q_IS_TFUSE) && (!q_allowed_calls_without_login($class_name, $method)))
+		if ((defined('VF_REL_PATH')) && (!q_allowed_calls_without_login($class_name, $method)))
 		{
 			# only allowed to do if logged
 			list ($logged_in_user_id /*, $logged_in_user_owner*/ )  = \Omi\User::Quick_Check_Login(false);
@@ -184,7 +184,7 @@ class QApi_frame_
 			$storage_model = QApp::GetDataClass();
 			$is_collection = false;
 			$property_reflection = null;
-			$src_from_types = static::DetermineFromTypes($storage_model, $app_from, $is_collection, $property_reflection);
+			$src_from_types = static::DetermineFromTypes($storage_model, static::GetFrom($app_from), $is_collection, $property_reflection);
 			if (!$src_from_types)
 				throw new \Exception('Unable to determine a data type for: ' . $app_from);
 		}
@@ -225,7 +225,7 @@ class QApi_frame_
 	 * @return mixed
 	 * @throws Exception
 	 */
-	public static function Save($destination, $data, $state = null, $selector = null, $id = null, $data_is_collection = true)
+	public static function Save($destination, $data, $state = null, $selector = null, $id = null, $data_is_collection = true, bool $replace_mode = false)
 	{
 		if ($destination === 'Salesforce_Customers')
 		{
@@ -251,7 +251,7 @@ class QApi_frame_
 
 		if (is_string($selector))
 			$selector = qParseEntity($selector);
-
+		
 		$result = [];
 		foreach ($parsed_sources as $src_key => $src_info)
 		{
@@ -274,8 +274,6 @@ class QApi_frame_
 						list ($data) 
 								= static::Array_To_Model($data, $src_from, $src_from_types, $storage_model, $is_collection, $property_reflection);
 						
-						# qvar_dump('$data', $data);
-						# throw new \Exception('eex: ' . get_class($data) . ' - ' . $data[0]->Private_IP . ' - ' . json_encode($initial_data));
 						/*
 						// determine $data_is_collection - don't use the parameter
 						# ==========================determine if data is provided as collection or as single item=========================
@@ -363,6 +361,9 @@ class QApi_frame_
 		
 			if ($src_from === 'SupportTickets')
 			{
+				if ($replace_mode) {
+					throw new \Exception('Replace mode not supported in this case (SupportTickets).');
+				}
 				# qvar_dumpk($storage_model, $src_from, $src_from_types, $data, $state, $selector);
 				# throw new \Exception('remake!');
 				if ($data && ($first_data = q_reset($data)))
@@ -370,6 +371,10 @@ class QApi_frame_
 			}
 			else if ($property_reflection && ($property_reflection->storage['engine'] === 'model'))
 			{
+				if ($replace_mode) {
+					throw new \Exception('Replace mode not supported in this case (engine=nodel).');
+				}
+				
 				if ((!$src_from_types) || (count($src_from_types) !== 1))
 					throw new \Exception('Only one storage engine is supported by the `model` storage');
 				$model_type = q_reset($src_from_types);
@@ -377,7 +382,17 @@ class QApi_frame_
 			}
 			else
 			{
-				$result[$src_key] = $storage::ApiSave($storage_model, $src_from, $src_from_types, $data, $state, $selector, $initialDestination);
+				if ($replace_mode) {
+					static::setup_replace_mode($storage, $storage_model, $src_from, $src_from_types, $data, $state, $selector, $initialDestination);
+				}
+
+				$result[$src_key] = $tmp_result = $storage::ApiSave($storage_model, $src_from, $src_from_types, $data, $state, $selector, $initialDestination);
+				
+				if (file_exists('code/_data_watchers.php')) {
+					# call data watcher(s) if setup
+					$_data_watch_args_ = [$src_from, $tmp_result, $selector, $id, $initialDestination, $src_from_types];
+					include 'code/_data_watchers.php';
+				}
 			}
 		}
 		
@@ -623,6 +638,19 @@ class QApi_frame_
 	 * @return mixed
 	 * @throws Exception
 	 */
+	public static function Replace($destination, $data, $selector = null)
+	{
+		return static::Save($destination, $data, QIModel::TransformMerge, $selector, null, false, true);
+	}
+	
+	/**
+	 * @api.enable
+	 * 
+	 * @param string $destination
+	 * @param QIModel $data
+	 * @return mixed
+	 * @throws Exception
+	 */
 	public static function Update($destination, $data, $selector = null)
 	{
 		return static::Save($destination, $data, QIModel::TransformUpdate, $selector, null, false);
@@ -641,6 +669,7 @@ class QApi_frame_
 		$is_scalar = is_scalar($data_or_id);
 		$data = $is_scalar ? null : $data_or_id;
 		$id = $is_scalar ? $data_or_id : null;
+
 		return static::Save($from, $data, QIModel::TransformDelete, $selector, $id, false);
 	}
 	
@@ -687,7 +716,7 @@ class QApi_frame_
 		$binds["Id"] = $id;
 		return static::Query($from, $selector, null, true, $binds);
 	}
-	
+
 	/**
 	 * @api.enable
 	 * 
@@ -2787,5 +2816,138 @@ class QApi_frame_
 		}
 		
 		curl_close($curl);
+	}
+	
+	public static function setup_replace_mode($storage, $storage_model, $src_from, $src_from_types, $data, $state = null, $selector = null, $initialDestination = null)
+	{
+		# @TODO - replace mode !
+		# 2. preserve ids 
+		# 3. flag collections as replace as long as we are still within the model's entity
+		
+		# check some things that we presume
+		if ($storage_model !== \QApp::GetDataClass()) {
+			throw new \Exception('Only tested for main model for now');
+		}
+		if (!$data instanceof \QModelArray) {
+			throw new \Exception('Only tested for array object input atm');
+		}
+		if (!is_string($src_from)) {
+			throw new \Exception('$src_from expected to be a property on the main model');
+		}
+		if (!$src_from_types) {
+			throw new \Exception('setup_replace_mode expects $src_from_types to be provided.');
+		}
+		
+		# ApiSave($storage_model, $from, $from_type, $data, $state = null, $selector = null, $initialDestination = null)
+		$populate_selector = $storage::GetSaveSelector($src_from, $src_from_types, $data, $state, $selector, $initialDestination);
+		if (!isset($populate_selector))
+			throw new \Exception('setup_replace_mode unable to get selector');
+		
+		$elems_to_process = [];
+		$db_elements = new \QModelArray();
+		# 1. populate if possible
+		foreach ($data as $item) {
+			# @TODO - in the future - try to setup a id based on merge by rule if present
+			if ($item->Id) {
+				$db_elements[] = $db_item = new $item();
+				$db_item->setId($item->Id);
+				$elems_to_process[$item->Id] = [$db_item, $item];
+			}
+		}
+		
+		if (q_count($db_elements) > 0) {
+			$db_elements->populate(qImplodeEntity($populate_selector));
+		}
+		
+		qvar_dump("BEFORE!", $elems_to_process);
+		
+		if ($elems_to_process) {
+			$m_types = [];
+			static::setup_replace_mode_recurse($elems_to_process, $populate_selector, $m_types);
+		}
+		
+		qvar_dump("AFTER!", $elems_to_process);
+		die;
+		
+		/*
+			$storage_model[string(7)]: "Omi\App"
+			$src_from[string(10)]: "Properties"
+			$src_from_types[array(1)]:
+				Omi\TFH\Property[string(16)]: "Omi\TFH\Property"
+
+			$data[QModelArray(1)#1]:
+				0[Omi\TFH\Property#2; id:276]:
+					_wst: {"Name":true,"Remote_Id":true,"Logo":true,"Currency":true,"Address":true,"Active":true,"Email":true,"API_Managed":true,"Stars":true,"Type":true,"Content_Description_HTML":true,"Check_In_Time_Hour":true,"Check_In_Time_Minutes":true,"Check_Out_Time_Hour":true,"Check_Out_Time_Minutes":true,"Comission":true,"Owner":true}
+					Id[int][protected][set]: 276
+					Remote_Id[string(3)][protected][set]: "868"
+		 */
+		
+		qvar_dump('$replace_mode !!!', [
+			'$storage_model' => $storage_model, 
+			'$src_from' => $src_from, 
+			'$src_from_types' => $src_from_types, 
+			'$data' => $data, 
+			'$state' => $state, 
+			'$selector' => $selector, 
+			'$initialDestination' => $initialDestination,
+		]);
+		die;
+	}
+	
+	public static function setup_replace_mode_recurse(array $data, $populate_selector, &$m_types)
+	{
+		$next_calls = [];
+		$tmp_types = [];
+		foreach ($data as $itms) {
+			list ($db_item, $item) = $itms;
+			$i_class = null;
+			foreach ($populate_selector as $property => $sub_selector) {
+
+				# 2. preserve ids
+				# 3. flag collections as replace as long as we are still within the model's entity
+				
+				$it_i = $item->$property ?? null;
+				if ($it_i instanceof \QModelArray) {
+					if ($it_i->getTransformState() === null) {
+						$it_i->setTransformState(\QModel::TransformReplace);
+					}
+				}
+				else if (($it_i instanceof \QModel) && ($db_i = ($db_item->$property ?? null)) && (($class = get_class($it_i)) === get_class($db_i))) {
+					if (($db_i->Id ?? null) && (!isset($it_i->Id))) {
+						$it_i->setId($db_i->Id);
+					}
+					
+					if ($sub_selector) {
+						
+						if ($i_class === null)
+							$i_class = get_class($item);
+						$p_type = $tmp_types["{$class}.{$property}"] ?? ($tmp_types["{$class}.{$property}"] = (\QModel::GetTypeByName($i_class)->properties[$property] ?? false));
+
+						if ((!$p_type) || isset($p_type->storage['optionsPool'])) {
+							# no action if missing type or optionsPool
+							# qvar_dump("will not process \$property = {$property} on {$i_class}, optionsPool=".($p_type->storage['optionsPool'] ?? '`null`'), 
+							#		$db_item, $db_i);
+						}
+						else {
+							$next_calls["{$class}.{$property}"][0][] = [$db_i, $it_i];
+							$next_calls["{$class}.{$property}"][1] = $sub_selector;
+						}
+					}
+				}
+			}
+		}
+		
+		foreach ($next_calls as $nc) {
+			static::setup_replace_mode_recurse($nc[0], $nc[1], $m_types);
+		}
+		
+		/*
+		$m_has_collection = $property->hasCollectionType();
+		$m_property = 
+		if ($m_has_collection) {
+			$m_has_collection
+		}
+		qvar_dump("setup_replace_mode_recurse", $property, $property->hasCollectionType(), $populate_selector, $data);
+		*/
 	}
 }

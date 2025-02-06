@@ -1,6 +1,6 @@
 <?php
 
-namespace Omi\TFS\View;
+namespace Omi\App\View;
 
 /**
  * @class.name TermsAndConditions

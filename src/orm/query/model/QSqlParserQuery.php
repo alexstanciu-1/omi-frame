@@ -392,6 +392,8 @@ class QSqlParserQuery
 	
 	public function query(&$objs, $storage, $conn, array $base_from = null, $populate_only = false)
 	{
+		$redundant_links = ($objs === false);
+		
 		if ($this->is_collection && (!$this->items))
 		{
 			// var_dump("no itms bby");
@@ -417,7 +419,9 @@ class QSqlParserQuery
 				
 				$t_id = $start_inst->getId();
 				$t_ty = $storage->getTypeIdInStorage($this->inst_type_obj->class);
-				$objs[$t_id][$t_ty] = $start_inst;
+				if ($objs !== false) {
+					$objs[$t_id][$t_ty] = $start_inst;
+				}
 				
 				$this->inst_type = $t_ty;
 			}
@@ -441,6 +445,12 @@ class QSqlParserQuery
 		if (static::$_DebugOn)
 			qvar_dumpk($exe_q);
 		$t2 = microtime(true);
+		
+		/*
+		if ($redundant_links) {
+			qvar_dump(($t2 - $t1)." | ".$exe_q);
+		}
+		*/
 	
 		if (($t2 - $t1) >= 30) # slow query log
 		{
@@ -479,7 +489,10 @@ class QSqlParserQuery
 
 				while (($row = $result->fetch_assoc()))
 				{
-					
+					if ($redundant_links) {
+						# keep reseting objs foreach row
+						$objs = [];
+					}
 
 					if (!$_this_f_actions)
 					{
@@ -543,7 +556,6 @@ class QSqlParserQuery
 										$object->setId($val_id);
 									
 										// echo "We create :: {$type_name}[#{$val_id}]<br/>\n";
-
 										$objs[$val_id][$type_id] = $object;
 									}
 								}
@@ -741,7 +753,8 @@ class QSqlParserQuery
 											else if ($p_type_name === "double")
 												$prop_val = (double)$prop_val;
 											
-											$object->{"set{$prop_name}"}($prop_val, true, false);
+											# setName($value, $check = true, $null_on_fail = false)
+											$object->{"set{$prop_name}"}($prop_val, false, false);
 										}
 										else
 										{
@@ -762,8 +775,9 @@ class QSqlParserQuery
 									{
 										// the item can be set but as a new instance and we will get here because of the $object->_wst[$prop_name] condition 
 										// we need to check again if we have model and if it has id
-										if ($obj_prop_v && $obj_prop_v->getId())
+										if ($obj_prop_v && $obj_prop_v->getId()) {
 											$objs[$obj_prop_v->getId()][$storage->getTypeIdInStorage(get_class($obj_prop_v))] = $obj_prop_v;
+										}
 									}
 									else
 									{
@@ -833,9 +847,12 @@ class QSqlParserQuery
 					{
 						$subq->parent = $this;
 						// query(&$objs, $storage, $conn, $base_from = null, $populate_only = false)
+						if ($redundant_links) {
+							$objs = false;
+						}
 						$subq->query($objs, $storage, $conn, null, $populate_only);
 					}
-				}	
+				}
 			}
 		}
 		finally

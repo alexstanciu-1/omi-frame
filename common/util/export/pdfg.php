@@ -2,7 +2,7 @@
 
 	$url = isset($_GET["url"]) ? $_GET["url"] : null;
 	if (!$url)
-		die();
+		die('No action @pdfg.php');
 
 	$cover = isset($_GET["cover"]) ? $_GET["cover"] : null;
 	$header = isset($_GET["header"]) ? $_GET["header"] : null;

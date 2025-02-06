@@ -55,7 +55,7 @@ abstract class Controller_mods_controller_ extends \QWebControl implements \QIUr
 	{
 		if (($langs = \QModel::GetLanguages_Dim()) && in_array($url->current(), $langs))
 		{
-			\QModel::SetLanguage_Dim($url->current());
+			\QApp::SetLanguage_Dim($url->current());
 			$url->next();
 		}
 	}
@@ -137,7 +137,7 @@ abstract class Controller_mods_controller_ extends \QWebControl implements \QIUr
 	public function resyncView($force = false)
 	{
 		// @TODO - remove this @REMOVE
-		$force = $force || \QAutoload::GetDevelopmentMode();
+		# $force = $force || \QAutoload::GetDevelopmentMode();
 		
 		if ((!$force) && (defined("IS_LIVE") && IS_LIVE))
 			return;
@@ -283,15 +283,16 @@ abstract class Controller_mods_controller_ extends \QWebControl implements \QIUr
 		$url_info = static::Get_Property_URL(null, true);
 		list($fixed_location, $original_url_owner, $original_url_property) = $url_info;
 		
-		if (isset($original_url_property) && ((int)$original_url_property > 0))
-		{
+		if (isset($original_url_property) && ((int)$original_url_property > 0)) {
+			
 			$ret = \QApi::QueryById('Properties', (int)$original_url_property);
 			return static::$Selected_Property = $ret ?: false;
 		}
-		else
+		else {
+			
 			return (static::$Selected_Property = false);
-		# qvar_dumpk($url_info);
-		# die;
+		}
+
 		/*
 		if (static::$Selected_Property !== null)
 			return static::$Selected_Property;
@@ -318,81 +319,5 @@ abstract class Controller_mods_controller_ extends \QWebControl implements \QIUr
 				die;
 			}
 		}
-	}
-	
-	/**
-	 * @api.enable
-	 * 
-	 * @param int $property_id
-	 */
-	public static function Get_Property_URL(int $property_id = null, bool $get_details = false, bool $called_by_property_select_drop_down = false)
-	{
-		$c_user = \Omi\User::GetCurrentUser();
-		if (!isset($c_user->Owner->Id))
-			return false;
-		$request_host = $_SERVER['HTTP_HOST'];
-		if (!$request_host)
-			return false;
-
-		$parts = array_reverse(preg_split("/(\\.)/uis", $request_host, -1, PREG_SPLIT_NO_EMPTY));
-		
-		$owner_property_part = isset($parts[3]) ? $parts[3] : null;
-		list ($url_owner, $url_property) = $owner_property_part ? preg_split("/(\\-)/uis", $owner_property_part, 2, PREG_SPLIT_NO_EMPTY) : [];
-		
-		$original_url_owner = $url_owner;
-		$original_url_property = $url_property;
-
-		if ((!$property_id) && ($property_id !== null)) # unset was requested
-			$url_property = null;
-		else if (isset($property_id) && $property_id)
-			$url_property = (string)$property_id;
-		
-		$request_uri = $_SERVER['REQUEST_URI'];
-		$request_uri_parts = \QUrl::Get_Current_Parts() ?: [];
-		list($url_grid, $url_action, $url_c_id) = $request_uri_parts;
-		
-		if (isset($property_id) && $property_id)
-		{
-			
-			if (($url_action == 'edit') || ($url_action == 'view') || ($url_action == 'delete'))
-			{
-				$app_type = \QModel::GetTypeByName("Omi\\App");
-				$app_prop_data_views = isset($app_type->properties['Properties']->storage['views']) ? $app_type->properties['Properties']->storage['views'] : null;
-				$property_parts = preg_split("/(\\s*\\,\\s*)/uis", trim($app_prop_data_views));
-				$property_parts[] = 'Properties';
-				
-				if (in_array($url_grid, $property_parts))
-				{
-					$index = count($request_uri_parts) - 1;
-					$request_uri_parts[$index] = $property_id;
-
-					$request_uri = \QWebRequest::GetBaseHref() . implode('/', $request_uri_parts);
-				}
-				else
-				{
-					# return to list mode
-					$request_uri = \QWebRequest::GetBaseHref() . implode('/', [$url_grid]);
-				}
-			}
-		}
-		else
-		{
-			# list mode
-			if ($called_by_property_select_drop_down)
-			{
-				# return to list mode
-				$request_uri = \QWebRequest::GetBaseHref() . implode('/', [$url_grid]);
-			} 
-		}
-		
-		$fixed_location = ($_SERVER['HTTPS'] ? "https://" : "http://").
-			$c_user->Owner->Id . ($url_property ? '-'.$url_property : '') . "." . 
-				implode(".", array_reverse(array_slice($parts, 0, 3))) . 
-				$request_uri;
-
-		if ($get_details)
-			return [$fixed_location, $original_url_owner, $original_url_property];
-		else
-			return $fixed_location;
 	}
 }

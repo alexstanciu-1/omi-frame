@@ -1091,7 +1091,7 @@ final class QAutoload
 						if (empty($files_state[$fs_lyr]))
 							unset($files_state[$fs_lyr]);
 					}
-										
+					
 					// changed files : $changed
 					// removed files : $files_state
 					if (((!$full_resync) && (!$generator_changes) && $changed && (!$new) && (!$files_state) && $changed[Q_FRAME_PATH] && (count($changed) === 1)) 
@@ -1398,7 +1398,7 @@ final class QAutoload
 		
 		// skip for AJAX
 		$HTTP_X_REQUESTED_WITH = filter_input(INPUT_SERVER, "HTTP_X_REQUESTED_WITH");
-		$ajax_mode = ((isset($HTTP_X_REQUESTED_WITH) && (strtolower($HTTP_X_REQUESTED_WITH) === 'xmlhttprequest')) || ($_POST["__qFastAjax__"] ?? ($_GET["__qFastAjax__"] ?? null)));
+		$ajax_mode = ((isset($HTTP_X_REQUESTED_WITH) && (strtolower($HTTP_X_REQUESTED_WITH) === 'xmlhttprequest')) || ($_POST["__qFastAjax__"] || $_GET["__qFastAjax__"]));
 
 		// auth:user:pass
 		if (is_string($restriction))
@@ -1431,7 +1431,7 @@ final class QAutoload
 			}
 			else if (filter_var($restriction, FILTER_VALIDATE_IP) !== false)
 			{
-				if ($restriction === filter_input(INPUT_SERVER, "REMOTE_ADDR", FILTER_VALIDATE_IP))
+				if ($restriction === filter_input(INPUT_SERVER, array_key_exists('HTTP_X_FORWARDED_FOR', $_SERVER) ? "HTTP_X_FORWARDED_FOR" : "REMOTE_ADDR", FILTER_VALIDATE_IP))
 				{
 					self::RunDevelopmenMode($full_resync, $debug_mode, $ajax_mode);
 					$scaned = true;
@@ -1545,7 +1545,7 @@ final class QAutoload
 		self::$DevelopmentMode = true;
 		
 		file_put_contents("temp_log_dev_mode.txt", 
-				date("Y-m-d H:i:s")." - " . $_SERVER["REMOTE_ADDR"] . "\n" , FILE_APPEND);
+				date("Y-m-d H:i:s")." - " . $_SERVER["HTTP_X_FORWARDED_FOR"] . " : " .$_SERVER["REMOTE_ADDR"] . "\n" , FILE_APPEND);
 		
 		if (!$ajax_mode)
 		{

@@ -3,7 +3,7 @@ QExtendClass("Omi\\View\\WebPage", "QWebPage",
 
 });
 
-function doOnException (jqXHR, textStatus, errorThrown)
+function doOnException (jqXHR, textStatus, errorThrown, hide_exception)
 {
 	var $ex = ((typeof(errorThrown) === "object") && errorThrown.__cust__) ? errorThrown : null;
 	if (!$ex)
@@ -24,7 +24,8 @@ function doOnException (jqXHR, textStatus, errorThrown)
 		}
 	}
 	
-	alert(($ex && $ex.Message) ? $ex.Message : "System Error");
+	if (!hide_exception)
+		alert(($ex && $ex.Message) ? $ex.Message : "System Error");
 }
 
 
@@ -160,7 +161,7 @@ jQuery(document).ready(function ()
 	
 	jQuery('body').on('click', '.js-show-terms-popup', function()
 	{
-		omi.api("Omi\\TFS\\View\\UserCreateAccount::TermsContentPopup", 
+		omi.api("Omi\\App\\View\\UserCreateAccount::TermsContentPopup", 
 	
 			// params
 			[],
@@ -195,7 +196,7 @@ jQuery(document).ready(function ()
 	
 	jQuery('body').on('click', '.js-show-policy-popup', function()
 	{
-		omi.api("Omi\\TFS\\View\\UserCreateAccount::TermsContentPopup", 
+		omi.api("Omi\\App\\View\\UserCreateAccount::TermsContentPopup", 
 	
 			// params
 			[],
@@ -223,7 +224,7 @@ jQuery(document).ready(function ()
 			// fail
 			function(jqXHR, textStatus, errorThrown)
 			{
-				omi.api("Omi\\TFS\\View\\UserCreateAccount::PolicyContentPopup", 
+				omi.api("Omi\\App\\View\\UserCreateAccount::PolicyContentPopup", 
 
 					// params
 					[],

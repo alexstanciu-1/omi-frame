@@ -266,7 +266,7 @@ class UserCreateAccount_mods_view_ extends UserCreateAccount_backend_
 	{
 		ob_start();
 		
-		$termsClass = new \Omi\TFS\View\TermsAndConditions();
+		$termsClass = new \Omi\App\View\TermsAndConditions();
 		$termsClass->render();
 		
 		$ret = ob_get_clean();
@@ -281,7 +281,7 @@ class UserCreateAccount_mods_view_ extends UserCreateAccount_backend_
 	{
 		ob_start();
 		
-		$policyClass = new \Omi\TFS\View\PrivacyPolicy();
+		$policyClass = new \Omi\App\View\PrivacyPolicy();
 		$policyClass->render();
 		
 		$ret = ob_get_clean();

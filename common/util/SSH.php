@@ -47,8 +47,9 @@ class SSH
 	
     public function connect()
 	{
-        if (!($this->connection = ssh2_connect($this->ssh_host, $this->ssh_port)))
+		if (!($this->connection = ssh2_connect($this->ssh_host, $this->ssh_port))) {
 		    throw new \Exception('Cannot connect to server');
+		}
 
         $fingerprint = ssh2_fingerprint($this->connection, SSH2_FINGERPRINT_MD5 | SSH2_FINGERPRINT_HEX);
 		
@@ -65,22 +66,29 @@ class SSH
 		}
     }
 
-    public function exec($cmd)
+    public function exec($cmd, bool $throw_exception = false, &$result_err = null)
 	{
 	    if (!($stream = ssh2_exec($this->connection, $cmd)))
 			throw new \Exception('SSH command failed');
 
-        stream_set_blocking($stream, true);
+		$sio_stream = ssh2_fetch_stream($stream, SSH2_STREAM_STDIO);
+		$err_stream = ssh2_fetch_stream($stream, SSH2_STREAM_STDERR);
+		
+		stream_set_blocking($sio_stream, true);
+        stream_set_blocking($err_stream, true);
 
-        $data = "";
+        $result_dio = stream_get_contents($sio_stream);
+		$result_err = stream_get_contents($err_stream);
 
-        while ($buf = fread($stream, 4096)) {
-            $data .= $buf;
-        }
+		fclose($sio_stream);
+		fclose($err_stream);
+		
+		fclose($stream);
+		
+		if ($throw_exception && (!empty($result_err)))
+			throw new \Exception($result_err);
 
-        fclose($stream);
-
-        return $data;
+        return $result_dio;
     }
 	
 	public function upload(string $local_file, string $remote_file, int $create_mode = 0644)

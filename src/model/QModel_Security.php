@@ -634,7 +634,7 @@ trait QModel_Security
 						}
 						case 'tfh-box':
 						{
-							$ret['relation'][] = 'tfhowner (Owner.Users.Id=? OR Owner.Accessible_By.Users.Id=?)';
+							$ret['relation'][] = 'tfhowner ((Owner.Users.Id=? OR Owner.Accessible_By.Users.Id=?) AND Owner.Is_Property_Owner)';
 							# $ret['filter'][0] .= ($ret['filter'][0] ? "," : "").'owner_customer+is:owner_customer:of:$each';
 							break;
 						}

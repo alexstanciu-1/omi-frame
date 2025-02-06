@@ -1,5 +1,5 @@
 
-QExtendClass("Omi\\TFS\\View\\Companies", "Omi\\View\\Grid",
+QExtendClass("Omi\\App\\View\\Companies", "Omi\\View\\Grid",
 {
 	init : function (dom)
 	{	

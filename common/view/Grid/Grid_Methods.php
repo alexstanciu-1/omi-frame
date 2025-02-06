@@ -73,19 +73,9 @@ trait Grid_Methods
 	 */
 	public function getData($grid_mode, $id = null, $bind_param = null)
 	{
-		try
-		{
-			\QTrace::Begin_Trace([], ['$grid_mode' => $grid_mode, '$id' => $id, 
-				'$bind_param' => $bind_param, ], ["grid", "get", "data"]);
-			
-			$selector = $this->getSelectorForMode($grid_mode);
-			$data = static::GetListData($this->app_reference ? "list" : $grid_mode, $this->from, $id, $bind_param, $selector, $this->settings, $this);
-			return $data;
-		}
-		finally
-		{
-			\QTrace::End_Trace([], ['$return' => $data]);
-		}
+		$selector = $this->getSelectorForMode($grid_mode);
+		$data = static::GetListData($this->app_reference ? "list" : $grid_mode, $this->from, $id, $bind_param, $selector, $this->settings, $this);
+		return $data;
 	}
 	/**
 	 * Decode bind params
@@ -136,10 +126,26 @@ trait Grid_Methods
 	public function exportPdf()
 	{		
 		ob_start();
+		
 		$this->renderPdfExportPage();
-		$str = ob_get_clean();		
-		\QApi::Call('\Omi\Util\Pdf::Download', $str, $this->pdfExportFileName ?: (static::$FromAlias ?: $this->from).".pdf", \Omi\Util\Pdf::Landscape);
+		
+		$str = ob_get_clean();	
+		
+		$portrait = ($this->grid_mode === 'view');
+		
+		\Omi\Util\Pdf::Download($str, $this->pdfExportFileName ?: 
+				(static::$FromAlias ?: $this->from).".pdf", 
+				$portrait ? \Omi\Util\Pdf::Portrait : \Omi\Util\Pdf::Landscape, true);
 	}
+	
+	/**
+	 * export grid to pdf - only list for now
+	 */
+	public function test_pdf()
+	{		
+		$this->renderPdfExportPage();		
+	}
+	
 	/**
 	 * Export grid data to excel - only list for now
 	 */
@@ -390,51 +396,34 @@ trait Grid_Methods
 	 */
 	public static function GetListData($grid_mode, $from, $id = null, $bind_param = null, $selector = null, $settings = null, $grid_reference = null)
 	{
-		try
-		{
-			$bind_param = static::GetInSerachBinds($bind_param);
+		$bind_param = static::GetInSerachBinds($bind_param);
 
-			$cc = get_called_class();
-			$dataCls = \QApp::GetDataClass();
-			$dataCls::$FromAlias = end(explode("\\", $cc));
+		$cc = get_called_class();
+		$dataCls = \QApp::GetDataClass();
+		$dataCls::$FromAlias = end(explode("\\", $cc));
+
+		$return = null;
 			
-			\QTrace::Begin_Trace([], ['$grid_mode' => $grid_mode, '$from' => $from, '$id' => $id, 
-				'$bind_param' => $bind_param, '$selector' => $selector, '$settings' => $settings, 
-				'$dataCls::$FromAlias' => $dataCls::$FromAlias, 'called_class' => $cc], ["grid", "list", "data"]);
-		
-			$return = null;
-			
-			switch ($grid_mode)
-			{
-				case "edit":
-				case "merge":
-				case "view":
-				case "delete":
-				{
-					if (!$id)
-						$return = null;
-					else
-						$return = \QApi::QueryById($dataCls::$FromAlias, $id, $selector);
-					break;
-				}
-				case "list":
-				case "bulk":
-				{
-					$return = \QApi::Query($dataCls::$FromAlias, $selector, $bind_param);
-					break;
-				}
-				default:
-				{
-					$return = null;
-					break;
-				}
-			}
-			
-			return $return;
-		}
-		finally
+		switch ($grid_mode)
 		{
-			\QTrace::End_Trace([], ['$return' => $return]);
+			case "edit":
+			case "merge":
+			case "view":
+			case "delete":
+			{
+				if (!$id)
+					return null;				
+				return \QApi::QueryById($dataCls::$FromAlias, $id, $selector);
+			}
+			case "list":
+			case "bulk":
+			{
+				return \QApi::Query($dataCls::$FromAlias, $selector, $bind_param);
+			}
+			default:
+			{
+				return null;
+			}
 		}
 	}
 	/**
@@ -837,7 +826,7 @@ trait Grid_Methods
 		
 		if ($bind_param === null)
 			$bind_param = [];
-		
+
 		//decode binds
 		static::ParamsDecode($bind_param, false);
 		
@@ -849,10 +838,19 @@ trait Grid_Methods
 					$bind_param[$k] = $v;
 			}
 		}
+
+		# $data = static::GetListData($grid_mode, $from, $id, $bind_param, $selector, $grid_data ? $grid_data["settings"] : null);
 		
-		$grid = static::GetLoadedGrid($grid_data);
+		$grid = self::GetLoadedGrid($grid_data);
+		
 		$grid->init(false);
-		$data = static::GetListData($grid_mode, $from, $id, $bind_param, $selector, $grid_data ? $grid_data["settings"] : null, $grid);
+		$grid->grid_mode = $grid_mode;
+		$grid->grid_id = $id;
+		$grid->grid_params = $bind_param;
+		
+		$grid->setupGrid($grid->grid_mode, $grid->grid_id, $grid->grid_params);
+		
+		$data = $grid->data;
 		
 		ob_start();
 		if ($data)
@@ -863,12 +861,13 @@ trait Grid_Methods
 				$next_crt_no++;
 			}
 		}
+		
 		$str = ob_get_clean();
 		
 		if (isset($data) && (count($data) > 0))
 			$data->_show_more = true;
 		
-		return [$str, $next_crt_no, ($data && ($data->_show_more || (($qc = $data->getQueryCount()) && ($qc >= $next_crt_no))))];
+		return [$str, $next_crt_no, ($data && ($data->_show_more || (($qc = $data->getQueryCount()) && ($qc >= $next_crt_no)))), q_count($data)];
 	}
 	/**
 	 * @api.enable
@@ -909,8 +908,25 @@ trait Grid_Methods
 		$grid->setupGrid($grid->grid_mode, $grid->grid_id, $grid->grid_params);
 		//$grid->setArguments([$grid->settings, $grid->data, $grid->grid_params, $grid->grid_mode, $id], $method);
 		//$grid->setRenderMethod($method);
-		
 		$grid->render();
+	}
+	
+	/**
+	 * @api.enable
+	 * 
+	 * Delete an item
+	 * 
+	 * @param type $id
+	 * @return type
+	 */
+	public static function DeleteItemFromList($id)
+	{
+		$cc = get_called_class();	
+		$cc_inst = new $cc();
+		
+		\QApi::DeleteById($cc_inst::$FromAlias, $id);
+		
+		return [true];
 	}
 	
 	/**
@@ -946,7 +962,7 @@ trait Grid_Methods
 	public function setupDefaultBinds($grid_mode, &$bind_params)
 	{
 		$defaultBinds = (($grid_mode === "list") || ($grid_mode === "bulk")) ? 
-			\QApi::Call('GetListDefaultBinds', static::$FromAlias) : \QApi::Call('GetFormDefaultBinds', static::$FromAlias);
+			\Omi\App::GetListDefaultBinds(static::$FromAlias) : \Omi\App::GetFormDefaultBinds(static::$FromAlias);
 
 		if (!$bind_params)
 			$bind_params = [];
@@ -981,6 +997,7 @@ trait Grid_Methods
 
 			if (!$data && ($grid_mode !== "add"))
 			{
+				// @TODO - this is not ok!
 				if (!$this->_is_reference)
 				{
 					$grid_mode = "list";
@@ -1090,9 +1107,6 @@ trait Grid_Methods
 
 	public function getJsProperties()
 	{
-		# qvar_dumpk($this->grid_params, $this->toJSON($this->jsPropsSelector, true));
-		# die;
-		
 		$decoded = json_decode($this->toJSON($this->jsPropsSelector, true), true);
 		
 		if (isset($this->grid_params) && empty($decoded['grid_params']))
@@ -1161,6 +1175,26 @@ trait Grid_Methods
 		}
 	}
 	
+	/**
+	 * @param array $data 
+	 * @param string $grid_mode
+	 * @param string|integer $grid_id
+	 */
+	public function doSubmitData($data, $grid_mode, $grid_id = null)
+	{
+		//setup from alias
+		$dataCls = \QApp::GetDataClass();
+		$dataCls::$FromAlias = static::$FromAlias;
+
+		$result = null;
+			
+		# $initial_data = $data;
+		if (is_array($data))
+			list($data) = \QApi::Array_To_Model($data, static::$FromAlias);
+			
+		return static::do_submit($data, $grid_mode, $grid_id, $this);
+	}
+	
 	public static function do_submit($data, $grid_mode, $grid_id = null, Grid $grid = null)
 	{
 		switch ($grid_mode)
@@ -1180,6 +1214,11 @@ trait Grid_Methods
 			case "merge":
 			{
 				$result = \QApi::Merge(static::$FromAlias, $data);
+				break;
+			}
+			case "replace":
+			{
+				$result = \QApi::Replace(static::$FromAlias, isset($data[$grid->from]) ? $data[$grid->from] : $data);
 				break;
 			}
 			case "bulk":
@@ -1208,40 +1247,7 @@ trait Grid_Methods
 		}
 		return $result;
 	}
-	
-	/**
-	 * @param array $data 
-	 * @param string $grid_mode
-	 * @param string|integer $grid_id
-	 */
-	public function doSubmitData($data, $grid_mode, $grid_id = null)
-	{
-		//setup from alias
-		$dataCls = \QApp::GetDataClass();
-		$dataCls::$FromAlias = static::$FromAlias;
 
-		try
-		{
-			\QTrace::Begin_Trace([], ['$data' => $data, '$grid_mode' => $grid_mode, 
-				'$grid_id' => $grid_id, '$dataCls' => $dataCls, '$dataCls::$FromAlias' => $dataCls::$FromAlias], ["grid", "data", "doSubmitData", "submit"]);
-
-			$result = null;
-			
-			# $initial_data = $data;
-			if (is_array($data))
-				list($data) = \QApi::Array_To_Model($data, static::$FromAlias);
-			
-			# qvar_dump('$data', $data);
-			# throw new \Exception('aaaaa: ' . get_class($data) . ' - ' . $data[0]->Private_IP . ' - ' . json_encode($initial_data));
-			
-			return static::do_submit($data, $grid_mode, $grid_id, $this);
-		}
-		finally
-		{
-			\QTrace::End_Trace([], ['$result' => $result]);
-		}
-	}
-	
 	/**
 	 * @api.enable
 	 */

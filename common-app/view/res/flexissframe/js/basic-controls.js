@@ -125,11 +125,13 @@ omi2.control("jx-controls", {
 			do: function($ctrl_dom, $sender) 
 			{
 				// define active class
-				var $classActive = 'is-visible';
+				// var $classActive = 'is-visible';
 				
 				// check if tab content has classes (it always has)
-				if (this.classList && this.classList.contains($classActive))
-					this.classList.remove($classActive);
+				// if (this.classList && this.classList.contains($classActive))
+				// 	this.classList.remove($classActive);
+				
+				this.parentElement.remove();
 			},
 			watch: {'click': '.jx-close-modal'}
 		},

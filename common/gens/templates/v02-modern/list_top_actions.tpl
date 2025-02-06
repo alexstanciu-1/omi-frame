@@ -1,7 +1,11 @@
 @code
-    $user = \QApi::Call('\Omi\User::GetCurrentUser');
-    $dataCls = \QApp::GetDataClass();
+	$user = \Omi\User::GetCurrentUser();
+	$dataCls = \QApp::GetDataClass();
 @endcode
+<div class='qc-top-actions'>
+	<?php
+		$search_metadata = $config["cfg"]["::"]['@search'] ?? [];
+	?>
 
 <div class="mt-5 flex lg:mt-0 lg:ml-4 tpl-top-actions-buttons">
 	<?php if ($_TYPE_FLAGS['list_checkboxes']) { ?>
@@ -88,39 +92,40 @@
                     -->
                 @endif
             </ul>
-        </div>
-		@endif
-        <!-- <a class="js-show-filters" href="javascript: void(0);"><i class="btn btn-warning btn-border zmdi zmdi-filter-list"></i></a> -->
-    @endif
+		</div>
+		<?php if ($search_metadata) { ?>
+			<a href="javascript://" onclick="jQuery(this).closest('.qc-inner').find('.js-list-wrapper').toggleClass('col-md-9'); jQuery(this).closest('.qc-inner').find('.js-shrc-ctrl').toggle()" class="btn btn-warning btn-border">{{_L("Filter")}}</a>
+		<?php } ?>
+	@endif
 
-    @if ((!$dataCls::$_USE_SECURITY_FILTERS || ($user && $user->can('provisioning_sync', 'Broadworks_Groups'))) && $this->provisioning_can_sync)
-        <div class='export-buttons provisioning-sync-buttons'>
-            @if ((!$dataCls::$_USE_SECURITY_FILTERS || ($user && $user->can('provisioning_sync_push', 'Broadworks_Groups'))) && $this->provisioning_can_push)
-                <a title='{{_L("Push")}}' target="_blank" data-type="push" class="btn qc-provisioning-sync qc-tooltip tooltip-bottom">
-                    <i class="fa fa-upload info"></i>
-                    <span class="tooltip">Push</span>
-                    Push
-                </a>
-            @endif
-            @if ((!$dataCls::$_USE_SECURITY_FILTERS || ($user && $user->can('provisioning_sync_pull', 'Broadworks_Groups'))) && $this->provisioning_can_pull)
-                <a title='{{_L("Pull")}}' data-type="pull" class="btn qc-provisioning-sync qc-tooltip tooltip-bottom">
-                    <i class="fa fa-download success"></i>
-                    <span class="tooltip">Pull</span>
-                    Pull
-                </a>
-            @endif
-        </div>
-    @endif
+	@if ((!$dataCls::$_USE_SECURITY_FILTERS || ($user && $user->can('provisioning_sync', 'Broadworks_Groups'))) && $this->provisioning_can_sync)
+		<div class='export-buttons provisioning-sync-buttons'>
+			@if ((!$dataCls::$_USE_SECURITY_FILTERS || ($user && $user->can('provisioning_sync_push', 'Broadworks_Groups'))) && $this->provisioning_can_push)
+				<a title='{{_L("Push")}}' target="_blank" data-type="push" class="btn qc-provisioning-sync qc-tooltip tooltip-bottom">
+					<i class="fa fa-upload info"></i>
+					<span class="tooltip">{{_L('Push')}}</span>
+					{{_L('Push')}}
+				</a>
+			@endif
+			@if ((!$dataCls::$_USE_SECURITY_FILTERS || ($user && $user->can('provisioning_sync_pull', 'Broadworks_Groups'))) && $this->provisioning_can_pull)
+				<a title='{{_L("Pull")}}' data-type="pull" class="btn qc-provisioning-sync qc-tooltip tooltip-bottom">
+					<i class="fa fa-download success"></i>
+					<span class="tooltip">{{_L('Pull')}}</span>
+					{{_L('Pull')}}
+				</a>
+			@endif
+		</div>
+	@endif
 
-    <?php if ($config && $config['__settings__'] && $config['__settings__']['bulk'] && $config['__settings__']['bulk']['show_bulk_switcher']) : ?>
-        @if ($this->grid_mode === "list")
-            <a title='{{_L("Edit")}}' href="{{$this->getUrlForTag('mode', 'bulk')}}" class="btn qc-bulk-btn btn-border btn-info">
-                {{_T('5aeae3f73f915', 'Edit')}}
-            </a>
-        @else
-            <a title='{{_L("List")}}' href="{{$this->getUrlForTag('mode', 'list')}}" class="btn qc-list-btn btn-border btn-warning">
-                {{_T('5aeae40bb1664', 'List')}}
-            </a>
-        @endif			
-    <?php endif; ?>
+	<?php if ($config && $config['__settings__'] && $config['__settings__']['bulk'] && $config['__settings__']['bulk']['show_bulk_switcher']) : ?>
+		@if ($this->grid_mode === "list")
+			<a title='{{_L("Edit")}}' href="{{$this->getUrlForTag('mode', 'bulk')}}" class="btn qc-bulk-btn btn-border btn-info">
+				{{_T('5aeae3f73f915', 'Edit')}}
+			</a>
+		@else
+			<a title='{{_L("List")}}' href="{{$this->getUrlForTag('mode', 'list')}}" class="btn qc-list-btn btn-border btn-warning">
+				{{_T('5aeae40bb1664', 'List')}}
+			</a>
+		@endif			
+	<?php endif; ?>
 </div>

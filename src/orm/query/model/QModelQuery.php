@@ -155,12 +155,9 @@ class QModelQuery
 			$run_query = static::PrepareBindQuery($query, $binds);
 
 			$result = static::Query($run_query, $from, $dataBlock, $skip_security, $binds, $query, $filter_selector, $populate_only, $storage, false);
-			if ($dataBlock)
-			{
-				foreach ($dataBlock as $objs)
-				{
-					if ($objs)
-					{
+			if (is_array($dataBlock)) {
+				foreach ($dataBlock as $objs) {
+					if ($objs) {
 						foreach ($objs as $obj)
 							$obj->init(false);
 					}
@@ -1930,18 +1927,18 @@ class QModelQuery
 	
 	public static function PopulateDataBlock($frm_arr, $sql_items, &$dataBlock, $storage)
 	{
-		if ((!$frm_arr) || (!$sql_items))
-
-		foreach ($sql_items as $item_id => $item_b)
-		{
-			foreach ($item_b as $ty_id => $item)
+		if (($dataBlock !== false) && ((!$frm_arr) || (!$sql_items))) {
+			foreach ($sql_items as $item_id => $item_b)
 			{
-				if ($item_id !== null)
-					$dataBlock[$item_id][$ty_id] = $item;
-				
-				$query_model = $frm_arr[get_class($item)];
-				if ($query_model && $query_model->children)
-					static::PopulateDataBlockRecursive($query_model->children, $item, $dataBlock, $storage);
+				foreach ($item_b as $ty_id => $item)
+				{
+					if ($item_id !== null)
+						$dataBlock[$item_id][$ty_id] = $item;
+
+					$query_model = $frm_arr[get_class($item)];
+					if ($query_model && $query_model->children)
+						static::PopulateDataBlockRecursive($query_model->children, $item, $dataBlock, $storage);
+				}
 			}
 		}
 	}

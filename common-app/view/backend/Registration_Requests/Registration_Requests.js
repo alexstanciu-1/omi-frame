@@ -1,4 +1,4 @@
-QExtendClass("Omi\\TFS\\View\\Registration_Requests", "Omi\\View\\Grid",
+QExtendClass("Omi\\App\\View\\Registration_Requests", "Omi\\View\\Grid",
 {
 	onclick: function(sender, sender_id, event)
 	{
@@ -8,7 +8,7 @@ QExtendClass("Omi\\TFS\\View\\Registration_Requests", "Omi\\View\\Grid",
 		{
 			var $registrationId = jQuery(sender).data('registration-id');
 			
-			omi.api("Omi\\TFS\\View\\Registration_Requests::ActivateAccount", [$registrationId], 
+			omi.api("Omi\\App\\View\\Registration_Requests::ActivateAccount", [$registrationId], 
 				// success
 				function(resp)
 				{					
@@ -26,7 +26,7 @@ QExtendClass("Omi\\TFS\\View\\Registration_Requests", "Omi\\View\\Grid",
 		{
 			var $registrationId = jQuery(sender).data('registration-id');
 			
-			omi.api("Omi\\TFS\\View\\Registration_Requests::SendConfirmationEmail", [$registrationId], 
+			omi.api("Omi\\App\\View\\Registration_Requests::SendConfirmationEmail", [$registrationId], 
 				// success
 				function(resp)
 				{					

@@ -97,7 +97,6 @@ abstract class Person_mods_model_ extends Actor
 	 */
 	protected $Title;
 	
-	
 	/**
 	 * @var boolean
 	 */
@@ -130,7 +129,6 @@ abstract class Person_mods_model_ extends Actor
 	 */
 	protected $IsDefault;
 	
-	
 	/**
 	 * Returns person full name
 	 * 
@@ -150,6 +148,11 @@ abstract class Person_mods_model_ extends Actor
 		return $this->getFullName();
 	}
 
+	/**
+	 * Get age for person.
+	 * 
+	 * @return type
+	 */
 	public function getAge()
 	{
 		if ($this->Age)
@@ -162,6 +165,7 @@ abstract class Person_mods_model_ extends Actor
 		$birthDate = new \DateTime($this->BirthDate);
 		$this->Age = intval($currentDate->diff($birthDate)->format("%y"));
 	}
+
 	/**
 	 * Gets a default for a listing selector if none was specified
 	 * 
@@ -236,6 +240,7 @@ abstract class Person_mods_model_ extends Actor
 			. "Latitude"
 		. "}";
 	}
+
 	/**
 	 * Gets a default for a listing selector if none was specified
 	 * 
@@ -289,6 +294,7 @@ abstract class Person_mods_model_ extends Actor
 				. "Latitude"
 			. "}");
 	}
+
 	/**
 	 * Gets a default for a listing selector if none was specified
 	 * 
@@ -345,7 +351,10 @@ abstract class Person_mods_model_ extends Actor
 	 */
 	public static function GetModelEntity($view_tag = null)
 	{
-		return static::vp_fuse__GetModelEntity($view_tag) . ",Sf_Roles,MainCompany.{Name,Code}";
+		if (defined('VF_REL_PATH'))
+			return static::vp_fuse__GetModelEntity($view_tag) . ",Sf_Roles,MainCompany.{Name,Code}";
+		else
+			return parent::GetModelEntity($view_tag);
 	}
 
 	/**
@@ -355,10 +364,15 @@ abstract class Person_mods_model_ extends Actor
 	 */
 	public static function GetListingEntity($view_tag = null)
 	{
-		$class = get_called_class();
-		$le = static::$ListingEntity[$class];
-		if ($le !== null)
-			return $le;
-		return static::$ListingEntity[$class] = qJoinSelectors(static::vp_fuse__GetListingEntity(), ["Sf_Roles" => [], 'MainCompany' => ['Name' => [], 'Code' => []]]);
+		if (defined('VF_REL_PATH')) {
+			$class = get_called_class();
+			$le = static::$ListingEntity[$class];
+			if ($le !== null)
+				return $le;
+			return static::$ListingEntity[$class] = qJoinSelectors(static::vp_fuse__GetListingEntity(), ["Sf_Roles" => [], 'MainCompany' => ['Name' => [], 'Code' => []]]);
+		}
+		else {
+			return parent::GetListingEntity($view_tag);
+		}
 	}
 }

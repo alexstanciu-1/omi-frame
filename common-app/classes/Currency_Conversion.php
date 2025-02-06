@@ -6,7 +6,7 @@ class Currency_Conversion
 {
 	public static $BNR_RATES = [];
 	
-	public static $BNRRatesUrl = TF_BNRRatesUrl;
+	public static $BNRRatesUrl = null;
 	
 	/**
 	 * @api.enable
@@ -24,10 +24,14 @@ class Currency_Conversion
 		$fmtime = file_exists($bnrRatesFile) ? filemtime($bnrRatesFile) : null;
 		if ($force || (!$fmtime || ($fmtime < strtotime("-1 hour"))))
 		{
+			self::$BNRRatesUrl = self::$BNRRatesUrl ?: (defined('TF_BNRRatesUrl') ? TF_BNRRatesUrl : 'http://www.bnr.ro/nbrfxrates.xml');
 			// we are using ron
 			static::$BNR_RATES = ["RON" => 1];
 			$ratesC = file_get_contents(self::$BNRRatesUrl);
-			$doc = \DOMDocument::loadXML($ratesC);
+			
+			$doc = new \DOMDocument();
+			$doc->loadXML($ratesC);
+			
 			$ratesElements = $doc->getElementsByTagName("Rate");
 			foreach ($ratesElements ?: [] as $rateElement)
 			{

@@ -443,7 +443,9 @@ class QApp extends QAppModule
 						$ret_code = $storage->connection->next_result();
 						if ((!$ret_code) && $storage->connection->error)
 						{
-							qvar_dump('$ret_code', $ret_code);
+							if (\QAutoload::GetDevelopmentMode()) {
+								qvar_dump('$ret_code', $ret_code, '$sql_statements', $sql_statements);
+							}
 							throw new Exception($storage->connection->error);
 						}
 					}
@@ -634,8 +636,6 @@ class QApp extends QAppModule
 		$multi_folder = "temp/multi-request/";
 		if (!is_dir($multi_folder))
 			qmkdir($multi_folder);
-		
-		
 
 		if ($request_multi_id)
 		{

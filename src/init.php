@@ -148,3 +148,4 @@ register_shutdown_function(function () {
 	# yes, we need to make sure it runs last!
 	register_shutdown_function(['QErrorHandler', 'Cleanup_On_End']);
 });
+

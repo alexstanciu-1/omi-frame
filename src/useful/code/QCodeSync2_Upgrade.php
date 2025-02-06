@@ -14,13 +14,6 @@ trait QCodeSync2_Upgrade
 	public function run_upgrade(array $files, array $changed_or_added, array $removed_files, array $new_files)
 	{
 		throw new \Exception('It needs a setup');
-		/*
-		unset($files['/home/alex/public_html/tf-develop/~includes/omi-frame/src/']);
-		unset($files['/home/alex/public_html/tf-develop/~includes/omi-mods/classes/']);
-		unset($files['/home/alex/public_html/tf-develop/~includes/omi-mods/integrations/']);
-		unset($files['/home/alex/public_html/tf-develop/~includes/omi-mods/gens/']);
-		unset($files['/home/alex/public_html/tf-develop/~instances/default/public_html/~backend_config/']);
-		*/
 		
 		# one dir above to catch more situations
 		$this->upgrade_inside_dir = "/home/alex/public_html/tf-develop/";
@@ -610,6 +603,37 @@ trait QCodeSync2_Upgrade
 			
 		}
 		
+		/*
+		// all ok, save it !
+		$write_to_file_name = null;
+		$full_ext = substr(basename($file), strpos(basename($file), "."));
+		if ($full_ext === '.php')
+			$write_to_file_name = substr($file, 0, -4).".class.php";
+		else if ($full_ext === '.patch.php')
+			$write_to_file_name = substr($file, 0, -strlen($full_ext)).".class.php";
+		else if ($full_ext === '.class.php')
+			return false;
+		else
+		{
+			qvar_dumpk($file, $full_ext, $write_to_file_name);
+			throw new \Exception('Unexpected extension: '.$full_ext.' in: '.$layer.$file);
+		}
+		
+		
+		$write_to_file_content = (string)$file_tok;
+		$upgrade_path = $this->upgrade_copy_file($layer, $write_to_file_name, $write_to_file_content);
+		#
+		#	1. rename it to CLASS_$layer_
+		#	2. inside it set ** @class.name CLASS *
+		#	3. patching classes must ` extend ` prev_patched class name if not first
+		# 
+		
+		// update the cache for the next go
+		foreach ($class_tok->methods ?: [] as $m_name => $c_meth)
+			$toks_cache_methods[$full_class_name][$m_name] = $c_meth;
+		
+		$this->analyze_parent_calls($upgrade_path, $write_to_file_name, $write_to_file_content, $full_class_name, $layer, $file, $layer_tag);
+		*/
 		return [$file_tok, $class_tok, $new_class_name];
 	}
 	

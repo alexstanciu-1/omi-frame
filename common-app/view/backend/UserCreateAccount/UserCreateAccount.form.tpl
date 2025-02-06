@@ -142,7 +142,7 @@
 											   $input_type_default, $input_name_name, $inputs_extra_class, $input_data_name, $input_data_default, $picker_prop)" 
 											q-args="$from = null, $selector = null, $binds = null, $caption = null, $full_data = null, $input_id_name = null, $input_id_default = null, 
 											   $input_type_name = null, $input_type_default = null, $input_name_name = 'name', $inputs_extra_class = null, $attrs = null, $picker_name = null, $cssClass = null, $picker_placeholder = null"
-											qCtrl="(Omi\View\DropDown)" q-valid='((!empty($value) || ($value === "0")))' q-dyn-parent="Omi\TFS\View\Users" q-dyn-inst="">
+											qCtrl="(Omi\View\DropDown)" q-valid='((!empty($value) || ($value === "0")))' q-dyn-parent="Omi\App\View\Users" q-dyn-inst="">
 
 										   <input class="qc-dd-from" type="hidden" value="API_Systems" />
 										   <input class="qc-dd-selector" type="hidden" value="Name" />

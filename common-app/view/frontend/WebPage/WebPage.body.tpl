@@ -132,13 +132,23 @@
 							</div>
 						</div>
 						<!-- MY ACCOUNT DROPDOWN :: BEGIN -->
+						
+						@if (defined('Q_IS_H2B') && Q_IS_H2B && !$isPropertyOwner)
+							<div class="mx-3">
+								<a href="Checkout_Orders/add" class="relative block">
+									<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+									</svg>
+								</a>
+							</div>
+						@endif
 					</div>
 				</div>
             @endif
-
+			
             @include($this::content, $userData);
 			
-			@if (false && $userData && (($originalRequest != 'terms-and-conditions') && ($originalRequest !== 'privacy-policy')))
+			@if (defined('Q_IS_H2B') && Q_IS_H2B && $userData && (($originalRequest != 'terms-and-conditions') && ($originalRequest !== 'privacy-policy')))
 				<footer id="footer" class="shadow">
 					<a href="terms-and-conditions" target="_blank" class="text-blue-600 text-sm underline">{{_T(214, 'Terms and conditions')}}</a> | 
 					<a href="privacy-policy" target="_blank" class="text-blue-600 text-sm underline">{{_T(324, 'Privacy policy')}}</a>
@@ -150,5 +160,5 @@
     @include($this::bodyResources);
     
     <?php $this->renderCallbacks(); ?>
-	<script type="text/javascript"> window._q_maximum_upload_size_ = <?= \Omi\View\Grid::maximum_upload_size(); ?>; </script>
+    <script type="text/javascript"> window._q_maximum_upload_size_ = <?= \Omi\View\Grid::maximum_upload_size(); ?>; </script>
 </body>

@@ -617,10 +617,23 @@ QExtendClass("Omi\\View\\DropDown", "omi", {
 		this.trigger("beforeUpdateResults", {"event" : event, "control" : this, "sender" : sender});
 
 		closeOpenedDropdowns(this.dom);
+		
+		// __submitted=1&Id=2&Deploy_Server%5BId%5D=2&Deploy_Server%5B_ty%5D=Omi%5CTF%5CProvision%5CServer&Id=2&Id=2&Id=2
+		var $xg_form_data = null;
+		var $xg_form = jQuery(sender).closest('.xg-form');
+		if ($xg_form.length)
+		{
+			// activate name(s) for $xg_form.serialize() then remove them
+			var $name_x_hiddens = $xg_form.find('input[type=hidden][name-x]');
+			for (var $x = 0; $x < $name_x_hiddens.length; $x++)
+				$name_x_hiddens[$x].setAttribute('name', $name_x_hiddens[$x].getAttribute('name-x'));
 
-		// if (this.stopResultsUpdate)
-			// return false;
-
+			$xg_form_data = $xg_form.serialize();
+			
+			for (var $x = 0; $x < $name_x_hiddens.length; $x++)
+				$name_x_hiddens[$x].removeAttribute('name');
+		}
+		
 		var ddbindsjq = this.$(".qc-dd-binds");
 		var ddbinds = (ddbindsjq.length > 0) ? ddbindsjq.val() : null;
 		var binds = (ddbinds && (ddbinds.length > 0)) ? JSON.parse(ddbinds) : null;
@@ -642,6 +655,9 @@ QExtendClass("Omi\\View\\DropDown", "omi", {
 		var dyn_inst = this.dom.getAttribute('q-dyn-inst');
 		if (dyn_inst && (dyn_inst.trim().length > 0))
 			call_on_method = "getRenderItems_Inst";
+		
+		if ($xg_form_data && $xg_form_data.length)
+			binds._xg_form_data_ = $xg_form_data;
 
 		this.ajax(call_on_method, [from, selector, binds], [this, this.updateResultsCallback]);
 		return true;

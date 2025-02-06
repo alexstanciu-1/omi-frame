@@ -51,4 +51,5 @@
 			{{<?= $_data_value ?>}}
         <?php endif; ?>
     </span>
-<?php endif; ?>
+<?php endif;
+if (!$_is_password) : ?><input type='hidden' name-x="{{<?= $_data_property ?>}}" value='{{<?= $_data_value ?>}}' /><?php endif;

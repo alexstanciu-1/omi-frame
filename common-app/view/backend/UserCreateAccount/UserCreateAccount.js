@@ -1,4 +1,4 @@
-QExtendClass("Omi\\TFS\\View\\UserCreateAccount", "Omi\\View\\Grid",
+QExtendClass("Omi\\App\\View\\UserCreateAccount", "Omi\\View\\Grid",
 {
 	init : function (dom)
 	{		
@@ -115,7 +115,7 @@ QExtendClass("Omi\\TFS\\View\\UserCreateAccount", "Omi\\View\\Grid",
 	openTermsPopup: function ($senderJq)
 	{
 		var $this = this;
-		omi.api("Omi\\TFS\\View\\UserCreateAccount::TermsContentPopup", 
+		omi.api("Omi\\App\\View\\UserCreateAccount::TermsContentPopup", 
 	
 			// params
 			[],
@@ -138,7 +138,7 @@ QExtendClass("Omi\\TFS\\View\\UserCreateAccount", "Omi\\View\\Grid",
 	{
 		var $this = this;		
 		
-		omi.api("Omi\\TFS\\View\\UserCreateAccount::PolicyContentPopup", 
+		omi.api("Omi\\App\\View\\UserCreateAccount::PolicyContentPopup", 
 	
 			// params
 			[],

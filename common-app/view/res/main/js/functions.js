@@ -354,7 +354,7 @@ jQuery(document).ready(function ()
 			var $ratePlanId = $lastSelected.data('rateplanid');
 			var $propertyId = $lastSelected.data('propertyid');
 
-			omi.api("Omi\\TFS\\View\\Rate_Set_Requests::RenderMiniPopup", [$dateStart, $dateEnd, $roomId, $ratePlanId, $propertyId], 
+			omi.api("Omi\\App\\View\\Rate_Set_Requests::RenderMiniPopup", [$dateStart, $dateEnd, $roomId, $ratePlanId, $propertyId], 
 				// success
 				function(resp)
 				{
@@ -385,7 +385,7 @@ jQuery(document).ready(function ()
 			var $roomId = $lastSelected.data('roomid');
 			var $propertyId = $lastSelected.data('propertyid');
 			
-			omi.api("Omi\\TFS\\View\\Rate_Set_Requests::RenderRoomCountMiniPopup", [$dateStart, $dateEnd, $roomId, $propertyId], 
+			omi.api("Omi\\App\\View\\Rate_Set_Requests::RenderRoomCountMiniPopup", [$dateStart, $dateEnd, $roomId, $propertyId], 
 				// success
 				function(resp)
 				{
@@ -419,7 +419,7 @@ jQuery(document).ready(function ()
 			var $restrictionName = $lastSelected.data('restriction');
 			var $daysLoacked = $lastSelected.data('days-locked');
 			
-			omi.api("Omi\\TFS\\View\\Rate_Set_Requests::RenderRestictionsMiniPopup", [$dateStart, $dateEnd, $roomId, $ratePlanId, $propertyId, $restrictionName, $daysLoacked], 
+			omi.api("Omi\\App\\View\\Rate_Set_Requests::RenderRestictionsMiniPopup", [$dateStart, $dateEnd, $roomId, $ratePlanId, $propertyId, $restrictionName, $daysLoacked], 
 				// success
 				function(resp)
 				{
@@ -449,7 +449,7 @@ jQuery(document).ready(function ()
 			var $dateEnd = $lastSelected.data('date');
 			var $serviceCalendarId = $firstSelected.closest('form').find('input[name="Id"]').val();
 			
-			omi.api("Omi\\TFS\\View\\Services_Calendar::RenderServiceStatusMiniPopup", [$dateStart, $dateEnd, $serviceCalendarId], 
+			omi.api("Omi\\App\\View\\Services_Calendar::RenderServiceStatusMiniPopup", [$dateStart, $dateEnd, $serviceCalendarId], 
 				// success
 				function(resp)
 				{
@@ -506,7 +506,7 @@ jQuery(document).ready(function ()
 			
 			// console.log($mouseX, $mouseY);
 			
-			omi.api("Omi\\TFS\\View\\Rate_Set_Requests::RenderMiniPopup", [$dateStart, $dateEnd, $roomId, $ratePlanId, $propertyId], 
+			omi.api("Omi\\App\\View\\Rate_Set_Requests::RenderMiniPopup", [$dateStart, $dateEnd, $roomId, $ratePlanId, $propertyId], 
 				// success
 				function(resp)
 				{
@@ -555,7 +555,7 @@ jQuery(document).ready(function ()
 		
 		$form.find(':input:disabled').removeAttr('disabled');
 
-		omi.api("Omi\\TFS\\View\\Rate_Set_Requests::UpdatePrices", [$form.serialize()], 
+		omi.api("Omi\\App\\View\\Rate_Set_Requests::UpdatePrices", [$form.serialize()], 
 			// success
 			function(resp)
 			{							
@@ -628,7 +628,7 @@ jQuery(document).ready(function ()
 		
 		$form.find(':input:disabled').removeAttr('disabled');
 
-		omi.api("Omi\\TFS\\View\\Rate_Set_Requests::UpdateRoomsCount", [$form.serialize()], 
+		omi.api("Omi\\App\\View\\Rate_Set_Requests::UpdateRoomsCount", [$form.serialize()], 
 			// success
 			function(resp)
 			{				
@@ -693,7 +693,7 @@ jQuery(document).ready(function ()
 		$form.find(':input:disabled').removeAttr('disabled');
 		
 		var $status = $form.find('input[xg-property-value^="Status("]').val();
-		omi.api("Omi\\TFS\\View\\Services_Calendar::UpdateServiceStatus", [$form.serialize()], 
+		omi.api("Omi\\App\\View\\Services_Calendar::UpdateServiceStatus", [$form.serialize()], 
 			// success
 			function(resp)
 			{				
@@ -733,7 +733,7 @@ jQuery(document).ready(function ()
 	
 	jQuery('body').on('click', '.js-remove-all-favorites-offers', function()
 	{
-		omi.api("Omi\\TFS\\View\\Favorite_Orders::Remove_All_Favorite_Orders", 
+		omi.api("Omi\\App\\View\\Favorite_Orders::Remove_All_Favorite_Orders", 
 	
 			// params
 			[],
@@ -762,7 +762,7 @@ jQuery(document).ready(function ()
 		
 		$form.find(':input:disabled').removeAttr('disabled');
 
-		omi.api("Omi\\TFS\\View\\Rate_Set_Requests::UpdateRestrictions", [$form.serialize(), $daysLocked], 
+		omi.api("Omi\\App\\View\\Rate_Set_Requests::UpdateRestrictions", [$form.serialize(), $daysLocked], 
 			// success
 			function(resp)
 			{				

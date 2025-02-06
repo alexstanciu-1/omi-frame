@@ -21,6 +21,7 @@ abstract class Email_omi_util_ extends \QModel
 	protected $contentTypeStr = "text/plain";
 	protected $reply_to = [];
 	protected $from_alias = null;
+	protected $cc_addresses = [];
 	
 	public $is_smtp = false;
 	
@@ -151,8 +152,9 @@ abstract class Email_omi_util_ extends \QModel
 
 		$this->from = $this->smtp_username;
 
-		return static::SMTPMail($this->smtp_host, $this->smtp_port, $this->smtp_encryption, $this->smtp_username, $this->smtp_password, $this->from, 
-			$this->to, $this->subject, $this->message, $this->attachments, $this->from_alias, $this->reply_to);
+		return static::SMTPMail($this->smtp_host, $this->smtp_port, $this->smtp_encryption, $this->smtp_username, 
+			$this->smtp_password, $this->from, 
+			$this->to, $this->subject, $this->message, $this->attachments, $this->from_alias, $this->reply_to, 0, $this->cc_addresses);
 	}
 
 	/**
@@ -174,8 +176,8 @@ abstract class Email_omi_util_ extends \QModel
 	 * @throws \Exception
 	 */
 	public static function SMTPMail($host, $port, $encryption, $username, $password, $from, $email, $subject, $message = "", $attachments = [], 
-		$fromAlias = null, $replyTo = [], $debugState = 0)
-	{
+		$fromAlias = null, $replyTo = [], $debugState = 0, $cc_addresses = [])
+	{	
 		$dir = dirname(__FILE__);
 		
 		$php_mailer_class = 'PHPMailer\PHPMailer\PHPMailer';
@@ -272,6 +274,13 @@ abstract class Email_omi_util_ extends \QModel
 				foreach ($replyTo as $rt)
 					$mail->addReplyTo($rt);
 			}
+            
+            //Set an carbon copy address
+			if ($cc_addresses && (count($cc_addresses) > 0))
+			{
+				foreach ($cc_addresses as $cc_addr)
+					$mail->addCC($cc_addr);
+            }
 
 			//Set who the message is to be sent to
 			$mail->addAddress($email);
@@ -299,11 +308,7 @@ abstract class Email_omi_util_ extends \QModel
 				$mail->Encoding = Q_MAIL_SEND_ENCODING;
 
 			//send the message, check for errors
-			# ob_start();
 			$sent = $mail->send();
-			# $inf = ob_get_clean();
-			# if (\QAutoload::GetDevelopmentMode())
-				# qvar_dumpk("dev", $sent, $inf);
 
 			//qvardump($sent);
 			//die();
@@ -316,8 +321,7 @@ abstract class Email_omi_util_ extends \QModel
 
 			return $sent;
 		}
-		catch (\Exception $ex)
-		{
+		catch (\Exception $ex) {
 			throw $ex;
 		}
 
@@ -344,10 +348,19 @@ abstract class Email_omi_util_ extends \QModel
         $this->headers = $headers;
         $this->reloadHeaders();
     }
-
-    public function setAsHTML()
+    
+    public function setCc($cc_addresses)
     {
-        $this->contentTypeStr = "text/html";
+        if ($cc_addresses && !empty($cc_addresses))
+		{
+            foreach ($cc_addresses as $key => $value)
+				$this->cc_addresses[] = $value;
+		}
+    }
+
+    public function setAsHTML(string $content_type = "text/html")
+    {
+        $this->contentTypeStr = $content_type;
     }
 	/**
 	 * reload headers
@@ -417,7 +430,7 @@ abstract class Email_omi_util_ extends \QModel
 	 * @param boolean $isHtml
 	 * @return boolean
 	 */
-	public static function Send($mailSender, $to, $subject, $message, $attachments = [], $headers = [], $isHtml = true)
+	public static function Send($mailSender, $to, $subject, $message, $attachments = [], $headers = [], $isHtml = true, $cc_addresses = [])
 	{
 		if (!($to && filter_var($to, FILTER_VALIDATE_EMAIL)))
 		{
@@ -442,6 +455,10 @@ abstract class Email_omi_util_ extends \QModel
 		if (($mailSender !== null) && is_object($mailSender))
 		{
 			# it is object
+		}
+		else if (is_array($mailSender))
+		{
+			$mailSender = (object)$mailSender;
 		}
 		else
 		{
@@ -535,16 +552,23 @@ abstract class Email_omi_util_ extends \QModel
 		$mail->setFrom(is_string($initial_mailSender) ? $initial_mailSender : ($mailSender->Email ?: $mailSender->Username));
 
 		$mail->setTextMessage($message);
-		$mail->setHeaders($headers);
 		
+		if (!isset($headers['Content-Type']))
+			$headers['Content-Type'] = 'text/html; charset=UTF-8';
+		
+		$mail->setHeaders($headers);
+        
+        if ($cc_addresses && (count($cc_addresses) > 0))
+            $mail->setCc($cc_addresses);
+        
 		if ($isHtml)
-			$mail->setAsHTML();
+			$mail->setAsHTML("text/html; charset=UTF-8");
 
 		try
 		{
 			$owner = \Omi\App::GetCurrentOwner();
 		}
-		catch (\Exception$ex)
+		catch (\Exception $ex)
 		{
 			$owner = null;
 		}
@@ -603,7 +627,7 @@ abstract class Email_omi_util_ extends \QModel
 		$mail->addAttachments($attachments);
 		
 		$sent = $mail->_send();
-		
+
 		foreach ($_unlink_attachments ?: [] as $u)
 			unlink($u);
 		

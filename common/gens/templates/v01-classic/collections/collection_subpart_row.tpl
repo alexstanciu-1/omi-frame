@@ -53,7 +53,7 @@
 					<?php if ($_PROP_FLAGS['collection.popup.edit']) { ?>
 					<li class="itm-config qc-itm-cfg qc-popup-prop-wr">
 						<input class="qc-popup-prop-id" type="hidden" value="{{$data->Id}}" />
-						<input class="qc-popup-prop-ty" type="hidden" value="{{$data ? get_class($data) : ''}}" />
+						<input class="qc-popup-prop-ty" type="hidden" value="{{$data ? q_get_class($data) : ''}}" />
 						<a data-view='<?= htmlentities($_PROP_FLAGS['collection.popup.edit']) ?>' data-params='{}' data-mode="edit" class="nowrap qc-popup-prop-setup" title="">
 							<i class="fa fa-cog"></i>
 						</a>

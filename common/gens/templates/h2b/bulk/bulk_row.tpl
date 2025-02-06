@@ -21,14 +21,14 @@
 		{{$_pos ? $_pos : ""}}
 		<?php if (false && $hide_pickers) : ?>
 			<?= $hiddens ?>
-			<input type="hidden" class="qc-hidden-ty" name='{{$this->from}}[{{$_pos}}][_ty]' value="{{is_object($data) ? get_class($data) : ''}}" />
+			<input type="hidden" class="qc-hidden-ty" name='{{$this->from}}[{{$_pos}}][_ty]' value="{{is_object($data) ? q_get_class($data) : ''}}" />
 		<?php endif; ?>
 	</td>
 	@endif
 	<?php if (true || !$hide_pickers) : ?>
 		<td class='qc-chk-cell'>
 			<?= $hiddens ?>
-			<input type="hidden" class="qc-hidden-ty" name='{{$this->from}}[{{$_pos}}][_ty]' value="{{is_object($data) ? get_class($data) : ''}}" />
+			<input type="hidden" class="qc-hidden-ty" name='{{$this->from}}[{{$_pos}}][_ty]' value="{{is_object($data) ? q_get_class($data) : ''}}" />
 			<input type="hidden" class="js-bulk-tsp" name='{{$vars_path}}[_ts]' value="" />
 			<div class='qc-checkbox'>
 				<input class='qc-chkcollitm-pick' type='checkbox' id='{{$unk = uniqid()}}' 

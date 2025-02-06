@@ -755,7 +755,7 @@ final class QWebRequest
 				static::HandleLegacyForAsyncRequest($uncaughtException);
 			static::HandleLegacyForAsyncRequest_OnShutdown();
 		}
-				
+
 		if (\QAutoload::GetDevelopmentMode())
 		{
 			// first determine if we stopped because of an error

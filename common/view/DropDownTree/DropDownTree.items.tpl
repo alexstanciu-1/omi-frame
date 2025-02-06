@@ -40,7 +40,7 @@
 		foreach ($items ?: [] as $item)
 		{
 			?>
-			<div<?= $dl ?> data-full='<?= htmlspecialchars(json_encode($item->toJSON()), ENT_QUOTES) ?>' class="qc-dd-item" item.id="{{$item->Id}}" item.ty="{{get_class($item)}}">
+			<div<?= $dl ?> data-full='<?= htmlspecialchars(json_encode($item->toJSON()), ENT_QUOTES) ?>' class="qc-dd-item" item.id="{{$item->Id}}" item.ty="{{q_get_class($item)}}">
 				{{ $item->getModelCaption($binds ? $binds["__caption_tag"] : null) }}
 			</div>
 

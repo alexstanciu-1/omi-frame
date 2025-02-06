@@ -12,5 +12,5 @@
 <?php if (!$is_top) : ?>
 	<input xg-property-value='<?= $xg_ty_tag ?>' type="hidden" class='qc-hidden-ty' 
 		name="{{$vars_path ? $vars_path.'[_ty]' : '_ty'}}" 
-		value="{{($data === null) ? '' : get_class($data)}}" />
+		value="{{($data === null) ? '' : q_get_class($data)}}" />
 <?php endif; ?>

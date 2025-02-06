@@ -18,7 +18,7 @@
     <?php if ($_TYPE_FLAGS['list_checkboxes']): 
 	?><td class='qc-chk-cell'>
 		<input type="hidden" class="qc-hidden-id" name='{{$this->from}}[{{$_pos}}][Id]' value="{{$data->Id}}" />
-		<input type="hidden" class="qc-hidden-ty" name='{{$this->from}}[{{$_pos}}][_ty]' value="{{is_object($data) ? get_class($data) : ''}}" />
+		<input type="hidden" class="qc-hidden-ty" name='{{$this->from}}[{{$_pos}}][_ty]' value="{{is_object($data) ? q_get_class($data) : ''}}" />
 		<div class='qc-checkbox'>
 			<input class='qc-chkcollitm-pick' type='checkbox' id='{{$unk = uniqid()}}' 
 				{{$_qengine_args["_tsp"] ? " data-vars-path='".$_qengine_args['_tsp'][0]."'" : ""}} />
@@ -58,7 +58,7 @@
                 @endif
 
                 @if ($can_delete)
-                    <a data-tippy-content="{{_L('Delete')}}" href="javascript: void(0);" data-id="{{$data->getId()}}" data-model="{{get_class($data)}}" class="group flex items-center p-2 text-sm text-gray-400 js-delete-item css-list-item-delete rounded-md">
+                    <a data-tippy-content="{{_L('Delete')}}" href="javascript: void(0);" data-id="{{$data->getId()}}" data-model="{{q_get_class($data)}}" class="group flex items-center p-2 text-sm text-gray-400 js-delete-item css-list-item-delete rounded-md">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
@@ -84,7 +84,7 @@
 							@endif
 							
 							@if ($can_delete)
-								<a href="javascript: void(0);" data-id="{{$data->getId()}}" data-model="{{get_class($data)}}" class="group flex items-center px-4 py-2 text-sm leading-5 hover:bg-gray-100 text-red-500 font-medium hover:text-red-700 js-delete-item">{{_L('Delete')}}</a>
+								<a href="javascript: void(0);" data-id="{{$data->getId()}}" data-model="{{q_get_class($data)}}" class="group flex items-center px-4 py-2 text-sm leading-5 hover:bg-gray-100 text-red-500 font-medium hover:text-red-700 js-delete-item">{{_L('Delete')}}</a>
 							@endif
 						</div>
 					</div>

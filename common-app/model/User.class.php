@@ -1288,7 +1288,7 @@ abstract class User_mods_model_ extends \QUser_frame_
 		$ndi = "#";
 
 		$module_indx = $module ?: $ndi;
-		$model_indx = $model ? get_class($model)."|".($model->getId() ?: $model->getTemporaryId()) : $ndi;
+		$model_indx = $model ? q_get_class($model)."|".($model->getId() ?: $model->getTemporaryId()) : $ndi;
 		$params_indx = $params ? implode("~", $params) : $ndi;
 	
 		/*
@@ -2421,7 +2421,7 @@ abstract class User_mods_model_ extends \QUser_frame_
 			$acc_code_data = [
 							'Code' => sha1(uniqid("", true).json_encode([$_SERVER, time(), microtime(true)])),
 							'ExpireDate' => date("Y-m-d H:i:s", time() + 3600),
-							'Login' => ['Id' => $login_user->getId(), '_ty' => get_class($login_user)]
+							'Login' => ['Id' => $login_user->getId(), '_ty' => q_get_class($login_user)]
 							];
 
 			# qvar_dumpk($acc_code_data);

@@ -19,7 +19,7 @@ if (!$binds)
 	{
 		?>
 		<input type="hidden" value="<?= $selected ? $selected->getId() : '' ?>" name<?= $selected ? "" : "-x" ?>="<?= $bind ?>[Id]" class="qc-dd-input-id<?= $selected ? '' : ' qc-new-data' ?>" />
-		<input type="hidden" value="<?= $selected ? get_class($selected) : '' ?>" name<?= $selected ? "" : "-x" ?>="<?= $bind ?>[_ty]" class="qc-dd-input-ty<?= $selected ? '' : ' qc-new-data' ?>" />
+		<input type="hidden" value="<?= $selected ? q_get_class($selected) : '' ?>" name<?= $selected ? "" : "-x" ?>="<?= $bind ?>[_ty]" class="qc-dd-input-ty<?= $selected ? '' : ' qc-new-data' ?>" />
 		<?php
 	}
 	else

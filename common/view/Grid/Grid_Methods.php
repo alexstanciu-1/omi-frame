@@ -284,7 +284,7 @@ trait Grid_Methods
 		$headings_props = [];
 
 		$m_ty = \QModel::GetTypeByName($model_name);
-		$view = end(explode("\\", get_class($this)));
+		$view = end(explode("\\", q_get_class($this)));
 
 		// go through each selector
 		if ($selector && count($selector) > 0)
@@ -595,7 +595,7 @@ trait Grid_Methods
 
 		if ($savedItm)
 		{
-			$type_inf = \QModelQuery::GetTypesCache(get_class($savedItm));
+			$type_inf = \QModelQuery::GetTypesCache(q_get_class($savedItm));
 			$captionProps = ($type_inf["#%misc"]["model"]["captionProperties"]) ? 
 					qParseEntity(implode(",", $type_inf["#%misc"]["model"]["captionProperties"])) : null;
 
@@ -605,7 +605,7 @@ trait Grid_Methods
 
 		//caption, id, type, full_data
 		return !$savedItm ? [null, null, null, null, null] : 
-			[$savedItm->getModelCaption(), $savedItm->getId(), get_class($savedItm), $savedItm->toJSON(), $savedItm];
+			[$savedItm->getModelCaption(), $savedItm->getId(), q_get_class($savedItm), $savedItm->toJSON(), $savedItm];
 	}
 	/**
 	 * It expands an array using keys array
@@ -764,7 +764,7 @@ trait Grid_Methods
 			
 			foreach ($rows_data as $rd)
 			{
-				$ty = get_class($rd);
+				$ty = q_get_class($rd);
 				
 				if (!($type_props = $ty_props[$ty]))
 				{

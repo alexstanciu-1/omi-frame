@@ -42,7 +42,7 @@
 
 				foreach ($items as $val => $item)
 				{
-					$data = $useModels ? " item.id='{$item->getId()}' item.ty='".get_class($item)."'" : " item.value='{$val}'";
+					$data = $useModels ? " item.id='{$item->getId()}' item.ty='".q_get_class($item)."'" : " item.value='{$val}'";
 					?><div class="qc-custom-dd-item"<?= $dl.$data ?>>{{ $useModels ? $item->getModelCaption() : $item }}</div><?php
 
 					if (!$binds["_tree_"] || !$byParent[$item->getId()])

@@ -42,7 +42,7 @@
 			@if (!$_hide_rm)
 				<ul class='actions'>
 					<li>
-						<a title="{{_L('Delete')}}" class="mdt-a nowrap qc-ref-ctrl-delete qc-delete" data-vars-path="{{$_qengine_args['_tsp'][0]}}" data-obj-id="{{$data->Id}}" data-obj-ty="{{$data ? get_class($data) : ''}}" data-obj-path="{{$vars_path}}">
+						<a title="{{_L('Delete')}}" class="mdt-a nowrap qc-ref-ctrl-delete qc-delete" data-vars-path="{{$_qengine_args['_tsp'][0]}}" data-obj-id="{{$data->Id}}" data-obj-ty="{{$data ? q_get_class($data) : ''}}" data-obj-path="{{$vars_path}}">
 							<i class="zmdi zmdi-delete"></i>
 						</a>
 					</li>

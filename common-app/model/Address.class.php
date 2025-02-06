@@ -316,7 +316,7 @@ abstract class Address_mods_model_ extends \QModel
 			. "PostCode, Street, StreetNumber, Details, Building, Organization, Premise, Caption");
 		if ($address && $address->getId())
 			$addr->setId($address->getId());
-		return [$addr->getModelCaption(), $addr->getId(), get_class($addr), $addr->toJSON(), $addr, \QApp::Data()];
+		return [$addr->getModelCaption(), $addr->getId(), q_get_class($addr), $addr->toJSON(), $addr, \QApp::Data()];
 		*/
 
 		$addrData = $cachedAddress->toArray("City.Id, Country.Id, County.Id, PostCode, Street, StreetNumber, Details, Building, Organization, Premise, Caption");
@@ -327,6 +327,6 @@ abstract class Address_mods_model_ extends \QModel
 
 		$appData = \QApi::Merge("Addresses", $addrData);
 		$addr = $appData->Addresses[0];
-		return !$addr ? [null, null, null, null, null, $appData] : [$addr->getModelCaption(), $addr->getId(), get_class($addr), $addr->toJSON(), $addr, $appData];
+		return !$addr ? [null, null, null, null, null, $appData] : [$addr->getModelCaption(), $addr->getId(), q_get_class($addr), $addr->toJSON(), $addr, $appData];
 	}
 }

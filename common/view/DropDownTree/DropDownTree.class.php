@@ -31,7 +31,7 @@ abstract class DropDownTree_omi_view_ extends DropDown
 			{
 				foreach ($items ?: [] as $itm)
 				{
-					if (($itm->getId() === $owner->getId()) && (get_class($owner) === get_class($itm)) && $itm->{$parentProp})
+					if (($itm->getId() === $owner->getId()) && (q_get_class($owner) === q_get_class($itm)) && $itm->{$parentProp})
 						$itm->$parentProp = null;
 				}
 			}

@@ -25,7 +25,7 @@
 		<div q-path='{{<?= $vPath ?>}}' 
 			 class='full-width qc-dd-wr qc-ref-ctrl <?= $qc_avoid_duplicates_cls.($_has_controller ? ' qc-with-ctrl-dd-deprecated' : '') ?> <?= $_dd_insert_full_data ? ' qc-dd-insert-full-data' : '' ?>'>
 			<div class="<?= $_has_controller ? 'col-md-9-deprecated' : '' ?>">
-				@include (<?= $_ddToLoad ?>, "<?= $esc_dd_property ?>", "<?= $esc_caption_selector ?>", <?= $binds ?>, (<?= $data ?>) ? <?= $data ?>->getModelCaption() : "<?= qaddslashes("Select") ?>", (<?= $data ?>) ? <?= $data ?>->toJSON() : null, <?= $vPath ?>."[Id]", (<?= $data ?>) ? <?= $data ?>->getId() : null, <?= $vPath ?>."[_ty]", (<?= $data ?>) ? get_class(<?= $data ?>) : null, "name-x", "qc-form-element<?= $propIsMandatory ? " q-mandatory" : "" ?>", <?= $attrs ?>)
+				@include (<?= $_ddToLoad ?>, "<?= $esc_dd_property ?>", "<?= $esc_caption_selector ?>", <?= $binds ?>, (<?= $data ?>) ? <?= $data ?>->getModelCaption() : "<?= qaddslashes("Select") ?>", (<?= $data ?>) ? <?= $data ?>->toJSON() : null, <?= $vPath ?>."[Id]", (<?= $data ?>) ? <?= $data ?>->getId() : null, <?= $vPath ?>."[_ty]", (<?= $data ?>) ? q_get_class(<?= $data ?>) : null, "name-x", "qc-form-element<?= $propIsMandatory ? " q-mandatory" : "" ?>", <?= $attrs ?>)
 			</div>
 			<?php if ($_has_controller) : ?>
 				<div class="col-md-3-deprecated">
@@ -41,7 +41,7 @@
 				<div class='qc-dd-rep padding-view qc-dd-rep-prop-<?= $property ?>' q-path='{{<?= $vPath ?>}}'>
 					{{$data-><?= $property ?>->getModelCaption()}}
 					<input type='hidden' value='{{<?= $data ?>->getId()}}' name='{{<?= $vPath ?>}}[Id]' class='qc-dd-rep-input-id' />
-					<input type='hidden' value='{{get_class(<?= $data ?>)}}' name='{{<?= $vPath ?>}}[_ty]' class='qc-dd-rep-input-ty' />		
+					<input type='hidden' value='{{q_get_class(<?= $data ?>)}}' name='{{<?= $vPath ?>}}[_ty]' class='qc-dd-rep-input-ty' />		
 					<input class='qc-dd-full-data' type='hidden' value='{{(<?= $data ?>) ? (<?= $data ?>->toJSON()) : ""}}' />
 				</div>
 			@endif

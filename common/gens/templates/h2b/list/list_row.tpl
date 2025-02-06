@@ -18,7 +18,7 @@
 	<?php if ($_TYPE_FLAGS['list_checkboxes']): 
 	?><td class='qc-chk-cell'>
 		<input type="hidden" class="qc-hidden-id" name='{{$this->from}}[{{$_pos}}][Id]' value="{{$data->Id}}" />
-		<input type="hidden" class="qc-hidden-ty" name='{{$this->from}}[{{$_pos}}][_ty]' value="{{is_object($data) ? get_class($data) : ''}}" />
+		<input type="hidden" class="qc-hidden-ty" name='{{$this->from}}[{{$_pos}}][_ty]' value="{{is_object($data) ? q_get_class($data) : ''}}" />
 		<div class='qc-checkbox'>
 			<input class='qc-chkcollitm-pick' type='checkbox' id='{{$unk = uniqid()}}' 
 				{{$_qengine_args["_tsp"] ? " data-vars-path='".$_qengine_args['_tsp'][0]."'" : ""}} />

@@ -14,7 +14,7 @@ namespace Omi;
  *
  * @class.name User
  */
-abstract class User_mods_model_ extends \QUser
+abstract class User_mods_model_ extends \QUser_frame_
 {
 	use \Omi\Owner_Trait;
 	
@@ -24,7 +24,6 @@ abstract class User_mods_model_ extends \QUser
 	const LOGIN_BANNED = -4;
 	const RECOVER_PASSWORD_USER_NOT_FOUND = -5;
 
-		
 	protected static $Load_Info_Entity = "User.{"
 		. "*, "
 		. "Person.{"
@@ -161,14 +160,6 @@ abstract class User_mods_model_ extends \QUser
 	 * @var string
 	 */
 	protected $Type;
-	
-	/**
-	 * @storage.type enum('H2B_Superadmin','H2B_Channel','H2B_Property')
-	 * 
-	 * @var string
-	 */
-	# protected $Type;
-	
 	/**
 	 * The first name of the user
 	 *
@@ -188,7 +179,6 @@ abstract class User_mods_model_ extends \QUser
 	 * @var \Omi\Language
 	 */
 	protected $UI_Language;
-	
 	
 	/**
 	 * @var string[]
@@ -422,7 +412,6 @@ abstract class User_mods_model_ extends \QUser
 		return $q;
 	}
 
-	
 	/**
 	 * Login
 	 * 
@@ -555,7 +544,7 @@ abstract class User_mods_model_ extends \QUser
 			
 			$data->LoginsLog[] = $loginLog;
 			$data->save("LoginsLog.{User, UserData, Date, SessionId, Ip}");
-			
+
 			return true;
 		}
 	}
@@ -612,7 +601,7 @@ abstract class User_mods_model_ extends \QUser
 		$identity->merge("User.{Id},Session.{Id,SessionId,IP}");
 
 		$session_identity = Identity::QueryFirst("*,User.*,Session.* WHERE Session.Id=? AND NOT User", $session->getId());
-		if ($session_identity)
+		if ($session_identity && ((!defined('TF_VERSION_2')) || (!TF_VERSION_2)))
 		{
 			// copy over
 			$session_identity->transferIdentity($identity);
@@ -779,10 +768,12 @@ abstract class User_mods_model_ extends \QUser
 							# can not use the same session under a different login, needs to login
 							return ($ret = false);
 						}
+	
 						if ((!isset($last_login[0]->User->Id)) || ($last_login[0]->User->Id != $identity->User->Id))
 						{
 							return ($ret = false);
 						}
+
 						$time_since_login = time() - ($last_login[0]->Date ? strtotime($last_login[0]->Date) : 0);
 						# no more than a day since the login
 						if ($time_since_login > (24 * 60 * 60))
@@ -793,7 +784,9 @@ abstract class User_mods_model_ extends \QUser
 						$last_active_date = $identity->Session->Last_Access_Date ?? $last_login[0]->Date;
 
 						$time_since_active_session = time() - ($last_active_date ? strtotime($last_active_date) : 0);
-						if (($time_since_active_session) > (60 * 60)) # more than an hour since last active
+						
+						# more than an hour since last active
+						if (($time_since_active_session) > (60 * 60))
 						{
 							return ($ret = false);
 						}
@@ -1007,7 +1000,7 @@ abstract class User_mods_model_ extends \QUser
 	 * @param string $tpl
 	 * @return int|boolean
 	 */
-	public static function RecoverPassword($email, $confirm_url = "myaccount/recover-password?RecoverCode=", $username = null, $tpl = null)
+	public static function RecoverPassword(string $email, string $username, string $tpl = null, string $confirm_url = "recover-password?RecoverCode=")
 	{		
 		// get user
 		$user = static::QueryFirst("Id, Email WHERE Email=? OR Username=?", [$email, $username]);
@@ -1367,7 +1360,7 @@ abstract class User_mods_model_ extends \QUser
 	 * @return boolean
 	 */
 	public static function Login($user_or_email, $password, $session_id = null, $remember = false)
-	{		
+	{
 		return static::commerce__Login($user_or_email, $password, $session_id, $remember);
 	}
 	
@@ -1424,14 +1417,24 @@ abstract class User_mods_model_ extends \QUser
 			throw new \Exception("Username {$user->Username} already exists!");
 	}
 
+	/**
+	 * Check if user is unique in app
+	 * 
+	 * @param type $user
+	 * @param type $appProp
+	 * 
+	 * @return type
+	 * 
+	 * @throws \Exception
+	 */
 	protected static function CheckUniqueInContext($user, $appProp)
 	{
 		// if the user is remote call user or is a default user we don't care
 		if ($user->IsRemoteCallUser || $user->IsDefault)
 			return;
 
-		if ((!$user->Username || !$user->Password) && !$user->getId())
-			throw new \Exception("Both username and password are mandatory for new user!");
+		if ((!$user->Username || !$user->Password || !$user->Email) && !$user->getId())
+			throw new \Exception("Username, Email and Password are mandatory for new user!");
 
 		// if we don't have password for sure the user is not new and the password was not changed
 		if (!$user->Password)
@@ -1442,15 +1445,20 @@ abstract class User_mods_model_ extends \QUser
 
 		// store the username
 		$username = $user->Username;
+		$email = $user->Email;
 		if ($user->getId())
 		{
 			// load username and password from database
 			$userClone = $user->getClone("Id");
-			$userClone->populate("Username, Password");
+			$userClone->populate("Username, Email, Password");
 			
 			// if the user does not have the username set - use the username from database
 			if (!$username)
 				$username = $userClone->Username;
+			
+			// if the user does not have the email set - use the email from database
+			if (!$email)
+				$email = $userClone->Email;
 
 			// password was changed - password that comes on user is different than what we have in the database
 			// we need to check unique if the password was changed
@@ -1462,23 +1470,41 @@ abstract class User_mods_model_ extends \QUser
 		if (!$checkUnique)
 			return;
 		
-		$binds = [
+		$username_like_binds = [
 			"Username" => $username,
 			"Password" => $user->Password
 		];
 		
 		if ($user->getId())
-			$binds["Not"] = $user->getId();
+			$username_like_binds["Not"] = $user->getId();
 
-		$existingUser = ($eUsers = \QQuery("Users.{Username, Owner WHERE 1 "
+		$existing_user_by_username = ($eUsers = \QQuery("Users.{Username, Owner WHERE 1 "
 			. "??Username?<AND[Username=?]"
 			. "??Password?<AND[Password=?]"
 			. "??Not?<AND[Id<>?]"
-		. "}", $binds)->Users) ? $eUsers[0] : null;
+		. "}", $username_like_binds)->Users) ? $eUsers[0] : null;
 
 		// throw exception if there is other user with same credentials combination
-		if ($existingUser)
+		if ($existing_user_by_username)
 			throw new \Exception("There is another user with same login credentials(username and password)!\n");
+		
+		$email_like_binds = [
+			"Email" => $email,
+			"Password" => $user->Password
+		];
+		
+		if ($user->getId())
+			$email_like_binds["Not"] = $user->getId();
+
+		$existing_user_by_email = ($eUsers = \QQuery("Users.{Username, Owner WHERE 1 "
+			. "??Email?<AND[Email=?]"
+			. "??Password?<AND[Password=?]"
+			. "??Not?<AND[Id<>?]"
+		. "}", $email_like_binds)->Users) ? $eUsers[0] : null;
+
+		// throw exception if there is other user with same credentials combination
+		if ($existing_user_by_email)
+			throw new \Exception("There is another user with same login credentials(email and password)!\n");
 	}
 
 	/**
@@ -1976,11 +2002,17 @@ abstract class User_mods_model_ extends \QUser
 	}
 	
 	/**
+	 * After transaction began
 	 * 
 	 * @param type $selector
 	 * @param type $transform_state
 	 * @param type $_bag
+	 * @param type $is_starting_point
+	 * @param type $appProp
+	 * 
 	 * @return type
+	 * 
+	 * @throws \Exception
 	 */
 	public function afterBeginTransaction($selector = null, $transform_state = null, &$_bag = null, $is_starting_point = true, $appProp = null)
 	{
@@ -2000,6 +2032,15 @@ abstract class User_mods_model_ extends \QUser
 			$usr = \QQuery('Users.{Id,Username WHERE TRIM(Username)=? LIMIT 1}', [$trimmed_Username])->Users;
 			if (isset($usr[0]->Id) && ($this->isNew() || ($usr[0]->Id != $this->Id)))
 				throw new \Exception('Duplicated Username.');
+		}
+		
+		# unique email
+		if ($is_starting_point && ($appProp === 'Users') && isset($this->Email) && trim($this->Email))
+		{
+			$trimmed_email = trim($this->Email);
+			$usr = \QQuery('Users.{Id,Username WHERE TRIM(Email)=? LIMIT 1}', [$trimmed_email])->Users;
+			if (isset($usr[0]->Id) && ($this->isNew() || ($usr[0]->Id != $this->Id)))
+				throw new \Exception('Duplicated Email. id=' . $usr[0]->Id);
 		}
 		
 		return parent::afterBeginTransaction($selector, $transform_state, $_bag, $is_starting_point, $appProp);

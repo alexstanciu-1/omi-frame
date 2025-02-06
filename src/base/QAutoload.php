@@ -564,9 +564,9 @@ final class QAutoload
 		if (defined('Q_CODE_DIR'))
 		{
 			if ($for)
-				return self::$MainFolderWebPath."temp/".$for;
+				return substr(self::$RuntimeFolder."temp/".$for, strlen(Q_CODE_DIR));
 			else
-				return self::$MainFolderWebPath."temp/";
+				return substr(self::$RuntimeFolder."temp/", strlen(Q_CODE_DIR));
 		}
 		else
 		{
@@ -858,6 +858,7 @@ final class QAutoload
 				# we do not sync in CLI mode atm
 				return false;
 			}
+			/*
 			else if (PHP_SAPI === 'fpm-fcgi')
 			{
 				# echo "WEB MODE\n";
@@ -911,6 +912,7 @@ final class QAutoload
 				# die;
 				return false;
 			}
+			*/
 			
 			clearstatcache();
 			
@@ -1026,7 +1028,6 @@ final class QAutoload
 						# scan Grid/template
 						# scan ~backend_config + ~backend_config/templates
 						// QGEN_ConfigDirBase = ~backend_config
-						// Omi_Mods_Path = "~includes/omi-mods/" + "gens/templates"
 						// $save_state_path = QAutoload::GetRuntimeFolder()."temp/files_state.php";
 						$backend_scan_in = [defined('QGEN_Templates_Path') ? QGEN_Templates_Path : Omi_Mods_Path."gens/templates/", QGEN_ConfigDirBase];
 						$list_backend = [];

@@ -73,6 +73,10 @@ abstract class App_mods_model_ extends \QModel
 	 */
 	protected $Companies;
 	/**
+	 * @var Comm\Price_Profile[]
+	 */
+	protected $Price_Profiles;
+	/**
 	 * @storage.views UserCreateAccount
 	 * 
 	 * @var \Omi\Comm\Registration_Request[]
@@ -468,7 +472,7 @@ abstract class App_mods_model_ extends \QModel
 				break;
 			}
 			
-            case "Addresses":
+			case "Addresses":
 			{
 				$ret = qParseEntity("StreetNumber,Street,PostCode,City,Country, Latitude, Longitude");
 				break;
@@ -984,7 +988,9 @@ abstract class App_mods_model_ extends \QModel
                         Bar,
                         Restaurant,
                         Garden,
-                        WiFi
+                        WiFi,
+			Parking,
+			Pet_Friendly
                     },
                     Property_Facil_Activities.{
                         Tennis_Equipment,
@@ -1204,6 +1210,7 @@ abstract class App_mods_model_ extends \QModel
 					. "Stars, "
 					. "Type, "
 					. "Active, "
+					. "Active_By_H2B, "
 					. "Classification_Certificate, "
 					. "Classification_Certificate_Number, "
 					. "Classification_Certificate_Issued_Date, "
@@ -1224,7 +1231,7 @@ abstract class App_mods_model_ extends \QModel
 													Bar,
 													Restaurant,
 													Garden,
-													WiFi},
+													WiFi, Parking, Pet_Friendly},
 							Property_Facil_Activities.{Tennis_Equipment,
 										Badminton_Equipment,
 										Beach,
@@ -1293,7 +1300,9 @@ abstract class App_mods_model_ extends \QModel
 						Bar,
 						Restaurant,
 						Garden,
-						WiFi
+						WiFi, 
+						Parking, 
+						Pet_Friendly
 					},
 							Property_Facil_Activities.{
 								Tennis_Equipment,
@@ -1379,7 +1388,7 @@ abstract class App_mods_model_ extends \QModel
 						. 'Phone'
 					. '}, '
 					// . 'UI_Language, '
-					. 'Active,Owner, Api_Key');
+					. 'Active,Owner, Api_Key, TFH_API_System');
 				break;
 			}
 			
@@ -1389,13 +1398,18 @@ abstract class App_mods_model_ extends \QModel
 					. 'Terms_Accepted, '
 					. 'Terms_Accepted_IP, '
 					. 'Terms_Accepted_Date, '
+					. 'Is_Property_Owner, '
+					. 'Channel_Manager, '
+					. 'Is_Channel_Owner, '
 					. 'Reg_No, '
 					. 'VAT_No, '
 					. 'VAT_Payer, '
 					. 'Logo, '
+					. 'Tourism_License, Tourism_License_Number, Tourism_License_Issued_Date, '
 					. 'Address.{'
 						. 'StreetNumber,Street,PostCode,City,Country'
 					. '}, '
+					. 'Properties.Name, '
 					. 'Bank_Accounts.{Bank_Name, IBAN, Currency}, '
 					. 'Contacts.{'
 						. 'Title, '
@@ -1478,6 +1492,7 @@ abstract class App_mods_model_ extends \QModel
 						. 'Owner, '
 						. 'ActivationCode, '
 						. 'Api_Key, '
+						. 'TFH_API_System, '
 						. 'Confirmed_Activation, '
 						. 'Person.{'
 							. 'Firstname, '
@@ -1594,7 +1609,9 @@ abstract class App_mods_model_ extends \QModel
 					. 'Terms_Accepted_IP, '
 					. 'Terms_Accepted_Date, '
 					. 'Agency_Name, '
-					. 'Reg_No, VAT_No, VAT_Payer, '
+					. 'Tourism_License, '
+					. 'Tourism_License_Number, '
+					. 'Tourism_License_Issued_Date, Reg_No, VAT_No, VAT_Payer, '
 					. 'Address.{'
 						. 'StreetNumber, '
 						. 'Street, '

@@ -94,7 +94,7 @@ abstract class Request_Log_mods_model_ extends \QModel
 	protected $Session_Id;
 	/**
 	 * @storage.index
-	 * @storage.type VARCHAR(16380)
+	 * @storage.type TEXT
 	 * 
 	 * @var string
 	 */

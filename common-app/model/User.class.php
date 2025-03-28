@@ -738,7 +738,7 @@ abstract class User_mods_model_ extends \QUser_frame_
 			
 			if ((!$session_id) && (session_status() === PHP_SESSION_ACTIVE))
 				$session_id = session_id();
-
+			
 			if ((!$session_id) || (!$ip))
 				return false;
 			
@@ -759,6 +759,7 @@ abstract class User_mods_model_ extends \QUser_frame_
 					* 2. Time limit (session needs to expire) / no more than a day since the login
 					* 3. If not active for X sec ...
 					*/
+				
 				try
 				{
 					if (isset($last_login[0]))
@@ -775,6 +776,7 @@ abstract class User_mods_model_ extends \QUser_frame_
 						}
 
 						$time_since_login = time() - ($last_login[0]->Date ? strtotime($last_login[0]->Date) : 0);
+						
 						# no more than a day since the login
 						if ($time_since_login > (24 * 60 * 60))
 						{
@@ -786,7 +788,8 @@ abstract class User_mods_model_ extends \QUser_frame_
 						$time_since_active_session = time() - ($last_active_date ? strtotime($last_active_date) : 0);
 						
 						# more than an hour since last active
-						if (($time_since_active_session) > (60 * 60))
+						# @TODO - this (Session.Last_Access_Date) only works for VFuse atm ... make it work for everybody
+						if (isset($identity->Session->Last_Access_Date) && (($time_since_active_session) > (60 * 60)))
 						{
 							return ($ret = false);
 						}
@@ -813,9 +816,9 @@ abstract class User_mods_model_ extends \QUser_frame_
 				}
 			}
 
-			//qvardump("Check LOGIN IDENTITY", $identity);
-			if ((!$identity->User->Owner) || ((!$identity->User->IsRemoteCallUser) && (!static::Partner_Is_Active($identity->User->Owner))))
+			if (defined('VF_REL_PATH') && ((!$identity->User->Owner) || ((!$identity->User->IsRemoteCallUser) && (!static::Partner_Is_Active($identity->User->Owner))))) {
 				return false;
+			}
 			
 			if ($identity)
 			{

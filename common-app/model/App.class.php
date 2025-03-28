@@ -82,6 +82,10 @@ abstract class App_mods_model_ extends \QModel
 	 * @var \Omi\Comm\Registration_Request[]
 	 */
 	protected $Registration_Requests;
+	/**
+	 * @var Text[]
+	 */
+	protected $Texts;
 	
 	/**
 	 * @storage.none
@@ -176,7 +180,7 @@ abstract class App_mods_model_ extends \QModel
 			}
 			case "Services":
 			{
-				$ret = ["Owner"];
+				$ret = ["Name", "Owner"];
 				break;
 			}
 			default :
@@ -2110,6 +2114,15 @@ abstract class App_mods_model_ extends \QModel
 	public static function Before_API_Query($from, $selector = null, $parameters = null, $only_first = false, $id = null)
 	{
 		return [false, null];
+	}
+	
+	/**
+	 * Legacy call
+	 * @return null
+	 */
+	public static function Get_Context_Id()
+	{
+		return null;
 	}
 	
 }

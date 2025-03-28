@@ -550,7 +550,6 @@ trait Grid_Methods
 		if (!$binds["LIMIT"])
 			$binds["LIMIT"] = [0, $grid->rowsOnPage ?: 20];
 
-
 		$grid->grid_mode = "list";
 		$grid->grid_id = null;
 		$grid->grid_params = array_filter($binds);
@@ -1033,9 +1032,6 @@ trait Grid_Methods
 					$bind_params["LIMIT"][$key] = (int)$value;
 			}
 
-			# if ($this->inExport)
-			#	unset($bind_params["LIMIT"]);
-			
 			$data = $this->getData($grid_mode, $id, $bind_params);
 		}
 
@@ -1340,6 +1336,11 @@ trait Grid_Methods
 		$maxPost        = return_bytes(ini_get('post_max_size'));
 		
 		return min($maxUpload, $maxUpload);
+	}
+	
+	public static function filename_view(string $file_name)
+	{
+		return (strlen($file_name) > 32) ? substr($file_name, 0, 32)."...".pathinfo($file_name, PATHINFO_EXTENSION) : $file_name;
 	}
 }
 

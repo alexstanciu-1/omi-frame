@@ -573,7 +573,7 @@ class QSqlParserQuery
 						if ($sql_type->action_set)
 						{
 							list($backref_col, $prop_name, $coll_rowid) = $sql_type->action_set;
-						
+							
 							// echo "Action SET: $backref_col, $prop_name, $coll_rowid<br/>\n";
 						
 							// identify parent

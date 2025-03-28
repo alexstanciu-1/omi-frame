@@ -13,14 +13,15 @@
 					
 					if (($login === true) || ($login instanceof \QUser))
 					{
-						if (isset($_GET['_after_login_']))
-						{
-							header("Location: " . $_GET['_after_login_']);
+						if (isset($_GET['_after_login_'])) {
+							header("Location: " . base64_decode( $_GET['_after_login_'] ));
 						}
-						else if ($url->current() === "login")
+						else if ($url->current() === "login") {
 							header("Location: " . dirname(\QWebRequest::GetRequestFullUrl(false)));
-						else
+						}
+						else {
 							header("Location: " . \QWebRequest::GetRequestFullUrl(true));
+						}
 						return true;
 					}
 				}

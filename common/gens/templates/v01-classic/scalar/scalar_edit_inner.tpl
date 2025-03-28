@@ -6,7 +6,7 @@ elseif ($_is_file) :
 	include(static::GetTemplate("form_elements/file.tpl", $config));	
 elseif ($_is_enum) : 
 	$wval_name = "_rdrpl_".($md5_seed__ ?: uniqid());
-	if (((count($_enum_vals ?: []) > 2) && ((!$_enum_display) || ($_enum_display != 'radio'))) || ($_enum_display && ($_enum_display == "dropdown"))) : 
+	if (((count($_enum_vals ?: []) > Q_GEN_RADIO_UP_TO) && ((!$_enum_display) || ($_enum_display != 'radio'))) || ($_enum_display && ($_enum_display == "dropdown"))) : 
         include(static::GetTemplate("form_elements/custom_select.tpl", $config));
 	else :
         include(static::GetTemplate("form_elements/radio_group.tpl", $config));

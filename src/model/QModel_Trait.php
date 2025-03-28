@@ -1549,16 +1549,17 @@ trait QModel_Trait
 
 											$save_path_fn = pathinfo($upload_info["name"], PATHINFO_FILENAME);
 											$save_path_ext = pathinfo($upload_info["name"], PATHINFO_EXTENSION);
-										
 											if (!q_allowed_upload_extension($save_path_ext))
-												throw new \Exception('Not allowed #file-extension.');
+												throw new \Exception('Not allowed #file-extension: ' . $save_path_ext);
 											
-											$save_path_fn = $logged_in_user_id . "-" . ($current_context_id ?? $logged_in_user_owner) . "_" . sha1(uniqid("", true)) . "_secured";
-											
+											list($save_path_fn) = q_secure_file_name($save_dir, $upload_info["name"], true); # $logged_in_user_id . "-" . ($current_context_id ?? $logged_in_user_owner) . "_" . sha1(uniqid("", true)) . "_secured";
+											$save_path = $save_dir.$save_path_fn;
+											/*
 											$index = 0;
 											// make sure we don't overwrite
 											while (file_exists($save_path = $save_dir.$save_path_fn.($index ? "-".$index : "").".".$save_path_ext))
 													$index++;
+											*/
 
 											$muf_rc = move_uploaded_file($upload_info["tmp_name"], $save_path);
 											if (!$muf_rc)
@@ -1647,7 +1648,7 @@ trait QModel_Trait
 									if ((!$prop_inf["#"]) && (!$include_nonmodel_properties))
 									{
 										if (\QAutoload::GetDevelopmentMode())
-											qvardumpk($k, $v, $prop_inf, $type_inf);
+											qvar_dumpk($k, $v, $prop_inf, $type_inf);
 										throw new \Exception("Expected type cannot be identified!");
 									}
 

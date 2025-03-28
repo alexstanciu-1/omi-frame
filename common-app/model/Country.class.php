@@ -48,7 +48,7 @@ abstract class Country_mods_model_ extends \QModel
 		$selector = $selector ?: static::GetListingEntity();
 		$q = (is_array($selector) ? qImplodeEntity($selector) : $selector)." "
 				. "WHERE 1 "
-				. "??Id?<AND[Id=?]"
+				. " ??Id?<AND[Id=?] "
 				. static::GetListingQueryFilters()
 				. " ??Name?<AND[Name=?]"
 				. " ??Code?<AND[Code=?]"

@@ -2686,8 +2686,9 @@ class QCodeSync
 		\$fail = false;{$get_type}{$before}".($possible_collection ? "
 		if (is_array(\$value) && (\$check !== 1))
 			\$value = new \QModelArray(\$value);" : "").(($fixval_str || $remove_thous_sep) ? ("
-		\$value = ".($remove_thous_sep ? "str_replace(Q_Thousands_Separator, '', " : "(").
-						($fixval_str ? "{$fixval_str});\n" : "\$value);\n")) : "").
+		if (\$check)
+			\$value = ".($remove_thous_sep ? "is_string(\$value) ? str_replace(Q_Thousands_Separator, '', " : "(").
+						($fixval_str ? "{$fixval_str})".($remove_thous_sep ? " : ({$fixval_str})" : "").";\n" : "\$value)".($remove_thous_sep ? " : \$value" : "").";\n")) : "").
 			($encode_str ? "
 		\$value = {$encode_str};" : "").
 				"

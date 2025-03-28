@@ -177,7 +177,7 @@ abstract class Email_omi_util_ extends \QModel
 	 */
 	public static function SMTPMail($host, $port, $encryption, $username, $password, $from, $email, $subject, $message = "", $attachments = [], 
 		$fromAlias = null, $replyTo = [], $debugState = 0, $cc_addresses = [])
-	{	
+	{
 		$dir = dirname(__FILE__);
 		
 		$php_mailer_class = 'PHPMailer\PHPMailer\PHPMailer';
@@ -309,15 +309,6 @@ abstract class Email_omi_util_ extends \QModel
 
 			//send the message, check for errors
 			$sent = $mail->send();
-
-			//qvardump($sent);
-			//die();
-
-			//qvardump("MAIL WAS SENT:", $sent);
-			//die();
-
-			//if (!$sent)
-			//	throw new \Exception("Sending email failed!\n");
 
 			return $sent;
 		}

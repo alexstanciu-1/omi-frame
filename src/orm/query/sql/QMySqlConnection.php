@@ -8,7 +8,7 @@ class QMySqlConnection extends \mysqli
 	
 	protected $mysqlData = [];
 
-	public function __construct(string $host, string $username, string $passwd, string $dbname, int $port, string $socket = null)
+	public function __construct(string $host = null, string $username = null, string $passwd = null, string $dbname = null, int $port = null, string $socket = null)
 	{
 		$this->mysqlData = [
 			'dbname' => $dbname,

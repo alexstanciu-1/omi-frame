@@ -337,7 +337,7 @@ final class QAutoload
 				{
 					if (\QAutoload::GetDevelopmentMode())
 						qvar_dumpk('$class_name, $qp, self::$AutoloadArray[$class_name]', $qp, $class_name, self::$AutoloadArray[$class_name]);
-					throw new \Exception('Requested file does not exists. #A');
+					throw new \Exception('Requested file does not exists. #A '.$class_name." @".$qp);
 				}
 				require_once($qp);
 			}
@@ -1389,107 +1389,118 @@ final class QAutoload
 	 */
 	public static function EnableDevelopmentMode($restriction = "default", $full_resync = false, $debug_mode = false)
 	{
-		if (defined('Q_DEV_MODE_ONLY_IF_USER_MATCH_INDEX_FILE_OWNER') && Q_DEV_MODE_ONLY_IF_USER_MATCH_INDEX_FILE_OWNER)
-		{
-			$c_unix_user = posix_geteuid();
-			$f_owner = fileowner($_SERVER['SCRIPT_FILENAME']);
-			if ($c_unix_user != $f_owner)
-				return false;
+		if (!($_GET['__q_run_code_resync__'] ?? null)) {
+			ob_start();
 		}
 		
-		// skip for AJAX
-		$HTTP_X_REQUESTED_WITH = filter_input(INPUT_SERVER, "HTTP_X_REQUESTED_WITH");
-		$ajax_mode = ((isset($HTTP_X_REQUESTED_WITH) && (strtolower($HTTP_X_REQUESTED_WITH) === 'xmlhttprequest')) || ($_POST["__qFastAjax__"] || $_GET["__qFastAjax__"]));
+		try
+		{
+			if (defined('Q_DEV_MODE_ONLY_IF_USER_MATCH_INDEX_FILE_OWNER') && Q_DEV_MODE_ONLY_IF_USER_MATCH_INDEX_FILE_OWNER)
+			{
+				$c_unix_user = posix_geteuid();
+				$f_owner = fileowner($_SERVER['SCRIPT_FILENAME']);
+				if ($c_unix_user != $f_owner)
+					return false;
+			}
 
-		// auth:user:pass
-		if (is_string($restriction))
-			$restrictions = preg_split("/[\\s\\,;]+/us", $restriction, -1, PREG_SPLIT_NO_EMPTY);
-		else if (is_array($restriction))
-			$restrictions = $restriction;
-		else
-			$restrictions = [$restriction];
-		
-		$scaned = false;
-		
-		$authentications = [];
-		
-		foreach ($restrictions as $restriction)
-		{
-			if ($restriction === true)
+			// skip for AJAX
+			$HTTP_X_REQUESTED_WITH = filter_input(INPUT_SERVER, "HTTP_X_REQUESTED_WITH");
+			$ajax_mode = ((isset($HTTP_X_REQUESTED_WITH) && (strtolower($HTTP_X_REQUESTED_WITH) === 'xmlhttprequest')) || ($_POST["__qFastAjax__"] || $_GET["__qFastAjax__"]));
+
+			// auth:user:pass
+			if (is_string($restriction))
+				$restrictions = preg_split("/[\\s\\,;]+/us", $restriction, -1, PREG_SPLIT_NO_EMPTY);
+			else if (is_array($restriction))
+				$restrictions = $restriction;
+			else
+				$restrictions = [$restriction];
+
+			$scaned = false;
+
+			$authentications = [];
+
+			foreach ($restrictions as $restriction)
 			{
-				self::RunDevelopmenMode($full_resync, $debug_mode, $ajax_mode);
-				$scaned = true;
-				break;
-			}
-			else if (($restriction === "default") || ($restriction === null))
-			{
-				if (self::IsIntranetRequest())
+				if ($restriction === true)
 				{
 					self::RunDevelopmenMode($full_resync, $debug_mode, $ajax_mode);
 					$scaned = true;
 					break;
 				}
-			}
-			else if (filter_var($restriction, FILTER_VALIDATE_IP) !== false)
-			{
-				if ($restriction === filter_input(INPUT_SERVER, array_key_exists('HTTP_X_FORWARDED_FOR', $_SERVER) ? "HTTP_X_FORWARDED_FOR" : "REMOTE_ADDR", FILTER_VALIDATE_IP))
+				else if (($restriction === "default") || ($restriction === null))
+				{
+					if (self::IsIntranetRequest())
+					{
+						self::RunDevelopmenMode($full_resync, $debug_mode, $ajax_mode);
+						$scaned = true;
+						break;
+					}
+				}
+				else if (filter_var($restriction, FILTER_VALIDATE_IP) !== false)
+				{
+					if ($restriction === filter_input(INPUT_SERVER, array_key_exists('HTTP_X_FORWARDED_FOR', $_SERVER) ? "HTTP_X_FORWARDED_FOR" : "REMOTE_ADDR", FILTER_VALIDATE_IP))
+					{
+						self::RunDevelopmenMode($full_resync, $debug_mode, $ajax_mode);
+						$scaned = true;
+						break;
+					}
+				}
+				else if ($restriction === "panel-only")
+				{
+					// self::$DevelopmentMode = true;
+					self::RunDevelopmenMode(false, $debug_mode, true);
+				}
+				else if ($restriction === "none")
 				{
 					self::RunDevelopmenMode($full_resync, $debug_mode, $ajax_mode);
 					$scaned = true;
 					break;
 				}
+				else if (substr($restriction, 0, strlen("auth:")) === "auth:")
+				{
+					list(, $user, $pass) = preg_split("/\\s*[\\:]+\\s*/us", $restriction, 3, PREG_SPLIT_NO_EMPTY);
+					$authentications[$user] = $pass;
+				}
 			}
-			else if ($restriction === "panel-only")
+
+			/*
+			// try to see if it's authenticated
+			if ((!$scaned) && $authentications)
 			{
-				// self::$DevelopmentMode = true;
-				self::RunDevelopmenMode(false, $debug_mode, true);
+				self::$DevelopmentModeAuthentications = $authentications;
+				if (self::IsDevelopmentAuthenticated($authentications, true))
+				{
+					self::RunDevelopmenMode($full_resync, $debug_mode);
+					$scaned = true;
+				}
 			}
-			else if ($restriction === "none")
+			*/
+
+			define("Q_DEV", self::$DevelopmentMode ? true : false);
+
+			if (!$scaned)
 			{
-				self::RunDevelopmenMode($full_resync, $debug_mode, $ajax_mode);
-				$scaned = true;
-				break;
+				// check that it was deployed
+				$was_deployed = QAutoload::WasDeployed();
+				if (!$was_deployed)
+				{
+					/*
+					qvar_dumpk(debug_backtrace());
+					throw new \Exception('wtf !?!');
+					// also put a warning that deployment was not made
+					echo QAutoload::GetWasNotDeployedMessage();
+					*/
+				}
 			}
-			else if (substr($restriction, 0, strlen("auth:")) === "auth:")
+
+			if ($_GET['__q_run_code_resync__'] ?? null)
 			{
-				list(, $user, $pass) = preg_split("/\\s*[\\:]+\\s*/us", $restriction, 3, PREG_SPLIT_NO_EMPTY);
-				$authentications[$user] = $pass;
+				exit;
 			}
 		}
-		
-		/*
-		// try to see if it's authenticated
-		if ((!$scaned) && $authentications)
+		finally
 		{
-			self::$DevelopmentModeAuthentications = $authentications;
-			if (self::IsDevelopmentAuthenticated($authentications, true))
-			{
-				self::RunDevelopmenMode($full_resync, $debug_mode);
-				$scaned = true;
-			}
-		}
-		*/
-		
-		define("Q_DEV", self::$DevelopmentMode ? true : false);
-		
-		if (!$scaned)
-		{
-			// check that it was deployed
-			$was_deployed = QAutoload::WasDeployed();
-			if (!$was_deployed)
-			{
-				/*
-				qvar_dumpk(debug_backtrace());
-				throw new \Exception('wtf !?!');
-				// also put a warning that deployment was not made
-				echo QAutoload::GetWasNotDeployedMessage();
-				*/
-			}
-		}
-		
-		if ($_GET['__q_run_code_resync__'] ?? null)
-		{
-			exit;
+			return ob_get_clean();
 		}
 	}
 	

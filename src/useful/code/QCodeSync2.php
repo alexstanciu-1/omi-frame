@@ -142,8 +142,9 @@ class QCodeSync2
 	{
 		$ex_ct = null;
 				
-		ob_start();
 		$this->start_time = microtime(true);
+		
+		ob_start();
 		
 		try
 		{
@@ -166,9 +167,6 @@ class QCodeSync2
 			# }
 			if ($this->upgrage_mode)
 			{
-				ob_end_flush();
-				ob_end_flush();
-
 				$this->full_sync = true;
 				$this->run_upgrade($files, $changed_or_added, $removed_files, $new_files);
 				// exit after upgrade
@@ -329,13 +327,8 @@ class QCodeSync2
 
 									try
 									{
-										ob_end_flush();
-										ob_end_flush();
-										ob_end_flush();
-										ob_end_flush();
-										
 										echo "Grid::Generate({$property}) | START<br/>\n";
-										ob_end_flush();
+										
 										$gen_ret = \Omi\Gens\Grid::Generate($config);
 										
 										if (isset($gen_ret[0]))
@@ -345,11 +338,6 @@ class QCodeSync2
 										$generated_views[$property] = $property;
 										foreach ($prop_views_arr ?: [] as $prop_v)
 											$generated_views[$prop_v] = $prop_v;
-										ob_end_flush();
-										ob_end_flush();
-										ob_end_flush();
-										ob_end_flush();
-										ob_end_flush();
 									}
 									catch (\Exception $eeex_grid_gen)
 									{
@@ -2191,10 +2179,8 @@ class QCodeSync2
 			$conn = new \QMySqlStorage("sql", "127.0.0.1", MyProject_MysqlUser, MyProject_MysqlPass, MyProject_MysqlDb, 3306);
 			$conn->connect();
 			
-			ob_start();
 			// enable this to resync your DB structure
 			$sql_statements = \QSqlModelInfoType::ResyncDataStructure($conn);
-			$dump = ob_get_clean();
 			*/
 		}
 		

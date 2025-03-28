@@ -27,7 +27,7 @@
 				$redirect_to = \QWebRequest::GetRequestFullUrl(true);
 				$login_url = \QWebRequest::GetBaseHref().$this->getUrlForTag("login");
 				
-				header("Location: " . $login_url . "?_after_login_=".rawurlencode($redirect_to));
+				header("Location: " . $login_url . "?_after_login_=".rawurlencode(base64_encode($redirect_to)));
 				die();
 			}
 			
@@ -115,7 +115,7 @@
 						{	
 							if (isset($_GET['_after_login_']))
 							{
-								header("Location: " . $_GET['_after_login_']);
+								header("Location: " . base64_decode( $_GET['_after_login_']) );
 							}
 							else
 								header("Location: ".($url->current() ? dirname(\QWebRequest::GetRequestFullUrl(true)) : \QWebRequest::GetRequestFullUrl(true)));
@@ -146,7 +146,7 @@
 		<load><?php
 			\Omi\User::Logout();
 			
-			header("Location: " . \QWebRequest::GetBaseHref().$this->url("login"));
+			header("Location: " . (defined('Q_REQUEST_BASE') ? Q_REQUEST_BASE : \QWebRequest::GetBaseHref()).$this->url("login"));
 			return true;
 		?></load>
 	</url>

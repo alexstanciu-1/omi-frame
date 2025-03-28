@@ -23,7 +23,10 @@ QExtendClass("Omi\\View\\Grid", "omi", {
 		var $scroll_on = document.querySelector('.js-omi-add-scroll-event');
 		
 		if ($scroll_on) {
-			$scroll_on.addEventListener('scroll', debounce(this.scroll, 500, null, this));
+			const $debounced_func = debounce(this.scroll, 500, null, this);
+			// document.addEventListener('wheel', $debounced_func);
+			// $scroll_on.addEventListener('wheel', $debounced_func);
+			$scroll_on.addEventListener('scroll', $debounced_func);
 		}
 
 		return $super;
@@ -559,8 +562,10 @@ QExtendClass("Omi\\View\\Grid", "omi", {
 		return this.$('.qc-main-tabs-panel .qc-tab-itm>.jx-tab.active').data('controls');
 	},
 
-	doSubmit : function (form, sender, forceAjax, callbackOnSuccess, callbackOnError, hide_exception)
+	doSubmit : function (form, sender, forceAjax, callbackOnSuccess, callbackOnError, hide_exception, callback_before_send, show_loader)
 	{
+		if (show_loader === undefined)
+			show_loader = true;
 		var grid_props = this.getProperties();
 		var callAjax = (forceAjax || (grid_props && grid_props.processAction && (grid_props.processAction === 'ajax')));
 		
@@ -616,7 +621,9 @@ QExtendClass("Omi\\View\\Grid", "omi", {
 
 		if (this._insubmitprocess)
 		{
-			alert("submit process already initiated!");
+			if (show_loader) {
+				alert("submit process already initiated! [1]");
+			}
 			return;
 		}
 
@@ -638,79 +645,90 @@ QExtendClass("Omi\\View\\Grid", "omi", {
 		if (this.hasClass('qc-on-add', sender))
 			$onAdd = true;
 		
-		this.setupLoader();
+		if (show_loader)
+			this.setupLoader();
 		
-		omi.api(this._ty + "::FormSubmit", [$submitData, grid_props], 
-			// the callback
-			function (resp) {
-				$this._insubmitprocess = false;
-				$this.unsetLoader();
-				$this.trigger("afterSave", {'resp' : resp});
+		var $call_obj = {method: this._ty + "::FormSubmit", args: [$submitData, grid_props], cancel: false};
+		if (callback_before_send) {
+			callback_before_send($call_obj);
+		}
+		
+		if (!$call_obj.cancel)
+		{
+			omi.api($call_obj.method, $call_obj.args, 
+				// the callback
+				function (resp) {
+					$this._insubmitprocess = false;
+					if (show_loader)
+						$this.unsetLoader();
+					$this.trigger("afterSave", {'resp' : resp, method: $call_obj.method, args: $call_obj.args});
 
-				// resp[0] - the actual model
-				// resp[1] - boolean - do redirect
-				// resp[2] - the url for redirect
-				// resp[3] - reload
-				// resp[4] - do nothing
-				
-				if ($saveOnTab)
-				{
-					var $item_id = (resp && resp[0]) ? resp[0]['Id'] : null;
-					if ($onAdd)
-						window.location.href = $redirectTo + $item_id;
-					else
-						window.location.href = $redirectTo;
-				}
-				else if (!callbackOnSuccess)
-				{
-					if (resp[4])
-					{
-						// do nothing
-					}
-					else if (resp[3]) // $stay_on_page
-					{
-						window.location.reload();
-					}
-					else if (resp[1] && resp[2])
-					{
-						window.location.href = resp[2];
-					}
-					else
+					// resp[0] - the actual model
+					// resp[1] - boolean - do redirect
+					// resp[2] - the url for redirect
+					// resp[3] - reload
+					// resp[4] - do nothing
+
+					if ($saveOnTab)
 					{
 						var $item_id = (resp && resp[0]) ? resp[0]['Id'] : null;
-						if ((!$item_id) && $saved_current_item)
-							$item_id = $saved_current_item;
-						// console.log(resp);
-						// return;
-						if ($item_id)
-							$this.redirectToList($item_id, $current_tab_id);
+						if ($onAdd)
+							window.location.href = $redirectTo + $item_id;
 						else
-							//alert("Data succesfully saved!");
-							$this.redirectToList(undefined, $current_tab_id);
-						//window.location.href = window.location.href;
+							window.location.href = $redirectTo;
 					}
-				}
-				else
+					else if (!callbackOnSuccess)
+					{
+						if (resp[4])
+						{
+							// do nothing
+						}
+						else if (resp[3]) // $stay_on_page
+						{
+							window.location.reload();
+						}
+						else if (resp[1] && resp[2])
+						{
+							window.location.href = resp[2];
+						}
+						else
+						{
+							var $item_id = (resp && resp[0]) ? resp[0]['Id'] : null;
+							if ((!$item_id) && $saved_current_item)
+								$item_id = $saved_current_item;
+							// console.log(resp);
+							// return;
+							if ($item_id)
+								$this.redirectToList($item_id, $current_tab_id);
+							else
+								//alert("Data succesfully saved!");
+								$this.redirectToList(undefined, $current_tab_id);
+							//window.location.href = window.location.href;
+						}
+					}
+					else
+					{
+						callbackOnSuccess(sender, resp);
+					}
+				},
+				// callback when error
+				function (jqXHR, textStatus, errorThrown) 
 				{
-					callbackOnSuccess(sender, resp);
-				}
-			},
-			// callback when error
-			function (jqXHR, textStatus, errorThrown) 
-			{
-				$this._insubmitprocess = false;
-				$this.unsetLoader();
-				if (callbackOnError)
-				{
-					callbackOnError.apply(this, [sender, jqXHR, textStatus, errorThrown]);
-				}
-				$this.doOnException(jqXHR, textStatus, errorThrown, hide_exception);
-			},
-			null,
-			null,
-			null,
-			$submitData["__have_files__"]
-		);
+					$this._insubmitprocess = false;
+					if (show_loader)
+						$this.unsetLoader();
+					if (callbackOnError)
+					{
+						callbackOnError.apply(this, [sender, jqXHR, textStatus, errorThrown]);
+					}
+					$this.doOnException(jqXHR, textStatus, errorThrown, hide_exception);
+				},
+				null,
+				null,
+				null,
+				$submitData["__have_files__"]
+			);
+		}
 	},
 
 	quickCall : function (method, params, onSuccessCallback, onSuccessCallbackParams, onErrorCallback, force, skipLoader, hide_exception)
@@ -1131,7 +1149,7 @@ QExtendClass("Omi\\View\\Grid", "omi", {
 
 		if (this._insubmitprocess)
 		{
-			alert("submit process already initiated!");
+			alert("submit process already initiated! [2]");
 			return;
 		}
 
@@ -2257,7 +2275,10 @@ QExtendClass("Omi\\View\\Grid", "omi", {
 			return;
 		}
 		
-		const $space_left_to_scroll = event.target.scrollTopMax - event.target.scrollTop;
+		var $scroll_top_max = event.target.scrollHeight - event.target.clientHeight;	   
+		// console.log('$scroll_top_max: ' + $scroll_top_max + " / " + event.target.scrollTopMax);
+		
+		const $space_left_to_scroll = $scroll_top_max - event.target.scrollTop;
 		const $viewport_height = event.target.clientHeight;
 		
 		const $elements = this.$('.qc-main-list .qc-xg-item');
@@ -2292,10 +2313,11 @@ QExtendClass("Omi\\View\\Grid", "omi", {
 		console.log('scrollHeight: ' + event.target.scrollHeight);
 		// console.log('scrollLeft: ' + event.target.scrollLeft);
 		console.log('scrollTop: ' + event.target.scrollTop);
-		console.log('scrollTopMax: ' + event.target.scrollTopMax);
+		console.log('$scroll_top_max: ' + $scroll_top_max);
 		// console.log('scrollWidth: ' + event.target.scrollWidth);
 		console.log('---------------------------------------------------------');
 		*/
+	   
 		if ($more_is_needed && ($show_more_dom.length > 0) && ($show_more_dom.data('hasMoreItems') !== false)) {
 			this.showMore($show_more_dom[0]);
 		}
@@ -2595,7 +2617,10 @@ QExtendClass("Omi\\View\\Grid", "omi", {
 			if ($tmp_collection_chk_toggle.length)
 				$this.js_collection_chk_toggle($tmp_collection_chk_toggle[0]);
 			
-			new_jq.find('.select-2-no-search').select2({minimumResultsForSearch: Infinity});
+			var $s2_no_search = new_jq.find('.select-2-no-search');
+			if ($s2_no_search.length && $s2_no_search.select2) {
+				$s2_no_search.select2({minimumResultsForSearch: Infinity});
+			}
 			jQuery(sender).trigger("afterAddCollectionRow", {"new_jq" : new_jq});
 
 			if (callback)

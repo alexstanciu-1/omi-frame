@@ -326,7 +326,7 @@ class QApi_frame_
 					$data[] = $_item;
 				}
 			}
-
+			
 			// do here security check - mihai - to be removed when security module is implemented
 			if ($data && property_exists($dataCls, '$_USE_SECURITY_FILTERS') && $dataCls::$_USE_SECURITY_FILTERS)
 			# if ($dataCls::$_USE_SECURITY_FILTERS && $data)
@@ -381,7 +381,7 @@ class QApi_frame_
 				$result[$src_key] = $model_type::ApiSave($storage_model, $src_from, $src_from_types, $data, $state, $selector, $initialDestination);
 			}
 			else
-			{
+			{		
 				if ($replace_mode) {
 					static::setup_replace_mode($storage, $storage_model, $src_from, $src_from_types, $data, $state, $selector, $initialDestination);
 				}
@@ -2224,7 +2224,6 @@ class QApi_frame_
 				unset($merge_by_list['replace']);
 				unset($merge_by_list['remove']);
 				// qvar_dumpk($data);
-				// die;
 			}
 			
 			# $duplicates_check = $merge_by_list["#type"];
@@ -2843,6 +2842,8 @@ class QApi_frame_
 		if (!isset($populate_selector))
 			throw new \Exception('setup_replace_mode unable to get selector');
 		
+		# $dbg_tmp = isset(q_reset($data)->Content_Images);
+		
 		$elems_to_process = [];
 		$db_elements = new \QModelArray();
 		# 1. populate if possible
@@ -2859,45 +2860,37 @@ class QApi_frame_
 			$db_elements->populate(qImplodeEntity($populate_selector));
 		}
 		
-		qvar_dump("BEFORE!", $elems_to_process);
+		# if ($dbg_tmp) {
+		#	qvar_dump("BEFORE!", $elems_to_process);
+		# }
 		
 		if ($elems_to_process) {
 			$m_types = [];
 			static::setup_replace_mode_recurse($elems_to_process, $populate_selector, $m_types);
 		}
 		
-		qvar_dump("AFTER!", $elems_to_process);
-		die;
-		
 		/*
-			$storage_model[string(7)]: "Omi\App"
-			$src_from[string(10)]: "Properties"
-			$src_from_types[array(1)]:
-				Omi\TFH\Property[string(16)]: "Omi\TFH\Property"
-
-			$data[QModelArray(1)#1]:
-				0[Omi\TFH\Property#2; id:276]:
-					_wst: {"Name":true,"Remote_Id":true,"Logo":true,"Currency":true,"Address":true,"Active":true,"Email":true,"API_Managed":true,"Stars":true,"Type":true,"Content_Description_HTML":true,"Check_In_Time_Hour":true,"Check_In_Time_Minutes":true,"Check_Out_Time_Hour":true,"Check_Out_Time_Minutes":true,"Comission":true,"Owner":true}
-					Id[int][protected][set]: 276
-					Remote_Id[string(3)][protected][set]: "868"
-		 */
-		
-		qvar_dump('$replace_mode !!!', [
-			'$storage_model' => $storage_model, 
-			'$src_from' => $src_from, 
-			'$src_from_types' => $src_from_types, 
-			'$data' => $data, 
-			'$state' => $state, 
-			'$selector' => $selector, 
-			'$initialDestination' => $initialDestination,
-		]);
-		die;
+		# if ($dbg_tmp) {
+			qvar_dump("AFTER!", $elems_to_process);
+			
+			qvar_dump('$replace_mode !!!', [
+				'$storage_model' => $storage_model, 
+				'$src_from' => $src_from, 
+				'$src_from_types' => $src_from_types, 
+				'$data' => $data, 
+				'$state' => $state, 
+				'$selector' => $selector, 
+				'$initialDestination' => $initialDestination,
+			]);
+			die;
+		# }
+		*/
 	}
 	
 	public static function setup_replace_mode_recurse(array $data, $populate_selector, &$m_types)
 	{
 		$next_calls = [];
-		$tmp_types = [];
+		$m_types = [];
 		foreach ($data as $itms) {
 			list ($db_item, $item) = $itms;
 			$i_class = null;
@@ -2907,30 +2900,83 @@ class QApi_frame_
 				# 3. flag collections as replace as long as we are still within the model's entity
 				
 				$it_i = $item->$property ?? null;
-				if ($it_i instanceof \QModelArray) {
-					if ($it_i->getTransformState() === null) {
-						$it_i->setTransformState(\QModel::TransformReplace);
-					}
-				}
-				else if (($it_i instanceof \QModel) && ($db_i = ($db_item->$property ?? null)) && (($class = get_class($it_i)) === get_class($db_i))) {
-					if (($db_i->Id ?? null) && (!isset($it_i->Id))) {
-						$it_i->setId($db_i->Id);
-					}
-					
-					if ($sub_selector) {
-						
+				$db_i = $db_item->$property ?? null;
+				
+				if (($it_i instanceof \QIModel) && $db_i && (($class = get_class($it_i)) === get_class($db_i)))
+				{
+					if ($it_i instanceof \QModelArray)
+					{
+						if ($it_i->getTransformState() === null) {
+							$it_i->setTransformState(\QModel::TransformReplace);
+						}
+
 						if ($i_class === null)
 							$i_class = get_class($item);
-						$p_type = $tmp_types["{$class}.{$property}"] ?? ($tmp_types["{$class}.{$property}"] = (\QModel::GetTypeByName($i_class)->properties[$property] ?? false));
 
-						if ((!$p_type) || isset($p_type->storage['optionsPool'])) {
-							# no action if missing type or optionsPool
-							# qvar_dump("will not process \$property = {$property} on {$i_class}, optionsPool=".($p_type->storage['optionsPool'] ?? '`null`'), 
-							#		$db_item, $db_i);
+						$p_type = $m_types["{$i_class}.{$property}"] ?? ($m_types["{$i_class}.{$property}"] = (\QModel::GetTypeByName($i_class)->properties[$property] ?? false));
+						$scalars = $p_type->getCollectionType()->hasScalarType();
+
+						if (($mby = ($p_type->storage['mergeBy'] ?? null)) !== null) {
+							# only support simple paths atm
+							$index_it = [];
+							foreach ($it_i as $k => $v) {
+								if (($key = (($scalars ? $v : $v->$mby) ?? null)) !== null)
+									$index_it[$key] = $k;
+							}
+							foreach ($db_i as $k => $v) {
+								if ((($key = (($scalars ? $v : $v->$mby) ?? null)) !== null) && 
+										(($i_k = ($index_it[$key] ?? null)) !== null) && 
+										(($rowi = $db_i->_rowi[$k]) !== null)) {
+									$it_i->setRowIdAtIndex($i_k, $rowi);
+									if ((!$scalars) && ($obj = ($it_i[$i_k] ?? null)) && !isset($obj->Id))
+										$obj->setId($v->Id);
+								}
+							}
+						}
+						# @storage.dependency subpart
+						else if (($p_type->storage['dependency'] ?? null) === 'subpart') {
+							# we can just overwrite any of them, we do this so we don't keep on inserting IDs
+							$rowis = $db_i->_rowi ?? null;
+							if ($rowis) {
+								reset($rowis);
+								foreach ($it_i as $k => $v) {
+									$it_i->setRowIdAtIndex($k, current($rowis));
+									if ((!$scalars) && (!isset($v->Id))) {
+										$v->setId($db_i[key($rowis)]->Id);
+									}
+									next($rowis);
+								}
+							}
 						}
 						else {
-							$next_calls["{$class}.{$property}"][0][] = [$db_i, $it_i];
-							$next_calls["{$class}.{$property}"][1] = $sub_selector;
+							
+							# @TODO - as long as we have ids is ok !!!
+							
+							# qvar_dump("`mergeBy` or `subpart` not defined in replace mode for `{$i_class}`.`{$property}`", $p_type);
+							throw new \Exception("`mergeBy` or `subpart` not defined in replace mode for `{$i_class}`.`{$property}`");
+						}
+					}
+					else
+					{
+						if (($db_i->Id ?? null) && (!isset($it_i->Id))) {
+							$it_i->setId($db_i->Id);
+						}
+
+						if ($sub_selector) {
+
+							if ($i_class === null)
+								$i_class = get_class($item);
+							$p_type = $m_types["{$i_class}.{$property}"] ?? ($m_types["{$i_class}.{$property}"] = (\QModel::GetTypeByName($i_class)->properties[$property] ?? false));
+
+							if ((!$p_type) || isset($p_type->storage['optionsPool'])) {
+								# no action if missing type or optionsPool
+								# qvar_dump("will not process \$property = {$property} on {$i_class}, optionsPool=".($p_type->storage['optionsPool'] ?? '`null`'), 
+								#		$db_item, $db_i);
+							}
+							else {
+								$next_calls["{$class}.{$property}"][0][] = [$db_i, $it_i];
+								$next_calls["{$class}.{$property}"][1] = $sub_selector;
+							}
 						}
 					}
 				}

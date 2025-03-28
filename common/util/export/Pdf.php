@@ -64,7 +64,11 @@ abstract class Pdf extends \QModel
 	 */
 	public static function Download($content, $name = null, $orientation = null, $withPageNumbers = false, $withMargins = true)
 	{
-		$tmpPath = \QAutoload::GetTempWebPath();
+		# $tmpPath = \QAutoload::GetTempWebPath();
+		$tmpPath = "temp/";
+		if (!is_dir($tmpPath)) {
+			qmkdir($tmpPath);
+		}
 		$tmpPath = $tmpPath ? rtrim($tmpPath, "\\/")."/" : "";
 		list($relPath, $fpath) = self::Export($content, $name, $orientation, $tmpPath.uniqid().".pdf", $withPageNumbers, $withMargins);
 		header('Content-Description: File Transfer');
@@ -90,7 +94,10 @@ abstract class Pdf extends \QModel
 	 */
 	public static function GetFileData($content, $name = null, $orientation = null, $withPageNumbers = false, $withMargins = true)
 	{
-		$tmpPath = \QAutoload::GetTempWebPath();
+		$tmpPath = "temp/";
+		if (!is_dir($tmpPath)) {
+			qmkdir($tmpPath);
+		}
 		$tmpPath = $tmpPath ? rtrim($tmpPath, "\\/")."/" : "";
 		if (!$name)
 			$name = "Untitled document";
@@ -147,7 +154,11 @@ abstract class Pdf extends \QModel
 		
 		$covurl = $hurl = $furl = $hfc = $ffc = null;
 
-		$tmpPath = \QAutoload::GetTempWebPath();
+		# $tmpPath = \QAutoload::GetTempWebPath();
+		$tmpPath = "temp/";
+		if (!is_dir($tmpPath)) {
+			qmkdir($tmpPath);
+		}
 		$tmpPath = $tmpPath ? rtrim($tmpPath, "\\/")."/" : "";
 		$file = $tmpPath.uniqid().".html";
 		$pFile = $tmpPath."print_".uniqid().".php";

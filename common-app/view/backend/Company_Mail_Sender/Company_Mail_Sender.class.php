@@ -49,7 +49,7 @@ class Company_Mail_Sender_mods_view_ extends Company_Mail_Sender_backend_
 			{
 				$smtp_email = \Omi\Util\Email::SMTPMail($mail_sender->Host, $mail_sender->Port, $mail_sender->Encryption, 
 					$mail_sender->Username, $mail_sender->Password, $mail_sender->Username, 
-					$mail_sender->Username, "Test email", "Testing email sending", null, null, null, 'UTF-8', 2);
+					$mail_sender->Username, "Test email", "Testing email sending", null, null, null, 2);
 				
 				$str = ob_get_clean();
 				

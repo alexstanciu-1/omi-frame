@@ -1314,22 +1314,15 @@ function extractQbRequest($data, &$parent = null, $key = null, $f_name = null, $
 					}
 					else
 					{
-						list ($logged_in_user_id, $logged_in_user_owner, $current_context_id)  = \Omi\User::Quick_Check_Login();
+						list ($logged_in_user_id)  = \Omi\User::Quick_Check_Login();
 						if (!$logged_in_user_id)
 							throw new \Exception('You are not allowed to upload');
-						
-						$pos = 1;
 						$ext = pathinfo($fn, PATHINFO_EXTENSION) ?: null;
-						
 						if (!q_allowed_upload_extension($ext))
-							throw new \Exception('Not allowed #upload-extension.');
+							throw new \Exception('Not allowed #upload-extension: ' . $ext);
 					
-						$fn = $logged_in_user_id . "-" . ($current_context_id ?? $logged_in_user_owner) . "_" . sha1(uniqid("", true)) . "_secured" . ($ext !== null ? ".".$ext : "");
-						$baseFn = pathinfo($fn, PATHINFO_FILENAME);
-					
-						// avoid overwrite
-						while (file_exists($full_path.$fn))
-							$fn = $baseFn."-".($pos++).($ext !== null ? ".".$ext : "");
+						list ($fn) = q_secure_file_name($full_path, $fn, true);
+						
 						move_uploaded_file($f_tmp_name["_dom"], $full_path.$fn);
 						if (($chmod = $prop->storage["fileMode"]))
 						{
@@ -3833,41 +3826,41 @@ function q_get_lang()
 function _T($uid, $defaultText)
 {
 	global $_T___INF, $_T___INF_LANG, $_T___INF_DATA;
+	
 	if ($_T___INF === null)
 	{
 		// init
 		$_T___INF = [];
-		$c_user = class_exists('Omi\User') ? \Omi\User::GetCurrentUser(false, false) : null;
-		if ($c_user && property_exists($c_user, 'UI_Language'))
-		{
-			if (!$c_user->wasSet('UI_Language'))
-				$c_user->populate('UI_Language.Code');
-			$ui_lang = $c_user->getUI_Language();
-			if ($ui_lang && (!$ui_lang->wasSet('Code')))
-				$ui_lang->populate('Code');
-			$current_language = $ui_lang ? $ui_lang->getCode() : null;
-			$_T___INF_LANG = $current_language ?: null;
-
-			if ($_T___INF_LANG && file_exists("lang/{$_T___INF_LANG}.php"))
+		if (($_T___INF_LANG === null) && defined('Q_URL_LANGUAGE')) {
+			$_T___INF_LANG = Q_URL_LANGUAGE;
+		}
+		else {
+			$c_user = class_exists('Omi\User') ? \Omi\User::GetCurrentUser(false, false) : null;
+			if ($c_user && property_exists($c_user, 'UI_Language'))
 			{
-				$_DATA__ = null;
-				include("lang/{$_T___INF_LANG}.php");
-				$_T___INF_DATA[$_T___INF_LANG] = $_DATA__;
+				if (!$c_user->wasSet('UI_Language'))
+					$c_user->populate('UI_Language.Code');
+				$ui_lang = $c_user->getUI_Language();
+				if ($ui_lang && (!$ui_lang->wasSet('Code')))
+					$ui_lang->populate('Code');
+				$current_language = $ui_lang ? $ui_lang->getCode() : null;
+				$_T___INF_LANG = $current_language ?: null;
 			}
 		}
-		
-		if ((!$_T___INF_LANG) && defined('Q_DEFAULT_USER_LANGUAGE') && Q_DEFAULT_USER_LANGUAGE && file_exists("lang/".Q_DEFAULT_USER_LANGUAGE.".php"))
-		{
+		if ((!$_T___INF_LANG) && defined('Q_DEFAULT_USER_LANGUAGE') && Q_DEFAULT_USER_LANGUAGE && file_exists("lang/".Q_DEFAULT_USER_LANGUAGE.".php")) {
 			# Q_DEFAULT_USER_LANGUAGE
 			$_T___INF_LANG = Q_DEFAULT_USER_LANGUAGE;
+		}
+		
+		if ($_T___INF_LANG && file_exists("lang/{$_T___INF_LANG}.php"))
+		{
 			$_DATA__ = null;
 			include("lang/{$_T___INF_LANG}.php");
 			$_T___INF_DATA[$_T___INF_LANG] = $_DATA__;
+			$_DATA__ = null;
 		}
+
 	}
-	// UI_Language
-	// $c_user = \Omi\User::GetCurrentUser();
-	// qvar_dumpk($c_user);
 	
 	if ($_T___INF_LANG && $_T___INF_DATA)
 	{
@@ -5427,4 +5420,77 @@ function q_get_class($object)
 		return get_class($object);
 	else
 		return false;
+}
+
+function q_transaction(callable $callback, $connection = null, array $args = [])
+{
+	try
+	{
+		$ok = false;
+		$in_trans = false;
+		
+		if (!$connection)
+			$connection = \QApp::GetStorage();
+
+		$connection->begin();
+		$in_trans = true;
+
+		$ret = $callback(...$args);
+
+		$connection->commit();
+		$in_trans = false;
+		$ok = true;
+
+		return $ret;
+	}
+	finally
+	{
+		if ($in_trans && (!$ok))
+			$connection->rollback();
+	}
+}
+
+function q_secure_file_name(string $path, string $file_name, bool $avoid_overwrite = false)
+{
+	$full_path = realpath($path);
+	
+	if (!is_dir($full_path))
+		throw new Exception("The path `{$full_path}` specified is missing");
+	$full_path = rtrim($full_path, "/\\")."/";
+	$fn = $file_name;
+
+	$pos = 1;
+	$ext = pathinfo($fn, PATHINFO_EXTENSION) ?: null;
+
+	$baseFn = pathinfo($fn, PATHINFO_FILENAME);
+	
+	if ((substr($baseFn, -14, 1) === '_') && ctype_xdigit(substr($baseFn, -13)) && ($baseFn === preg_replace("/(\W|_)+/", "_", $baseFn))) {
+		# already secured
+	}
+	else {
+		$add_uniqid = (substr($baseFn, -14, 1) === '_') && ctype_xdigit(substr($baseFn, -13)) ? false : true;
+		$baseFn = rtrim(preg_replace("/(\W|_)+/", "_", $baseFn), "_") . ($add_uniqid ? "_" . uniqid("") : "");
+	}
+	
+	$fn = $baseFn . strtolower($ext !== null ? ".".$ext : "");
+	
+	if ($avoid_overwrite) {
+		
+		if (defined('VF_REL_PATH')) {
+			# voip fuse
+			list ($logged_in_user_id, $logged_in_user_owner, $current_context_id)  = \Omi\User::Quick_Check_Login();
+			$fn = $logged_in_user_id . "-" . ($current_context_id ?? $logged_in_user_owner) . "_" . $baseFn . "_secured" . ($ext !== null ? ".".$ext : "");
+		}
+		# avoid overwrite
+		while (file_exists($full_path.$fn)) {
+			if (defined('VF_REL_PATH')) {
+				$fn = $logged_in_user_id . "-" . ($current_context_id ?? $logged_in_user_owner) . "_" . $baseFn . "-" . ($pos++) . "_secured" . ($ext !== null ? ".".$ext : "");
+			}
+			else {
+				$fn = $baseFn."-".($pos++) . strtolower($ext !== null ? ".".$ext : "");
+			}
+		}
+	}
+	
+	return [$fn];
 }

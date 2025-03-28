@@ -29,6 +29,9 @@ class Grid implements IGenerator
 	 */
 	public static function Generate($config, string $template = null)
 	{
+		if (!defined('Q_GEN_RADIO_UP_TO'))
+			define('Q_GEN_RADIO_UP_TO', 5);
+		
 		if (static::$Default_Template === null)
 		{
 			if (defined('Q_Saas_Template') && Q_Saas_Template)
@@ -3512,9 +3515,9 @@ class Grid implements IGenerator
 		{
 			# (!empty($value))
 			if (static::$CachedData[$prop_idf]["validation"] === null)
-				static::$CachedData[$prop_idf]["validation"] = '((!empty($value)) || ($value === "0"))';
+				static::$CachedData[$prop_idf]["validation"] = '((!empty($value)) || ($value === "0") || ($value === 0))';
 			else
-				static::$CachedData[$prop_idf]["validation"] .= ' && ((!empty($value)) || ($value === "0"))';
+				static::$CachedData[$prop_idf]["validation"] .= ' && ((!empty($value)) || ($value === "0") || ($value === 0))';
 		}
 		
 		return static::$CachedData[$prop_idf];

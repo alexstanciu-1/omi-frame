@@ -79,7 +79,7 @@ class Registration_Requests_mods_view_ extends Registration_Requests_backend_
 		if (!$registrationId)
 			throw new \Exception('Missing registration id!');
 		
-		$registrationRequest = \QApi::QueryById('Registration_Requests', $registrationId, 'Company.*, User.*');
+		$registrationRequest = \QApi::QueryById('Registration_Requests', $registrationId, 'Company.*, User.{*,Person.Email}');
 		
 		$registrationRequest->User->Active = true;
 		$registrationRequest->User->Owner = $registrationRequest->Company;
@@ -91,7 +91,17 @@ class Registration_Requests_mods_view_ extends Registration_Requests_backend_
 		$app->Users = new \QModelArray();
 		$app->Users[] = $registrationRequest->User;
 		
-		$app->save('Companies, Users.{Active, Owner}', null, null, false, false, false, false);
+		if ($registrationRequest->Username) {
+			$user = $registrationRequest->User;
+			if (!$user->Email)
+				$user->setEmail($registrationRequest->Username);
+			if (!$user->Person)
+				$user->setPerson(new \Omi\Person());
+			if (!$user->Person->Email)
+				$user->Person->setEmail($registrationRequest->Username);
+		}
+		
+		$app->save('Companies, Users.{Username, Email, Person.{Email}, Active, Owner}', null, null, false, false, false, false);
 		
 		$mailSender = new \stdClass();
 		$mailSender->Host = APP_DEFAULT_MAIL_ACCOUNT['Host'];

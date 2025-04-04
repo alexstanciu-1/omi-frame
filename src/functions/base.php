@@ -3859,9 +3859,8 @@ function _T($uid, $defaultText)
 			$_T___INF_DATA[$_T___INF_LANG] = $_DATA__;
 			$_DATA__ = null;
 		}
-
 	}
-	
+		
 	if ($_T___INF_LANG && $_T___INF_DATA)
 	{
 		$ret_text = (($txt = $_T___INF_DATA[$_T___INF_LANG][$uid]) !== null) ? $txt : 

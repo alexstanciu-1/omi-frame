@@ -257,15 +257,55 @@
 		?></load>
 	</url>
 	
-	<url tag="termsandconsitions">
+	<!-- ----------------------------- TERMS AND CONDITIONS ----------------------------- -->
+	<url tag="termsandconditions">		
 		<get translate="terms-and-conditions" />
-		<load><?php 
+		<load><?php
+			$current_url = $url->current();
+			
+			$terms_and_conditions_pages = \QQuery('Terms_And_Conditions_Pages.{* WHERE Active=1}')->Terms_And_Conditions_Pages;
+			
+			$default_terms_and_conditions_page = null;
+			$early_versions = [];
+			foreach ($terms_and_conditions_pages as $terms_and_conditions_page)
+			{
+				if ($terms_and_conditions_page->Is_Default && !$default_terms_and_conditions_page)
+					$default_terms_and_conditions_page = $terms_and_conditions_page;
+				
+				$early_versions[$terms_and_conditions_page->Date] = $terms_and_conditions_page;
+			}
+			
+			rsort($early_versions);
+			
+			if (isset($current_url) && !empty($current_url))
+			{
+				$version = end(explode('-', $current_url));
+				
+				$terms_and_conditions_page = \QQuery('Terms_And_Conditions_Pages.{* WHERE Active=1 AND Version=?}', [$version])->Terms_And_Conditions_Pages[0];
+				
+				$data = [
+					'Default_Terms_And_Conditions_Page' => $terms_and_conditions_page,
+					'Early_Versions' => $early_versions
+				];
+				
+				$this->webPage->content = new \Omi\App\View\TermsAndConditions();
+				$this->webPage->content->setArguments([$data], "render");
+				
+				return $this->webPage->content;
+			}
+			
+			$data = [
+				'Default_Terms_And_Conditions_Page' => $default_terms_and_conditions_page,
+				'Early_Versions' => $early_versions
+			];
+		
 			$this->webPage->content = new \Omi\App\View\TermsAndConditions();
-			$this->webPage->content->setArguments([true], "render");
+			$this->webPage->content->setArguments([$data], "render");
 		
 			return $this->webPage->content;
 		?></load>
 	</url>
+	<!-- -------------------------------------------------------------------------------- -->
 	
 	<url tag="privacypolicy">
 		<get translate="privacy-policy" />

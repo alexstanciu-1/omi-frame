@@ -236,24 +236,16 @@
 		<get translate="create-account" />
 		<load><?php 
 			$user = \Omi\User::GetCurrentUser();
-			
-			# if ($user)
-			{
-				# header('Location: ' . \QWebRequest::GetBaseHref());
-				# die;
-			}
 		
 			$this->webPage->content = new \Omi\App\View\UserCreateAccount();
 			$this->webPage->content->setArguments([true], "render");
 			
 			// add the control
 			$this->addControl($this->webPage->content);
-			# $url->next();
 
 			$this->webPage->content->loadFromUrl($url, $this);
 			
-			return $this->webPage->content;		
-
+			return $this->webPage->content;
 		?></load>
 	</url>
 	
@@ -307,16 +299,55 @@
 	</url>
 	<!-- -------------------------------------------------------------------------------- -->
 	
+	<!-- ----------------------------- PRIVACY POLICY ----------------------------------- -->
 	<url tag="privacypolicy">
 		<get translate="privacy-policy" />
 		<load><?php 
-			$this->webPage->content = new \Omi\App\View\PrivacyPolicy();
-			$this->webPage->content->setArguments([true], "render");
+			$current_url = $url->current();
+			
+			$privacy_policy_pages = \QQuery('Privacy_Policy_Pages.{* WHERE Active=1}')->Privacy_Policy_Pages;
+			
+			$default_privacy_policy_page = null;
+			$early_versions = [];
+			foreach ($privacy_policy_pages as $privacy_policy_page)
+			{
+				if ($privacy_policy_page->Is_Default && !$default_privacy_policy_page)
+					$default_privacy_policy_page = $privacy_policy_page;
+				
+				$early_versions[$privacy_policy_page->Date] = $privacy_policy_page;
+			}
+			
+			rsort($early_versions);
+			
+			if (isset($current_url) && !empty($current_url))
+			{
+				$version = end(explode('-', $current_url));
+				
+				$privacy_policy_page = \QQuery('Privacy_Policy_Pages.{* WHERE Active=1 AND Version=?}', [$version])->Privacy_Policy_Pages[0];
+				
+				$data = [
+					'Default_Privacy_Policy_Page' => $privacy_policy_page,
+					'Early_Versions' => $early_versions
+				];
+				
+				$this->webPage->content = new \Omi\App\View\PrivacyPolicy();
+				$this->webPage->content->setArguments([$data], "render");
+				
+				return $this->webPage->content;
+			}
+			
+			$data = [
+				'Default_Privacy_Policy_Page' => $default_privacy_policy_page,
+				'Early_Versions' => $early_versions
+			];
 		
-			return $this->webPage->content;		
-
+			$this->webPage->content = new \Omi\App\View\PrivacyPolicy();
+			$this->webPage->content->setArguments([$data], "render");
+		
+			return $this->webPage->content;
 		?></load>
 	</url>
+	<!-- -------------------------------------------------------------------------------- -->
 
 	<index>
 		<load>

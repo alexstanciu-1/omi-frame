@@ -141,8 +141,8 @@ abstract class Controller_mods_controller_ extends \QWebControl implements \QIUr
 		
 		if ((!$force) && (defined("IS_LIVE") && IS_LIVE))
 			return;
-		if ((!$force) && (!\QAutoload::$HasChanges))
-			return;
+		#if ((!$force) && (!\QAutoload::$HasChanges))
+		#	return;
 
 		# qvar_dumpk('resyncView!!!: '.$this->showProperty);
 		

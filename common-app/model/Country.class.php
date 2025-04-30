@@ -35,7 +35,12 @@ abstract class Country_mods_model_ extends \QModel
 
 	public function getModelCaption($view_tag = null)
 	{
-		return $this->Name;
+        if (isset($this->_Overwrite_Name))
+		{
+			return $this->_Overwrite_Name;
+		}
+        else
+            return $this->Name;
 	}
 	
 	/**

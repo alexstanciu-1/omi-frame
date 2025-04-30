@@ -385,7 +385,7 @@ class QApi_frame_
 				if ($replace_mode) {
 					static::setup_replace_mode($storage, $storage_model, $src_from, $src_from_types, $data, $state, $selector, $initialDestination);
 				}
-
+				
 				$result[$src_key] = $tmp_result = $storage::ApiSave($storage_model, $src_from, $src_from_types, $data, $state, $selector, $initialDestination);
 				
 				if (file_exists('code/_data_watchers.php')) {
@@ -2745,72 +2745,87 @@ class QApi_frame_
 			if ((!$reverse_api->On_Action) || (!$reverse_api->URL) || (trim($reverse_api->On_Action) !== trim($action)))
 				continue;
 			
-			$url = filter_var(trim($reverse_api->URL), FILTER_VALIDATE_URL);
-			if ((!$url) || (strtolower(substr($url, 0, strlen('https://'))) !== 'https://'))
-				continue;
-			
 			$data_to_send = ['user' => $user_data_to_send, 'action' => $action, 'args' => $args];
 			
-			$json_data = json_encode($data_to_send, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-			
-			curl_reset($curl);
-			curl_setopt_array($curl, [
-				
-				CURLOPT_URL => $url,
-				CURLOPT_FOLLOWLOCATION => true,
-				CURLOPT_POST => 1,
-				CURLOPT_HTTPHEADER => [
-					'Content-Type: application/json'
-				],
-				CURLOPT_HEADER => 1,
-				CURLOPT_RETURNTRANSFER => 1,
-				CURLINFO_HEADER_OUT => true,
-				CURLOPT_POSTFIELDS => $json_data,
-				CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-			]);
-						
-			$rc = curl_exec($curl);
-			
-			# $log_file = 'temp/log_Trigger_Reverse_Api_'.date('Y-m-d H:i:s')." - ".uniqid().".log";
-			
-			$request_headers = curl_getinfo($curl, CURLINFO_HEADER_OUT);
-			
-			$req = new \Omi\Request_Log();
-			$req->Date = date("Y-m-d H:i:s");
-			$req->Method = 'POST';
-			$req->IP_v4 = '127.0.0.1';
-			$req->Is_Ajax = true;
-			$req->Is_Fast_Call = false;
-
-			$req->Request_URI = $url;
-			# $req->Cookies = $_SERVER['HTTP_COOKIE'];
-			$req->User_Agent = 'API Trigger_Reverse_Api';
-
-			# $req->HTTP_GET = [];
-			$req->HTTP_POST = $json_data;
-			# $req->HTTP_FILES = 
-			
-			if ($rc === false)
+			$url = filter_var(trim($reverse_api->URL), FILTER_VALIDATE_URL);
+			if ((!$url) || (strtolower(substr($url, 0, strlen('https://'))) !== 'https://'))
 			{
-				$err_no = curl_errno($curl);
-				$err_str = curl_error($curl);
-				
-				$req->Traces = json_encode(['trace' => (new \Exception())->getTraceAsString(), "ERROR" => "{$err_no}\n{$err_str}", "REQ_HEADERS" => $request_headers], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_LINE_TERMINATORS | JSON_INVALID_UTF8_SUBSTITUTE);
-				
-				# file_put_contents($log_file, (new \Exception())->getTraceAsString()."\n\n". "ERROR:\n{$err_no}\n{$err_str}\n\n{$request_headers}");
+				$email = filter_var(trim($reverse_api->URL), FILTER_VALIDATE_EMAIL);
+				if ($email) {
+					$mailSender = new \stdClass();
+					$mailSender->Host = APP_DEFAULT_MAIL_ACCOUNT['Host'];
+					$mailSender->Port = APP_DEFAULT_MAIL_ACCOUNT['Port'];
+					$mailSender->Username = APP_DEFAULT_MAIL_ACCOUNT['Username'];
+					$mailSender->Password = APP_DEFAULT_MAIL_ACCOUNT['Password'];
+					$mailSender->Encryption = APP_DEFAULT_MAIL_ACCOUNT['Encryption'];
+
+					$json_data = json_encode($data_to_send, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+					\Omi\Util\Email::Send($mailSender, $email, 'Reverse API @'.$action, $json_data);
+				}
 			}
 			else
 			{
-				# file_put_contents($log_file, (new \Exception())->getTraceAsString()."\n\n". "REQUEST:\n{$url}\n\n{$request_headers}\n\n{$json_data}\n\n=================================================\nRESPONSE:\n{$rc}");
-				$req->Traces = json_encode(['trace' => (new \Exception())->getTraceAsString(), "RESPONSE" => $rc, "REQ_HEADERS" => $request_headers], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_LINE_TERMINATORS | JSON_INVALID_UTF8_SUBSTITUTE);
-			}
-						
-			$req->log();
-			
-			# if (\QAutoload::GetDevelopmentMode())
-			{
-				# echo "<pre>";
-				# echo substr($rc, curl_getinfo($curl, CURLINFO_HEADER_SIZE));
+				$json_data = json_encode($data_to_send, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+				curl_reset($curl);
+				curl_setopt_array($curl, [
+
+					CURLOPT_URL => $url,
+					CURLOPT_FOLLOWLOCATION => true,
+					CURLOPT_POST => 1,
+					CURLOPT_HTTPHEADER => [
+						'Content-Type: application/json'
+					],
+					CURLOPT_HEADER => 1,
+					CURLOPT_RETURNTRANSFER => 1,
+					CURLINFO_HEADER_OUT => true,
+					CURLOPT_POSTFIELDS => $json_data,
+					CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+				]);
+
+				$rc = curl_exec($curl);
+				
+				# $log_file = 'temp/log_Trigger_Reverse_Api_'.date('Y-m-d H:i:s')." - ".uniqid().".log";
+
+				$request_headers = curl_getinfo($curl, CURLINFO_HEADER_OUT);
+
+				$req = new \Omi\Request_Log();
+				$req->Date = date("Y-m-d H:i:s");
+				$req->Method = 'POST';
+				$req->IP_v4 = '127.0.0.1';
+				$req->Is_Ajax = true;
+				$req->Is_Fast_Call = false;
+
+				$req->Request_URI = $url;
+				# $req->Cookies = $_SERVER['HTTP_COOKIE'];
+				$req->User_Agent = 'API Trigger_Reverse_Api';
+
+				# $req->HTTP_GET = [];
+				$req->HTTP_POST = $json_data;
+				# $req->HTTP_FILES = 
+
+				if ($rc === false)
+				{
+					$err_no = curl_errno($curl);
+					$err_str = curl_error($curl);
+
+					$req->Traces = json_encode(['trace' => (new \Exception())->getTraceAsString(), "ERROR" => "{$err_no}\n{$err_str}", "REQ_HEADERS" => $request_headers], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_LINE_TERMINATORS | JSON_INVALID_UTF8_SUBSTITUTE);
+
+					# file_put_contents($log_file, (new \Exception())->getTraceAsString()."\n\n". "ERROR:\n{$err_no}\n{$err_str}\n\n{$request_headers}");
+				}
+				else
+				{
+					# file_put_contents($log_file, (new \Exception())->getTraceAsString()."\n\n". "REQUEST:\n{$url}\n\n{$request_headers}\n\n{$json_data}\n\n=================================================\nRESPONSE:\n{$rc}");
+					$req->Traces = json_encode(['trace' => (new \Exception())->getTraceAsString(), "RESPONSE" => $rc, "REQ_HEADERS" => $request_headers], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_LINE_TERMINATORS | JSON_INVALID_UTF8_SUBSTITUTE);
+				}
+
+				$req->log();
+
+				# if (\QAutoload::GetDevelopmentMode())
+				{
+					# echo "<pre>";
+					# echo substr($rc, curl_getinfo($curl, CURLINFO_HEADER_SIZE));
+				}
 			}
 		}
 		

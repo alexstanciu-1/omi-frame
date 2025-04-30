@@ -51,6 +51,7 @@ abstract class County_mods_model_ extends \QModel
 				. "??Id?<AND[Id=?]"
 				. static::GetListingQueryFilters()
 				. " ??Name?<AND[Name=?]"
+				. " ??QINSEARCH_Name?<AND[Name LIKE (?)]"
 				. " ??Code?<AND[Code=?]"
 				. " ??Country?<AND[Country.Id=?]"
 				. " ??WHR_Search?<AND[(Name LIKE (?) OR Code LIKE(?))]"
@@ -62,6 +63,11 @@ abstract class County_mods_model_ extends \QModel
 
 	public function getModelCaption($view_tag = null)
 	{
-		return $this->Name.(isset($this->Country->Name) ? ", ".$this->Country->Name : "");
+        if (isset($this->_Overwrite_Name))
+		{
+			return $this->_Overwrite_Name;
+		}
+        else
+            return $this->Name.(isset($this->Country->Name) ? ", ".$this->Country->Name : "");
 	}
 }

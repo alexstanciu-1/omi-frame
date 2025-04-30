@@ -70,6 +70,14 @@ abstract class Company_mods_model_ extends \QModel
 	 */
 	protected $Accessible_By;
 	/**
+	 * @storage.optionsPool Companies
+	 * 
+	 * @storage.collection Companies_Accessible_By,Accessible_By,Companies
+	 * 
+	 * @var Company[]
+	 */
+	protected $Has_Access_To;
+	/**
 	 * @storage.oneToMany Owner
 	 * 
 	 * @var \Omi\User[]

@@ -17,6 +17,7 @@
 		}
 		
 		$noItemCaption = $binds['noItemCaption'] ?? 'Select';
+		$search_for_placeholder = $binds['search_for_placeholder'] ?? "Search for {$from} here";
 	?>
 
 	@if ($binds)
@@ -48,7 +49,7 @@
 	
 	<div class="qc-dd-box q-hide-on-click-away-container rounded-md bg-white shadow-xs hidden origin-top-right absolute right-0 w-full rounded-md shadow-lg z-10">
 		<div class="qc-dd-search">
-            <input type="text" value="" placeholder="Search for <?= $from ?> here" class="mt-1 form-input block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none transition duration-150 ease-in-out sm:text-sm sm:leading-5" />
+            <input type="text" value="" placeholder="{{$search_for_placeholder}}" class="mt-1 form-input block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none transition duration-150 ease-in-out sm:text-sm sm:leading-5" />
         </div>
 		<div class="qc-dd-items">
 

@@ -261,12 +261,28 @@ class UserCreateAccount_mods_view_ extends UserCreateAccount_backend_
 	
 	/**
 	 * @api.enable
+	 *
+	 * @return type
 	 */
 	public static function TermsContentPopup()
 	{
+		$terms_and_conditions_pages = \QQuery('Terms_And_Conditions_Pages.{* WHERE Active=1}')->Terms_And_Conditions_Pages;
+			
+		$default_terms_and_conditions_page = null;
+		foreach ($terms_and_conditions_pages as $terms_and_conditions_page)
+		{
+			if ($terms_and_conditions_page->Is_Default && !$default_terms_and_conditions_page)
+				$default_terms_and_conditions_page = $terms_and_conditions_page;
+		}
+
+		$data = [
+			'Default_Terms_And_Conditions_Page' => $default_terms_and_conditions_page,
+		];		
+		
 		ob_start();
 		
-		$termsClass = new \Omi\App\View\TermsAndConditions();
+		$termsClass = new \Omi\App\View\TermsAndConditions();		
+		$termsClass->setArguments($data, 'render');
 		$termsClass->render();
 		
 		$ret = ob_get_clean();

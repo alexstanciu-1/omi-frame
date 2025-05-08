@@ -3823,11 +3823,12 @@ function q_get_lang()
  * @param type $defaultText
  * @return type
  */
-function _T($uid, $defaultText)
+function _T($uid, $defaultText, string $force_lang = null)
 {
 	global $_T___INF, $_T___INF_LANG, $_T___INF_DATA;
 	
-	if ($_T___INF === null)
+	$use_lang = $force_lang ?? $_T___INF_LANG;
+	if (($_T___INF === null) || (!isset($_T___INF[$use_lang])))
 	{
 		// init
 		$_T___INF = [];
@@ -3852,19 +3853,19 @@ function _T($uid, $defaultText)
 			$_T___INF_LANG = Q_DEFAULT_USER_LANGUAGE;
 		}
 		
-		if ($_T___INF_LANG && file_exists("lang/{$_T___INF_LANG}.php"))
+		if ($use_lang && file_exists("lang/{$use_lang}.php"))
 		{
 			$_DATA__ = null;
-			include("lang/{$_T___INF_LANG}.php");
-			$_T___INF_DATA[$_T___INF_LANG] = $_DATA__;
+			include("lang/{$use_lang}.php");
+			$_T___INF_DATA[$use_lang] = $_DATA__;
 			$_DATA__ = null;
 		}
 	}
-		
-	if ($_T___INF_LANG && $_T___INF_DATA)
+	
+	if ($use_lang && $_T___INF_DATA)
 	{
-		$ret_text = (($txt = $_T___INF_DATA[$_T___INF_LANG][$uid]) !== null) ? $txt : 
-					((($s_txt = $_T___INF_DATA[$_T___INF_LANG][$defaultText]) !== null) ? $s_txt : $defaultText);
+		$ret_text = (($txt = $_T___INF_DATA[$use_lang][$uid]) !== null) ? $txt : 
+					((($s_txt = $_T___INF_DATA[$use_lang][$defaultText]) !== null) ? $s_txt : $defaultText);
 	}
 	else
 		$ret_text = $defaultText;

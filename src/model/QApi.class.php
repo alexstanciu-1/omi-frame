@@ -2740,6 +2740,8 @@ class QApi_frame_
 
 		$curl = curl_init();
 		
+		$return = [];
+		
 		foreach ($user->Reverse_APIs->Items ?: [] as $reverse_api)
 		{
 			if ((!$reverse_api->On_Action) || (!$reverse_api->URL) || (trim($reverse_api->On_Action) !== trim($action)))
@@ -2760,7 +2762,10 @@ class QApi_frame_
 					$mailSender->Encryption = APP_DEFAULT_MAIL_ACCOUNT['Encryption'];
 
 					$json_data = json_encode($data_to_send, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-					\Omi\Util\Email::Send($mailSender, $email, 'Reverse API @'.$action, $json_data);
+					$rc = \Omi\Util\Email::Send($mailSender, $email, 'Reverse API @'.$action, $json_data);
+					
+					$return['reverse-api-items'][] = ['user-id' => $user->Id, 'method' => 'email', 'Reverse_Api' => [$reverse_api->On_Action, $reverse_api->URL], '$data_to_send' => $data_to_send, 
+						'$email' => $email, '$request_headers' => 'email', 'response' => $rc];
 				}
 			}
 			else
@@ -2789,6 +2794,9 @@ class QApi_frame_
 
 				$request_headers = curl_getinfo($curl, CURLINFO_HEADER_OUT);
 
+				$return['reverse-api-items'][] = ['user-id' => $user->Id, 'method' => 'curl', 'Reverse_Api' => [$reverse_api->On_Action, $reverse_api->URL], '$data_to_send' => $data_to_send, 
+						'$url' => $url, '$request_headers' => $request_headers, 'response' => $rc];
+				
 				$req = new \Omi\Request_Log();
 				$req->Date = date("Y-m-d H:i:s");
 				$req->Method = 'POST';
@@ -2820,6 +2828,10 @@ class QApi_frame_
 				}
 
 				$req->log();
+				
+				if (!isset($return['Request_Logs']))
+					$return['Request_Logs'] = [];
+				$return['Request_Logs']['Id'] = $req->Id;
 
 				# if (\QAutoload::GetDevelopmentMode())
 				{
@@ -2830,6 +2842,8 @@ class QApi_frame_
 		}
 		
 		curl_close($curl);
+		
+		return $return;
 	}
 	
 	public static function setup_replace_mode($storage, $storage_model, $src_from, $src_from_types, $data, $state = null, $selector = null, $initialDestination = null)

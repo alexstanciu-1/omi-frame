@@ -81,5 +81,10 @@ abstract class Order_mods_model_ extends \QModel
 	 * @var \Omi\User
 	 */
 	protected $Created_By;
+
+	/**
+	 * @var \Omi\Request_Log[]
+	 */
+	protected $Reverse_Api_Log;
 }
 

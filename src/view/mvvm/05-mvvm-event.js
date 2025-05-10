@@ -7,8 +7,6 @@ omi.handleEvent = function(event, sender, node, mv_event)
 	
 	var meth_name = "on" + event_type;
 	
-	// console.log('event: ' + event_type, event);
-	
 	// alert(event_type);
 	// bubble event to objects
 	node = node || sender;

@@ -194,6 +194,12 @@ abstract class QSqlTableColumn_frame_ extends QStorageTableColumn
 	 */
 	public $auto_increment;
 	/**
+	 * The compressed flag
+	 *
+	 * @var boolean
+	 */
+	public $compressed;
+	/**
 	 * The column's comments
 	 *
 	 * @var string
@@ -224,7 +230,7 @@ abstract class QSqlTableColumn_frame_ extends QStorageTableColumn
 	 */
 	public function __construct(QSqlTable $table = null, $name = null, $type = null, $length = null, $values = null, 
 		$default = null, $charset = null, $collation = null, 
-		$unsigned = null, $null = null, $auto_increment = null, $comment = null)
+		$unsigned = null, $null = null, $auto_increment = null, $comment = null, $compressed = null)
 	{
 		$this->table = $table;
 		$this->name = $name;
@@ -238,6 +244,7 @@ abstract class QSqlTableColumn_frame_ extends QStorageTableColumn
 		$this->null = $null;
 		$this->auto_increment = $auto_increment;
 		$this->comment = $comment;
+		$this->compressed = $compressed;
 	}
 	
 	/**

@@ -440,8 +440,7 @@ class QSqlParserQuery
 		$root_q = $this->getRootQuery();
 		$t1 = microtime(true);
 		$result = $conn->query($exe_q);
-			
-		# qvar_dumpk($exe_q);
+		
 		if (static::$_DebugOn)
 			qvar_dumpk($exe_q);
 		$t2 = microtime(true);

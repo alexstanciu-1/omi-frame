@@ -207,7 +207,7 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 			$f_name = $row["Field"];
 			
 			// type / length / values / unsigned
-			list($f_type, $f_length, $f_values, $f_unsigned) = $this->parseFieldType($row["Type"]);
+			list($f_type, $f_length, $f_values, $f_unsigned, $f_compressed) = $this->parseFieldType($row["Type"]);
 			
 			$f_type = static::DecodeColumnType($f_type, $f_length);
 			if ($f_type == QSqlTableColumn::TypeBool)
@@ -224,7 +224,7 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 			$f_auto_increment = (trim($row["Extra"]) == "auto_increment");
 			$f_comment = $row["Comment"];
 			
-			$sql_column = new QSqlTableColumn($table, $f_name, $f_type, $f_length, $f_values, $f_default, $f_charset, $f_collation, $f_unsigned, $f_null, $f_auto_increment, $f_comment);
+			$sql_column = new QSqlTableColumn($table, $f_name, $f_type, $f_length, $f_values, $f_default, $f_charset, $f_collation, $f_unsigned, $f_null, $f_auto_increment, $f_comment, $f_compressed);
 			$sql_column->setTransformState(self::TransformNoAction);
 			$sql_column->table = $table;
 			$fields[$f_name] = $sql_column;
@@ -312,6 +312,13 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 		$f_length = null;
 		$f_values = null;
 		$f_unsigned = false;
+		$f_compressed = false;
+		
+		$p = strpos($field_type, '/*!100301 COMPRESSED*/');
+		if ($p !== false) {
+			$f_compressed = true;
+			$field_type = trim(str_replace('/*!100301 COMPRESSED*/', '', $field_type));
+		}
 		
 		$end_type = strpos($field_type, "(");
 		if ($end_type !== false)
@@ -375,7 +382,7 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 			var_dump($f_type, $f_length, $f_values, $f_unsigned);
 		}
 		*/
-		return array($f_type, $f_length, $f_values, $f_unsigned);
+		return [$f_type, $f_length, $f_values, $f_unsigned, $f_compressed];
 	}
 	
 	/**
@@ -839,6 +846,10 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 				$query .= " DEFAULT '{$this->escapeString($field->default)}'";
 			}
 		}
+		
+		if ($field->compressed ?? false) {
+			$query .= " COMPRESSED ";
+		}
 			
 		// auto increment forces PK
 		if ($field->auto_increment)
@@ -851,7 +862,7 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 			
 		if ($field->comment)
 			$query .= " COMMENT '".$this->escapeString($field->comment)."'";
-			
+
 		return $query;
 	}
 	
@@ -1487,9 +1498,10 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 			if (is_string($selector))
 				$selector = qParseEntity($selector);
 			
-			if (!$only_first)
+			if (!$only_first) {
 				// join it with static::GetModelEntity()
 				$selector = qJoinSelectors($selector, $from_type::GetListingEntity());
+			}
 			
 			if ($view_tag)
 				$query = $only_first ? $from_type::GetItemQuery($view_tag, $selector) : $from_type::GetListingQuery($selector, $view_tag);

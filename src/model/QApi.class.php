@@ -385,8 +385,13 @@ class QApi_frame_
 				if ($replace_mode) {
 					static::setup_replace_mode($storage, $storage_model, $src_from, $src_from_types, $data, $state, $selector, $initialDestination);
 				}
-				
-				$result[$src_key] = $tmp_result = $storage::ApiSave($storage_model, $src_from, $src_from_types, $data, $state, $selector, $initialDestination);
+				try
+				{
+					$result[$src_key] = $tmp_result = $storage::ApiSave($storage_model, $src_from, $src_from_types, $data, $state, $selector, $initialDestination);
+				}
+				catch (\Exception $ex) {
+					throw $ex;
+				}
 				
 				if (file_exists('code/_data_watchers.php')) {
 					# call data watcher(s) if setup
@@ -456,6 +461,21 @@ class QApi_frame_
 					throw new \Exception('Multiple filters are not supported');
 				
 				$sql_filter = \QModel::ExtractSQLFilter(reset($security_filter), \Omi\User::GetGroupsList() ?: [], \QModel::GetFinalSecurityForAppProperty($src_from, 'relation', $property_reflection));
+				# ??User_Access_Template?<AND[Access.Id=?]
+				if (strpos($sql_filter, '<<User_Access_Template>>') !== false) {
+					$sql_filter = str_replace('<<User_Access_Template>>', ' ??User_Access_Template?<AND[Access.Id=?] ', $sql_filter);
+					$c_user = \Omi\User::GetCurrentUser();
+					if (isset($c_user->Access_Template->Id) && ($c_user->Access_Template->Id > 0)) {
+						$parameters['User_Access_Template'] = $c_user->Access_Template->Id;
+					}
+				}
+				else if (strpos($sql_filter, '<<Property.User_Access_Template>>') !== false) {
+					$sql_filter = str_replace('<<Property.User_Access_Template>>', ' ??Property_User_Access_Template?<AND[Property.Access.Id=?] ', $sql_filter);
+					$c_user = \Omi\User::GetCurrentUser();
+					if (isset($c_user->Access_Template->Id) && ($c_user->Access_Template->Id > 0)) {
+						$parameters['Property_User_Access_Template'] = $c_user->Access_Template->Id;
+					}
+				}
 			}
 			else if ($security_filter === false)
 			{
@@ -2969,9 +2989,15 @@ class QApi_frame_
 							if ($rowis) {
 								reset($rowis);
 								foreach ($it_i as $k => $v) {
-									$it_i->setRowIdAtIndex($k, current($rowis));
+									$rowi = current($rowis);
+									if ($rowi > 0) {
+										$it_i->setRowIdAtIndex($k, $rowi);
+									}
 									if ((!$scalars) && (!isset($v->Id))) {
-										$v->setId($db_i[key($rowis)]->Id);
+										$tmp_id = $db_i[key($rowis)]->Id ?? null;
+										if ($tmp_id > 0) {
+											$v->setId($tmp_id);
+										}
 									}
 									next($rowis);
 								}

@@ -1921,7 +1921,7 @@ trait QModel_Methods
 			}
 		}
 		
-		if (!$was_included)
+		if ($ignore_refs || (!$was_included))
 		{
 			$data = ($selector !== null) ? reset($selector) : null;
 			$prop = ($selector !== null) ? key($selector) : null;

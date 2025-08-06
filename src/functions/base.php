@@ -3827,18 +3827,13 @@ function _T($uid, $defaultText, string $force_lang = null)
 {
 	global $_T___INF, $_T___INF_LANG, $_T___INF_DATA;
 	
-	$use_lang = $force_lang ?? $_T___INF_LANG;
-	if (($_T___INF === null) || (!isset($_T___INF[$use_lang])))
-	{
-		// init
-		$_T___INF = [];
-		if (($_T___INF_LANG === null) && defined('Q_URL_LANGUAGE')) {
+	if ($_T___INF_LANG === null) {
+		if (defined('Q_URL_LANGUAGE') && (Q_URL_LANGUAGE !== null)) {
 			$_T___INF_LANG = Q_URL_LANGUAGE;
 		}
 		else {
 			$c_user = class_exists('Omi\User') ? \Omi\User::GetCurrentUser(false, false) : null;
-			if ($c_user && property_exists($c_user, 'UI_Language'))
-			{
+			if ($c_user && property_exists($c_user, 'UI_Language')) {
 				if (!$c_user->wasSet('UI_Language'))
 					$c_user->populate('UI_Language.Code');
 				$ui_lang = $c_user->getUI_Language();
@@ -3852,13 +3847,21 @@ function _T($uid, $defaultText, string $force_lang = null)
 			# Q_DEFAULT_USER_LANGUAGE
 			$_T___INF_LANG = Q_DEFAULT_USER_LANGUAGE;
 		}
-		
+	}
+
+	$use_lang = $force_lang ?? $_T___INF_LANG;
+	if (($_T___INF === null) || (!isset($_T___INF[$use_lang])))
+	{
+		// init
+		if ($_T___INF === null) {
+			$_T___INF = [];
+		}
 		if ($use_lang && file_exists("lang/{$use_lang}.php"))
 		{
 			$_DATA__ = null;
 			include("lang/{$use_lang}.php");
-			$_T___INF_DATA[$use_lang] = $_DATA__;
-			$_DATA__ = null;
+			$_T___INF_DATA[$use_lang] = $_DATA__ ?? [];
+			unset($_DATA__);
 		}
 	}
 	
@@ -3867,8 +3870,9 @@ function _T($uid, $defaultText, string $force_lang = null)
 		$ret_text = (($txt = $_T___INF_DATA[$use_lang][$uid]) !== null) ? $txt : 
 					((($s_txt = $_T___INF_DATA[$use_lang][$defaultText]) !== null) ? $s_txt : $defaultText);
 	}
-	else
+	else {
 		$ret_text = $defaultText;
+	}
 	if (false && \QAutoload::GetDevelopmentMode()) # || ($_SERVER['REMOTE_ADDR'] === '176.24.78.34'))
 	{
 		# get the trace no matter what

@@ -1236,28 +1236,32 @@ class QModelArray extends ArrayObject implements QIModelArray
 		if (is_string($selector))
 			$selector = qParseEntity($selector);
 		
+		$ignore_refs = is_array($selector);
+		
 		$class = get_class($this);
 		$arr = [];
 		if ($with_type)
 			$arr["_ty"] = $class;
 		
 		$was_included = false;
-		if ($refs_no_class === null)
-			$refs_no_class = [];
+		if (!$ignore_refs) {
+			if ($refs_no_class === null)
+				$refs_no_class = [];
 
-		if (($refs_class = $refs_no_class[$class]))
-		{
-			foreach ($refs_class as $_obj)
+			if (($refs_class = $refs_no_class[$class]))
 			{
-				if ($this === $_obj)
+				foreach ($refs_class as $_obj)
 				{
-					$was_included = true;
-					break;
+					if ($this === $_obj)
+					{
+						$was_included = true;
+						break;
+					}
 				}
 			}
 		}
-		
-		if (!$was_included)
+		# if (!$was_included)
+		if ($ignore_refs || (!$was_included))
 		{
 			$refs_no_class[$class][] = $this;
 			

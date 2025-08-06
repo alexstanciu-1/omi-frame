@@ -34,7 +34,7 @@ $__DATA = [
 		],
 	
 		'Properties' => [
-				'rule' => '@H2B_Superadmin,tfh-box,@H2B_Channel',
+				'rule' => '@H2B_Superadmin,tfh-box-property,@H2B_Channel',
 				'enforcements' => 'tfh-box',
 			],
 		'Properties_Rooms' => [
@@ -67,7 +67,7 @@ $__DATA = [
 				'enforcements' => 'tfh-box',
 			],
 		'Orders' => [
-				'rule' => '@H2B_Superadmin,tfh-box,tfh-box-via-property',
+				'rule' => '@H2B_Superadmin,tfh-box,tfh-box-via-property,tfh-order-channel',
 				'enforcements' => 'tfh-box',
 			],
 		'Cancellation_Policies' => [
@@ -95,6 +95,11 @@ $__DATA = [
 				'enforcements' => 'tfh-self',
 			],
 		'Users' => [
+				'rule' => '@H2B_Superadmin,tfh-box,tfh-channel',
+				'enforcements' => 'tfh-box',
+			],
+	
+		'User_Access_Templates' => [
 				'rule' => '@H2B_Superadmin,tfh-box',
 				'enforcements' => 'tfh-box',
 			],
@@ -118,12 +123,20 @@ $__DATA = [
 			'rule' => '@H2B_Superadmin',
 		],
 	
+		'Registration_Requests' => [
+			'rule' => '@H2B_Superadmin',
+		],
+	
 		'API_Systems' => [
 			# 'rule' => '@H2B_Superadmin',
 		],
 		'Favorite_Orders' => [
-			'rule' => '@H2B_Superadmin,tfh-box',
+			'rule' => '@H2B_Superadmin,tfh-box,tfh-channel',
 			'enforcements' => 'tfh-box',
 		],
+		'Invoices' => [
+			'rule' => '@H2B_Superadmin,tfh-box,tfh-channel',
+			'enforcements' => 'tfh-box',
+		]
 	];
 

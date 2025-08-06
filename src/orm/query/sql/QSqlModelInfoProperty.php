@@ -53,7 +53,7 @@ class QSqlModelInfoProperty
 				if (($_i_ty = QModel::GetTypeByName($ty)) instanceof QModelType)
 				{
 					$refs_types[$ty] = $_i_ty;
-					$cc_nt = count($this->property->getAllReferenceTypes());
+					$cc_nt = q_count($this->property->getAllReferenceTypes());
 					if ($cc_nt > 0)
 					{
 						$types_on_prop += $cc_nt;
@@ -242,6 +242,8 @@ class QSqlModelInfoProperty
 		$length = $force_type ? ($force_type_length ?: false) : self::GetDefaultColumnLength($type);
 		$values = $force_type_values; // for enums / sets | TO DO in the future
 		
+		$compressed = ($using_prop->storage['compressed'] ?? false) ? true : false;
+		
 		// if ($using_prop->name === "Message")
 		// {
 		// 	var_dump("Column for property value: ".$using_prop->name, $force_type, $force_type_length, $length);
@@ -305,7 +307,7 @@ class QSqlModelInfoProperty
 		{
 			if ($dimensions)
 			{
-				$dims_count = count($dimensions);
+				$dims_count = q_count($dimensions);
 				foreach ($dimensions as $dim_key)
 				{
 					$dim_vals = QModel::$DimsDef[$dim_key];
@@ -320,13 +322,13 @@ class QSqlModelInfoProperty
 					{
 						$dim_name = $name . (($dims_count > 1) ? "_".$dim_key : "") . "_".$dv;
 						$dim_comment = $comment .  " (dimension[{$dim_key}] : ".$dv.")";
-						self::SetupSqlColumn($force_index_type, $db_table, $dim_name, $type, $length, $values, $default, $charset, $collation, $unsigned, $null, $auto_increment, $dim_comment);
+						self::SetupSqlColumn($force_index_type, $db_table, $dim_name, $type, $length, $values, $default, $charset, $collation, $unsigned, $null, $auto_increment, $dim_comment, $compressed);
 					}
 				}
 			}
 			else
 			{
-				$column = self::SetupSqlColumn($force_index_type, $db_table, $name, $type, $length, $values, $default, $charset, $collation, $unsigned, $null, $auto_increment, $comment);
+				$column = self::SetupSqlColumn($force_index_type, $db_table, $name, $type, $length, $values, $default, $charset, $collation, $unsigned, $null, $auto_increment, $comment, $compressed);
 			}
 		}
 		
@@ -372,7 +374,7 @@ class QSqlModelInfoProperty
 			return array(null, null, null);
 	}
 
-	public static function SetupSqlColumn($index_type, QSqlTable $table, $name, $type, $length, $values, $default, $charset, $collation, $unsigned, $null, $auto_increment, $comment)
+	public static function SetupSqlColumn($index_type, QSqlTable $table, $name, $type, $length, $values, $default, $charset, $collation, $unsigned, $null, $auto_increment, $comment, $compressed = null)
 	{
 		if (!is_string($name))
 		{
@@ -415,7 +417,9 @@ class QSqlModelInfoProperty
 				"unsigned" => $unsigned,
 				"null" => $null,
 				"auto_increment" => $auto_increment,
-				"comment" => $comment));
+				"comment" => $comment,
+				"compressed" => ($compressed ?? false) ? true : false,
+			));
 
 		$index_name = ($index_type == QSqlTableIndex::IndexPrimary) ? "PRIMARY" : $name;
 		

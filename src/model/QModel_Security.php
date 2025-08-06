@@ -565,6 +565,12 @@ trait QModel_Security
 							# $ret['filter'][0] .= ($ret['filter'][0] ? "," : "").'owner_customer+is:owner_customer:of:$each';
 							break;
 						}
+						case 'tfh-box-property':
+						{
+							$ret['filter'][0] .= ($ret['filter'][0] ? "," : "").'is:propertyOwner:of:$each';
+							# $ret['filter'][0] .= ($ret['filter'][0] ? "," : "").'owner_customer+is:owner_customer:of:$each';
+							break;
+						}
 						case 'strict-box-customer':
 						{
 							$ret['filter'][0] .= ($ret['filter'][0] ? "," : "").'customer+is:ownerCustomer:of:$each';
@@ -634,30 +640,36 @@ trait QModel_Security
 						}
 						case 'tfh-box':
 						{
-							$ret['relation'][] = 'tfhowner ((Owner.Users.Id=? OR Owner.Accessible_By.Users.Id=?) AND Owner.Is_Property_Owner)';
+							$ret['relation'][] = 'tfhowner (Owner.Accessible_By.Users.Id=? AND Owner.Is_Property_Owner)';
 							# $ret['filter'][0] .= ($ret['filter'][0] ? "," : "").'owner_customer+is:owner_customer:of:$each';
 							break;
 						}
 						case 'tfh-order-channel':
 						{
-							$ret['relation'][] = 'tfhorderchannel ((Channel.Users.Id=? OR Channel.Accessible_By.Users.Id=?) AND Channel.Is_Channel_Owner)';
+							$ret['relation'][] = 'tfhorderchannel (Channel.Accessible_By.Users.Id=? AND Channel.Is_Channel_Owner)';
 							break;
 						}
 						case 'tfh-channel':
 						{
-							$ret['relation'][] = 'tfhchannel ((Owner.Users.Id=? OR Owner.Accessible_By.Users.Id=?) AND Owner.Is_Channel_Owner)';
+							$ret['relation'][] = 'tfhchannel (Owner.Accessible_By.Users.Id=? AND Owner.Is_Channel_Owner)';
 							# $ret['filter'][0] .= ($ret['filter'][0] ? "," : "").'owner_customer+is:owner_customer:of:$each';
 							break;
 						}
 						case 'tfh-self':
 						{
-							$ret['relation'][] = 'owner (Users.Id=? OR Accessible_By.Users.Id=?)';
+							$ret['relation'][] = 'owner (Accessible_By.Users.Id=?)';
 							# $ret['filter'][0] .= ($ret['filter'][0] ? "," : "").'owner_customer+is:owner_customer:of:$each';
 							break;
 						}
 						case 'tfh-box-via-property':
 						{
-							$ret['relation'][] = 'propertyOwner (Property.Owner.Users.Id=? OR Property.Owner.Accessible_By.Users.Id=?)';
+							$ret['relation'][] = 'propertyOwner (Property.Owner.Accessible_By.Users.Id=? <<Property.User_Access_Template>> )';
+							# $ret['relation'][] = 'propertyOwner (Property.Owner.Users.Id=? OR Property.Owner.Accessible_By.Users.Id=?)';
+							break;
+						}
+						case 'tfh-box-property':
+						{
+							$ret['relation'][] = 'propertyOwner (Owner.Accessible_By.Users.Id=? <<User_Access_Template>> )';
 							break;
 						}
 						case 'strict-box-customer-self':

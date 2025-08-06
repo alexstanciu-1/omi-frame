@@ -444,12 +444,6 @@ class QSqlParserQuery
 		if (static::$_DebugOn)
 			qvar_dumpk($exe_q);
 		$t2 = microtime(true);
-		
-		/*
-		if ($redundant_links) {
-			qvar_dump(($t2 - $t1)." | ".$exe_q);
-		}
-		*/
 	
 		if (($t2 - $t1) >= 30) # slow query log
 		{

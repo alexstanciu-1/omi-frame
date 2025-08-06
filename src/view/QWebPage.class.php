@@ -12,3 +12,4 @@ abstract class QWebPage_frame_ extends QWebControl implements QIUrlController
 	
 	public $onPdfExport = false;
 }
+

@@ -807,7 +807,11 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 			$query .= "({$field->length})";
 		else if ($field->values)
 			$query .= "({$field->values})";
-			
+		
+		if ($field->compressed ?? false) {
+			$query .= " COMPRESSED ";
+		}
+
 		if ($field->type && ($field->type != QSqlTableColumn::TypeBool) && $field->unsigned)
 			$query .= " UNSIGNED";
 			
@@ -847,10 +851,6 @@ abstract class QMySqlStorage_frame_ extends QSqlStorage
 			}
 		}
 		
-		if ($field->compressed ?? false) {
-			$query .= " COMPRESSED ";
-		}
-			
 		// auto increment forces PK
 		if ($field->auto_increment)
 		{

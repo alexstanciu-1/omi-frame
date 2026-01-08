@@ -3044,6 +3044,7 @@ function _L($tag, $lang = null, $arg_1 = null, $arg_2 = null, $arg_3 = null, $ar
 			return $tag;
 		return _T($tag, $tag);
 	}
+	
 	if ($lang === null)
 		$lang = QApp::GetLanguage_Dim();
 	$data = $dt[$lang];

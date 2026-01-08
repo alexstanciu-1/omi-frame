@@ -402,8 +402,6 @@ trait Grid_Methods
 		$dataCls = \QApp::GetDataClass();
 		$dataCls::$FromAlias = end(explode("\\", $cc));
 
-		$return = null;
-			
 		switch ($grid_mode)
 		{
 			case "edit":

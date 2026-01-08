@@ -2826,7 +2826,7 @@ class QApi_frame_
 
 				$req->Request_URI = $url;
 				# $req->Cookies = $_SERVER['HTTP_COOKIE'];
-				$req->User_Agent = 'API Trigger_Reverse_Api';
+				$req->User_Agent = "API-Trigger_Reverse_Api|action:{$action}|user:{$user_id}";
 
 				# $req->HTTP_GET = [];
 				$req->HTTP_POST = $json_data;

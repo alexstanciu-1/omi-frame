@@ -232,7 +232,7 @@ class QModelQuery
 				// Keywords: AND/OR/...
 				"\bAS\b|\bSELECT\b|\bUPDATE\b|\bDELETE\b|\bINSERT\b|\bWHERE\b|\bORDER\\s+BY\b|\bHAVING\b|\bGROUP\\s+BY\b|\bAND\b|\bOR\b|\bBETWEEN\b|\bASC\b|\bDESC\b|\bLIMIT\b|".
 					"\bNULL\b|\bTRUE\b|\bFALSE\b|\bIS_A\b|\bIS\b|\bLIKE\b|\bCASE\b|\bBINARY\b|\bNOT\b|\bDIV\b|\bIS\\s*NULL\b|\bIS\\s*NOT\\s*NULL\b|\bSQL_CALC_FOUND_ROWS\b|".
-					"\bDISTINCT\b|\bEND\b|\bELSE\b|\bTHEN\b|\bSEPARATOR\b|".
+					"\bDISTINCT\b|\bEND\b|\bELSE\b|\bTHEN\b|\bSEPARATOR\b|\bLEADING\b|".
 					"\bSQL_NO_CACHE\b|\bIN\\s+BOOLEAN\\s+MODE\b|\bINTERVAL\b|\bMONTH\b|\bDAY\b|\bWEEK\b|\bHOUR\b|\bMINUTE\b|\bSECOND\b|\bYEAR\b|\bUNSIGNED\b|\bSIGNED\b|\bCAST\b|\bINT\b|".
 					"\bFROM\b|".
 				// FUNCTIONS: FuncName (

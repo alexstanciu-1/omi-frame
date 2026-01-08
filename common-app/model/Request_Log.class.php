@@ -41,8 +41,6 @@ abstract class Request_Log_mods_model_ extends \QModel
 	 */
 	protected $Timestamp_ms_end;
 	/**
-	 * @storage.index
-	 * 
 	 * @var float
 	 */
 	protected $Duration;
@@ -57,7 +55,6 @@ abstract class Request_Log_mods_model_ extends \QModel
 	 */
 	protected $Method;
 	/**
-	 * 
 	 * @storage.index
 	 * @storage.type CHAR(16)
 	 * 
@@ -94,7 +91,7 @@ abstract class Request_Log_mods_model_ extends \QModel
 	protected $Session_Id;
 	/**
 	 * @storage.index
-	 * @storage.type TEXT
+	 * @storage.type VARCHAR(1024)
 	 * 
 	 * @var string
 	 */
@@ -129,6 +126,7 @@ abstract class Request_Log_mods_model_ extends \QModel
 	protected $Tags;
 	/**
 	 * @storage.type LONGTEXT
+	 * @storage.compressed
 	 * 
 	 * @var string
 	 */
@@ -244,36 +242,39 @@ abstract class Request_Log_mods_model_ extends \QModel
 		$q = (is_array($selector) ? qImplodeEntity($selector) : $selector)." "
 				# . " SELECT {} "
 				. " WHERE 1 "
-				. "??Id?<AND[Id=?]"
-				. "??Id_IN?<AND[Id IN (?)]"
+				. " ??Id?<AND[Id=?]"
+				. " ??Id_IN?<AND[Id IN (?)]"
 
-				. "??IP_v4?<AND[IP_v4=?]"
-				. "??QINSEARCH_IP_v4?<AND[(IP_v4=?)]"
+				. " ??Date?<AND[Date=?] "
+				. " ??QINSEARCH_Date?<AND[Date=?] "
+				. " ??Date_Between?<AND[(Date>=? AND Date<=?)] "
+				
+				. " ??IP_v4?<AND[IP_v4=?]"
+				. " ??QINSEARCH_IP_v4?<AND[(IP_v4=?)]"
 
-				. "??Request_URI?<AND[Request_URI LIKE (?)]"
-				. "??QINSEARCH_Request_URI?<AND[Request_URI LIKE (?)]"
+				. " ??Request_URI?<AND[Request_URI LIKE (?)]"
+				. " ??QINSEARCH_Request_URI?<AND[Request_URI LIKE (?)]"
 				
-				. "??User_Agent?<AND[User_Agent LIKE (?)]"
-				. "??QINSEARCH_User_Agent?<AND[User_Agent LIKE (?)]"
+				. " ??User_Agent?<AND[User_Agent LIKE (?)]"
+				. " ??QINSEARCH_User_Agent?<AND[User_Agent LIKE (?)]"
 
-				. "??Is_Ajax?<AND[Is_Ajax IN (?)]"
-				. "??QINSEARCH_Is_Ajax?<AND[Is_Ajax IN(?)]"
+				. " ??Is_Ajax?<AND[Is_Ajax IN (?)]"
+				. " ??QINSEARCH_Is_Ajax?<AND[Is_Ajax IN(?)]"
 				
-				. "??Session_Id?<AND[Session_Id=?]"
-				. "??QINSEARCH_Session_Id?<AND[Session_Id IN(?)]"
+				. " ??Session_Id?<AND[Session_Id=?]"
+				. " ??QINSEARCH_Session_Id?<AND[Session_Id IN(?)]"
 				
-				. "??HTTP_GET?<AND[HTTP_GET LIKE (?)]"
-				. "??QINSEARCH_HTTP_GET?<AND[HTTP_GET LIKE (?)]"
+				. " ??HTTP_GET?<AND[HTTP_GET LIKE (?)]"
+				. " ??QINSEARCH_HTTP_GET?<AND[HTTP_GET LIKE (?)]"
 				
-				. "??Is_Error?<AND[Is_Error = ?]"
-				. "??QINSEARCH_Is_Error?<AND[Is_Error = ?]"
+				. " ??Is_Error?<AND[Is_Error = ?]"
+				. " ??QINSEARCH_Is_Error?<AND[Is_Error = ?]"
 				
-				. "??Tags?<AND[Tags LIKE (?)]"
-				. "??QINSEARCH_Tags?<AND[Tags LIKE (?)]"
+				. " ??Tags?<AND[Tags LIKE (?)]"
+				. " ??QINSEARCH_Tags?<AND[Tags LIKE (?)]"
 				
 			# . " GROUP BY Id "
 			. " ORDER BY "
-				. "??OBY_Id?<,[Id ?@]"
 				. " Id DESC "
 			. " ??LIMIT[LIMIT ?,?]";
         

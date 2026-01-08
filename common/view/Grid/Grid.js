@@ -786,8 +786,13 @@ QExtendClass("Omi\\View\\Grid", "omi", {
 				else
 				{
 					$this.$_schedFor = false;
-					// alert('__doQuickSearch');
-					$this.__doQuickSearch();
+					
+					(debounce(function () {
+						
+						$this.__doQuickSearch();
+						
+					}, 800))();
+					
 				}
 			};
 			

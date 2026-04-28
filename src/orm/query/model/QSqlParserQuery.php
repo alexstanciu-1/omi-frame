@@ -464,6 +464,9 @@ class QSqlParserQuery
 				var_dump($root_q->_dbg_query, $root_q->_dbg_binds, $exe_q);
 			else
 				var_dump($root_q->_dbg_query, $exe_q);
+			if (\QAutoload::GetDevelopmentMode()) {
+				qvar_dump($exe_q);
+			}
 			throw new Exception($conn->error);
 		}
 		

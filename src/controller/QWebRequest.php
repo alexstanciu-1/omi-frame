@@ -861,8 +861,12 @@ final class QWebRequest
 					}
 					else
 					{
-						if (!headers_sent())
+						if (!headers_sent()) {
 							header("HTTP/1.1 500 Internal Server Error");
+						}
+						if (\QAutoload::GetDevelopmentMode() || (defined('dev_ip') && (dev_ip === $_SERVER['REMOTE_ADDR']))) {
+							qvar_dump($uncaughtException);
+						}
 						echo "There was an error. Error ID: {$err_uid}";# $uncaughtException->getMessage();
 					}
 				}

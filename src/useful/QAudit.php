@@ -112,7 +112,7 @@ class QAudit
   KEY `Type` (`Type`),
   KEY `ParentUid` (`ParentUid`),
   KEY `Uid` (`Uid`,`Ends`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci ROW_FORMAT=REDUNDANT AUTO_INCREMENT=1 ;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=REDUNDANT AUTO_INCREMENT=1 ;
 ");
 	}
 	

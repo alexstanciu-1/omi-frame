@@ -86,7 +86,7 @@ if ((Q_REMOTE_ADDR === dev_ip) || (($_GET['_dev_mode_key_'] ?? '') === sha1(Q_DE
 						defined('MyProject_Mysql_Socket') ? MyProject_Mysql_Socket : ini_get("mysqli.default_socket"));
 
 	$mysql->connect();
-	$mysql->connection->query('SET NAMES utf8');
+	$mysql->connection->query('SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci');
 	$mysql->connection->query("SET SESSION sql_mode = CONCAT(@@sql_mode, ',NO_UNSIGNED_SUBTRACTION')");
 
 	// we set the $mysql object as the main storage for our APP

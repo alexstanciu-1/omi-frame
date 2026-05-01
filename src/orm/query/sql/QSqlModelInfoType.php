@@ -106,8 +106,8 @@ class QSqlModelInfoType
 			"Storage for collection: ".$this->parent->parent->type->class.".".$this->parent->property->name : 
 			"Storage for class: ".$this->type;
 
-		$db_table->set("charset", "utf8");
-		$db_table->set("collation", "utf8_unicode_ci");
+		$db_table->set("charset", "utf8mb4");
+		$db_table->set("collation", "utf8mb4_unicode_ci");
 		$db_table->set("comment", $table_comment);
 		$db_table->set("engine", "InnoDB");
 

@@ -106,9 +106,11 @@
 					if ($users && (q_count($users) == 1))
 						$user = q_reset($users);
 					
-					if (defined('Q_IS_H2B') && Q_IS_H2B && !$user)
+					$requires_activation = (defined('Q_IS_H2B') && Q_IS_H2B) && !(defined('Q_IS_H2W') && Q_IS_H2W);
+
+					if ((defined('Q_IS_H2B') && Q_IS_H2B) && !$user)
 						$error = 'Username sau parola sunt gresite!';
-					else if ((defined('Q_IS_H2B') && Q_IS_H2B) ? ($user && ($user->Confirmed_Activation) || ($user->Type == 'H2B_Superadmin')) : true)
+					else if ($requires_activation ? ($user && ($user->Confirmed_Activation || ($user->Type == 'H2B_Superadmin'))) : true)
 					{
 						$login = \QApi::Call("Omi\\User::Login", $user_or_email, $password, null, $remember);
 						if (($login === true) || ($login instanceof \QUser))
@@ -124,7 +126,7 @@
 
 						$error = $login;
 					}
-					else if (defined('Q_IS_H2B') && Q_IS_H2B)
+					else if ($requires_activation)
 						$error = "Contul trebuie activat accesand link-ul de activare din email!";
 				}
 				else

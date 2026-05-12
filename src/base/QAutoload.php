@@ -1389,6 +1389,7 @@ final class QAutoload
 	 */
 	public static function EnableDevelopmentMode($restriction = "default", $full_resync = false, $debug_mode = false)
 	{
+		$buffered_output = null;
 		if (!($_GET['__q_run_code_resync__'] ?? null)) {
 			ob_start();
 		}
@@ -1500,8 +1501,12 @@ final class QAutoload
 		}
 		finally
 		{
-			return ob_get_clean();
+			if (!($_GET['__q_run_code_resync__'] ?? null)) {
+				$buffered_output = ob_get_clean();
+			}
 		}
+		
+		return $buffered_output;
 	}
 	
 	/**

@@ -79,7 +79,7 @@ else
 						defined('MyProject_Mysql_Socket') ? MyProject_Mysql_Socket : ini_get("mysqli.default_socket"));
 
 	$mysql->connect();
-	$mysql->connection->query('SET NAMES utf8');
+	$mysql->connection->query('SET NAMES utf8mb4');
 	$mysql->connection->query("SET SESSION sql_mode = CONCAT(@@sql_mode, ',NO_UNSIGNED_SUBTRACTION')");
 
 	// we set the $mysql object as the main storage for our APP

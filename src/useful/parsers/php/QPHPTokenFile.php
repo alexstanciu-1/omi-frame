@@ -88,7 +88,7 @@ class QPHPTokenFile extends QPHPToken
 			$is_patch = false;
 
 			$contents = file_get_contents($this->filename);
-			# fix broken files (missing UTF8 header but utf8)
+			# fix broken files (missing UTF8 header but utf8mb4)
 			$file_encoding = mb_detect_encoding($contents, 'UTF-8, ISO-8859-1', true);
 			if ($file_encoding === false)
 				throw new \Exception('Unable to detect encoding for file: '.$this->filename);

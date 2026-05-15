@@ -2193,7 +2193,7 @@ class QCodeSync2
 
 			$mysql->offline_mode = true;
 			# $mysql->connect();
-			# $mysql->connection->query('SET NAMES utf8');
+			# $mysql->connection->query('SET NAMES utf8mb4');
 			
 			// enable this to resync your DB structure
 			\QSqlModelInfoType::ResyncDataStructure($mysql, false, true);

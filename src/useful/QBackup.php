@@ -28,7 +28,7 @@ class QBackup
 			}
 		}
 
-		$command = "mysqldump --single-transaction --default-character-set=utf8 --user='{$user}' --password='{$pass}' ".($host ? " --host={$host} " : "").($port ? " --port={$port} " : "")." --databases ";
+		$command = "mysqldump --single-transaction --default-character-set=utf8mb4 --user='{$user}' --password='{$pass}' ".($host ? " --host={$host} " : "").($port ? " --port={$port} " : "")." --databases ";
 		// now normalize things
 		foreach ($databases_to_backup as $v)
 			$command .= " \"{$v}\" ";

@@ -15,6 +15,7 @@ QExtendClass("Omi\\View\\Grid", "omi", {
 		this.initValues();
 		this.setupDatepickers();
 		this.initCheckboxCollection();
+		this.initMultiLanguage();
 
 		this.initWysiwyg();
 		
@@ -80,10 +81,15 @@ QExtendClass("Omi\\View\\Grid", "omi", {
 		return $ret;
 	},
 
-	initWysiwyg : function ()
+	initWysiwyg : function (context)
 	{
-		var trumbowyg_txt_area = this.$('.qc-trumbowyg');
-		var wysiwyg = this.$(".qc-wysiwyg");
+		var root = context ? jQuery(context) : jQuery(this.dom);
+		var trumbowyg_txt_area = root.find('.qc-trumbowyg').filter(function () {
+			return !jQuery(this).data('qcMlWysiwygReady');
+		});
+		var wysiwyg = root.find(".qc-wysiwyg").filter(function () {
+			return !jQuery(this).data('qcMlWysiwygReady');
+		});
 		if (wysiwyg.bwTextarea)
 			wysiwyg.bwTextarea();
 		
@@ -92,10 +98,12 @@ QExtendClass("Omi\\View\\Grid", "omi", {
 		for (var i = 0; i < wysiwyg.length; i++)
 		{
 			var wysiwyg_itm = jQuery(wysiwyg[i]);
+			wysiwyg_itm.data('qcMlWysiwygReady', true);
 			var $this = this;
 			wysiwyg_itm[0]._wysiwyg_onchange = function (event, wysiwyg, textarea)
 			{
 				jQuery(textarea).val(jQuery(wysiwyg).find("body").html());
+				$this.syncMultiLanguageEditor(textarea);
 				$this.onchange(textarea);
 			};
 		}
@@ -103,15 +111,408 @@ QExtendClass("Omi\\View\\Grid", "omi", {
 		for (var i = 0; i < trumbowyg.length; i++)
 		{
 			var trumbowyg_itm = jQuery(trumbowyg[i]);
+			trumbowyg_itm.data('qcMlWysiwygReady', true);
 			var $this = this;
 			var $iii = i; // we need this line, otherwise i will be the last increment always !!!
 			
 			trumbowyg_itm.on('tbwchange', function()
 			{
 				var textarea = trumbowyg_txt_area[$iii];
+				$this.syncMultiLanguageEditor(textarea);
 				$this.onchange(textarea);
 			});
 		}
+	},
+
+	initMultiLanguage : function (context)
+	{
+		var widgets = context ? jQuery(context).find('.qc-multilang-field') : this.$('.qc-multilang-field');
+		for (var i = 0; i < widgets.length; i++)
+			this.setupMultiLanguageWidget(widgets[i]);
+	},
+
+	setupMultiLanguageWidget : function (widget)
+	{
+		if (!widget || widget._qcMultiLangReady)
+			return;
+
+		widget._qcMultiLangReady = true;
+
+		var languages = [];
+		try
+		{
+			languages = JSON.parse(widget.getAttribute('data-ml-languages') || '[]') || [];
+		}
+		catch ($ex)
+		{
+			languages = [];
+		}
+
+		var defaultLanguage = (widget.getAttribute('data-ml-default-language') || '').toLowerCase() || ((languages[0] && languages[0].code) ? languages[0].code : 'ro');
+		var inputTag = widget.getAttribute('data-ml-input-tag') || 'input';
+		var inputType = widget.getAttribute('data-ml-input-type') || 'text';
+		var useEditor = widget.getAttribute('data-ml-use-editor') === '1';
+		var store = widget.querySelector('.qc-multilang-store');
+		var addLanguage = widget.querySelector('.qc-ml-add-language');
+		var panels = widget.querySelector('.qc-ml-panels');
+		var rawValue = store ? (store.value || '') : '';
+		var values = this.parseMultiLanguageValue(rawValue, defaultLanguage);
+		var rows = [];
+		var hasRows = false;
+
+		if (Object.prototype.hasOwnProperty.call(values, defaultLanguage))
+		{
+			rows.push({ language: defaultLanguage, key: 'row-' + defaultLanguage });
+			hasRows = true;
+		}
+
+		for (var valueLanguage in values)
+		{
+			if (!Object.prototype.hasOwnProperty.call(values, valueLanguage))
+				continue;
+			if (valueLanguage === defaultLanguage)
+				continue;
+			rows.push({ language: valueLanguage, key: 'row-' + valueLanguage });
+			hasRows = true;
+		}
+
+		if (!hasRows)
+			rows.push({ language: defaultLanguage, key: 'row-' + defaultLanguage });
+
+		widget._qcMultiLangData = {
+			languages: languages,
+			defaultLanguage: defaultLanguage,
+			inputTag: inputTag,
+			inputType: inputType,
+			useEditor: useEditor,
+			store: store,
+			addLanguage: addLanguage,
+			panels: panels,
+			values: values,
+			rows: rows,
+			nextRowIndex: rows.length
+		};
+
+		var $this = this;
+
+		if (addLanguage)
+		{
+			addLanguage.addEventListener('click', function () {
+				var languageCode = $this.getNextMultiLanguage(widget);
+				var rowKey = 'row-' + (widget._qcMultiLangData.nextRowIndex++);
+				widget._qcMultiLangData.rows.push({
+					language: languageCode,
+					key: rowKey
+				});
+				$this.renderMultiLanguageWidget(widget);
+			});
+		}
+
+		if (panels)
+		{
+			panels.addEventListener('input', function (event) {
+				if (event.target && event.target.classList.contains('qc-ml-editor'))
+					$this.syncMultiLanguageEditor(event.target);
+			});
+			panels.addEventListener('change', function (event) {
+				if (event.target && event.target.classList.contains('qc-ml-editor'))
+					$this.syncMultiLanguageEditor(event.target);
+				else if (event.target && event.target.classList.contains('qc-ml-language-select'))
+					$this.syncMultiLanguageSelector(event.target);
+			});
+			panels.addEventListener('click', function (event) {
+				var removeButton = event.target ? event.target.closest('.qc-ml-remove-language') : null;
+				if (removeButton)
+					$this.removeMultiLanguageRow(removeButton);
+			});
+		}
+
+		this.renderMultiLanguageWidget(widget);
+	},
+
+	getNextMultiLanguage : function (widget)
+	{
+		var data = widget._qcMultiLangData;
+		if (!data)
+			return 'ro';
+
+		var used = {};
+		for (var i = 0; i < data.rows.length; i++)
+		{
+			var code = String(data.rows[i].language || '').toLowerCase();
+			if (code)
+				used[code] = true;
+		}
+
+		for (var l = 0; l < data.languages.length; l++)
+		{
+			var languageCode = String(data.languages[l].code || '').toLowerCase();
+			if (languageCode && !used[languageCode])
+				return languageCode;
+		}
+
+		return data.defaultLanguage;
+	},
+
+	getUsedMultiLanguages : function (data, exceptRowKey)
+	{
+		var used = {};
+		for (var i = 0; i < data.rows.length; i++)
+		{
+			if (exceptRowKey && (data.rows[i].key === exceptRowKey))
+				continue;
+			var code = String(data.rows[i].language || '').toLowerCase();
+			if (code)
+				used[code] = true;
+		}
+		return used;
+	},
+
+	parseMultiLanguageValue : function (rawValue, defaultLanguage)
+	{
+		if ((rawValue === null) || (rawValue === undefined))
+			return {};
+
+		if (typeof rawValue !== 'string')
+			rawValue = String(rawValue);
+
+		var trimmed = rawValue.trim();
+		if (!trimmed)
+			return {};
+
+		if ((trimmed.charAt(0) === '{') && (trimmed.charAt(trimmed.length - 1) === '}'))
+		{
+			try
+			{
+				var decoded = JSON.parse(trimmed);
+				if (decoded && (typeof decoded === 'object') && !Array.isArray(decoded))
+				{
+					var normalized = {};
+					for (var languageCode in decoded)
+					{
+						if (!Object.prototype.hasOwnProperty.call(decoded, languageCode))
+							continue;
+						var normalizedCode = String(languageCode || '').trim().toLowerCase();
+						if (!normalizedCode)
+							continue;
+						var translation = decoded[languageCode];
+						normalized[normalizedCode] = (translation === null || translation === undefined) ? '' : String(translation);
+					}
+					return normalized;
+				}
+			}
+			catch ($ex)
+			{
+			}
+		}
+
+		var legacy = {};
+		legacy[defaultLanguage] = rawValue;
+		return legacy;
+	},
+
+	renderMultiLanguageWidget : function (widget)
+	{
+		var data = widget._qcMultiLangData;
+		if (!data)
+			return;
+
+		if (data.addLanguage)
+			data.addLanguage.disabled = (data.rows.length >= data.languages.length);
+
+		if (data.panels)
+		{
+			data.panels.innerHTML = '';
+			for (var p = 0; p < data.rows.length; p++)
+			{
+				var rowData = data.rows[p];
+				var panelLanguage = String(rowData.language || '').toLowerCase() || data.defaultLanguage;
+				var panel = document.createElement('div');
+				panel.className = 'qc-ml-panel mb-3';
+				panel.setAttribute('data-language', panelLanguage);
+				panel.setAttribute('data-row-key', rowData.key);
+
+				var toolbar = document.createElement('div');
+				toolbar.className = 'flex items-center gap-2 mb-2';
+
+				var selector = document.createElement('select');
+				selector.className = 'qc-ml-language-select form-input block w-auto sm:text-sm sm:leading-5';
+				selector.setAttribute('data-row-key', rowData.key);
+				var usedLanguages = this.getUsedMultiLanguages(data, rowData.key);
+				for (var s = 0; s < data.languages.length; s++)
+				{
+					var selectorLanguage = data.languages[s];
+					var selectorOption = document.createElement('option');
+					selectorOption.value = selectorLanguage.code;
+					selectorOption.textContent = selectorLanguage.name;
+					if (selectorLanguage.code === panelLanguage)
+						selectorOption.selected = true;
+					if ((selectorLanguage.code !== panelLanguage) && usedLanguages[selectorLanguage.code])
+						selectorOption.disabled = true;
+					selector.appendChild(selectorOption);
+				}
+				toolbar.appendChild(selector);
+
+				if (p > 0)
+				{
+					var removeButton = document.createElement('button');
+					removeButton.type = 'button';
+					removeButton.className = 'qc-ml-remove-language inline-flex items-center gap-1 text-xs text-red-500 hover:text-red-700';
+					removeButton.setAttribute('data-row-key', rowData.key);
+					removeButton.innerHTML = '<span aria-hidden="true">&times;</span><span>Remove</span>';
+					toolbar.appendChild(removeButton);
+				}
+				panel.appendChild(toolbar);
+
+				var fieldId = (widget.getAttribute('data-ml-widget-id') || 'qc-ml') + '-' + rowData.key;
+				var editor;
+				if (data.inputTag === 'textarea')
+				{
+					editor = document.createElement('textarea');
+					editor.textContent = data.values[panelLanguage] || '';
+					editor.className = 'form-textarea mt-1 block w-full transition duration-150 ease-in-out sm:text-sm sm:leading-5 qc-ml-editor qc-textarea' + (data.useEditor ? ' qc-trumbowyg ' : '');
+				}
+				else
+				{
+					editor = document.createElement('input');
+					editor.type = data.inputType;
+					editor.value = data.values[panelLanguage] || '';
+					editor.className = 'form-input block w-full sm:text-sm sm:leading-5 qc-ml-editor qc-input';
+				}
+
+				editor.id = fieldId;
+				editor.setAttribute('data-language', panelLanguage);
+				editor.setAttribute('data-row-key', rowData.key);
+				editor.setAttribute('autocomplete', 'off');
+				panel.appendChild(editor);
+				data.panels.appendChild(panel);
+			}
+		}
+
+		this.syncMultiLanguageStore(widget);
+		if (data.useEditor)
+			this.initWysiwyg(data.panels);
+	},
+
+	syncMultiLanguageEditor : function (editor)
+	{
+		if (!editor)
+			return;
+
+		var widget = editor.closest('.qc-multilang-field');
+		if (!widget || !widget._qcMultiLangData)
+			return;
+
+		var languageCode = String(editor.getAttribute('data-language') || '').toLowerCase();
+		if (!languageCode)
+			return;
+
+		widget._qcMultiLangData.values[languageCode] = editor.value || '';
+		this.syncMultiLanguageStore(widget, editor);
+	},
+
+	syncMultiLanguageSelector : function (selector)
+	{
+		if (!selector)
+			return;
+
+		var widget = selector.closest('.qc-multilang-field');
+		if (!widget || !widget._qcMultiLangData)
+			return;
+
+		var rowKey = selector.getAttribute('data-row-key');
+		var languageCode = String(selector.value || '').toLowerCase();
+		if (!rowKey || !languageCode)
+			return;
+
+		var data = widget._qcMultiLangData;
+		for (var i = 0; i < data.rows.length; i++)
+		{
+			if (data.rows[i].key !== rowKey)
+				continue;
+
+			var oldLanguage = String(data.rows[i].language || '').toLowerCase();
+			var usedLanguages = this.getUsedMultiLanguages(data, rowKey);
+			if (usedLanguages[languageCode])
+			{
+				selector.value = oldLanguage;
+				return;
+			}
+			var editor = widget.querySelector('.qc-ml-editor[data-row-key="' + rowKey + '"]');
+			if (editor)
+			{
+				data.values[oldLanguage] = editor.value || '';
+				editor.setAttribute('data-language', languageCode);
+				if (data.inputTag === 'textarea')
+					editor.textContent = data.values[languageCode] || '';
+				else
+					editor.value = data.values[languageCode] || '';
+			}
+
+			data.rows[i].language = languageCode;
+			break;
+		}
+
+		this.syncMultiLanguageStore(widget, selector);
+		this.renderMultiLanguageWidget(widget);
+	},
+
+	removeMultiLanguageRow : function (button)
+	{
+		if (!button)
+			return;
+
+		var widget = button.closest('.qc-multilang-field');
+		if (!widget || !widget._qcMultiLangData)
+			return;
+
+		var rowKey = button.getAttribute('data-row-key');
+		if (!rowKey)
+			return;
+
+		var data = widget._qcMultiLangData;
+		if (data.rows.length <= 1)
+			return;
+
+		for (var i = 0; i < data.rows.length; i++)
+		{
+			if (data.rows[i].key !== rowKey)
+				continue;
+			var editor = widget.querySelector('.qc-ml-editor[data-row-key="' + rowKey + '"]');
+			if (editor)
+			{
+				var languageCode = String(editor.getAttribute('data-language') || '').toLowerCase();
+				if (languageCode)
+					data.values[languageCode] = editor.value || '';
+			}
+			data.rows.splice(i, 1);
+			break;
+		}
+
+		this.renderMultiLanguageWidget(widget);
+		this.syncMultiLanguageStore(widget, button);
+	},
+
+	syncMultiLanguageStore : function (widget, changedEditor)
+	{
+		var data = widget && widget._qcMultiLangData;
+		if (!data || !data.store)
+			return;
+
+		var normalized = {};
+		for (var languageCode in data.values)
+		{
+			if (!Object.prototype.hasOwnProperty.call(data.values, languageCode))
+				continue;
+			var translation = data.values[languageCode];
+			translation = (translation === null || translation === undefined) ? '' : String(translation);
+			if (translation !== '')
+				normalized[languageCode] = translation;
+		}
+
+		data.store.value = Object.keys(normalized).length ? JSON.stringify(normalized) : '';
+		if (changedEditor)
+			this.onchange(data.store);
 	},
 
 	initCheckboxCollection : function (context)

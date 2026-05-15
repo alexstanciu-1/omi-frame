@@ -2087,6 +2087,7 @@ class Grid implements IGenerator
 		$_is_password = $_PROP_FLAGS["type.password"];
 		$_is_file = $_PROP_FLAGS["type.file"]; 
 		$_is_string = $_PROP_FLAGS["type.string"];
+		$_is_multilang = $_PROP_FLAGS["type.multilang"];
 		$_is_textarea = $_PROP_FLAGS["display.textarea"];
 		$_is_date = $_PROP_FLAGS["type.date"];
 		$_date_format = $_PROP_FLAGS["date.format"];
@@ -2186,6 +2187,7 @@ class Grid implements IGenerator
 		$_set_vals
 		$_enum_captions
 		$_field_style
+		$_is_multilang
 		*/
 		
 		ob_start();
@@ -3288,6 +3290,9 @@ class Grid implements IGenerator
 			static::$CachedData[$prop_idf]["type.file"] = in_array('file', $firstScalarType);
 
 			static::$CachedData[$prop_idf]["type.string"] = in_array('string', $firstScalarType);
+			static::$CachedData[$prop_idf]["type.multilang"] =
+				(bool)(static::ExtractExtraConfig($config["cfg"], $path ?: "", "@storage.multilanguage") ??
+					($mixed_data["storage.full"]["multilanguage"] ?? false));
 
 			static::$CachedData[$prop_idf]["type.date"] = (in_array('datetime', $firstScalarType) || in_array('date', $firstScalarType));
 			

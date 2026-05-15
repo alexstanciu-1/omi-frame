@@ -35,7 +35,11 @@ if ($_force_block || $blockWhenData || $blockWhenRecord) : ?>
 				</span>
 				<?php endif; ?>
 			<?php else : ?>		
-				{{<?= $_data_value ?>}}
+				<?php if ($_is_multilang) : ?>
+					{{tfh_multilang_get_display_value(<?= $_data_value ?>)}}
+				<?php else : ?>
+					{{<?= $_data_value ?>}}
+				<?php endif; ?>
 			<?php endif; ?>
 			<input type='hidden' name="{{<?= $_data_property ?>}}" value='{{<?= $_data_value ?>}}' <?= $_is_password ? " autocomplete='new-password' " : "" ?> />
 		</div>

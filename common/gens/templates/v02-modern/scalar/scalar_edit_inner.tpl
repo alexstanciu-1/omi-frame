@@ -1,5 +1,7 @@
 <?php if ($_is_bool) : 
     include(static::GetTemplate("form_elements/checkbox.tpl", $config));
+elseif ($_is_multilang) :
+	include(static::GetTemplate('form_elements/multilanguage.tpl', $config));
 elseif ($_is_date) : 
     include(static::GetTemplate("form_elements/date.tpl", $config));	
 elseif ($_is_file) : 

@@ -772,6 +772,9 @@ function QUndefined()
 
 function Q_SESSION_SET_ID($session_id)
 {
+	if (defined('OMI_ORM_ONLY') && OMI_ORM_ONLY)
+		return $session_id;
+
 	$doSessionDebug = false;
 	if ($doSessionDebug)
 	{
@@ -814,6 +817,9 @@ function Q_SESSION_SET_ID($session_id)
 
 function Q_SESSION_GET_ID()
 {
+	if (defined('OMI_ORM_ONLY') && OMI_ORM_ONLY)
+		return '';
+
 	$doSessionDebug = false;
 	if ($doSessionDebug)
 	{
@@ -852,6 +858,44 @@ function Q_SESSION_GET_ID()
 
 function Q_SESSION($key, $value = null, bool $unset = false)
 {
+	if (defined('OMI_ORM_ONLY') && OMI_ORM_ONLY)
+	{
+		static $orm_only_session = [];
+		$set_value = (bool)(func_num_args() > 1);
+		if (is_string($key) || is_int($key) || is_scalar($key) || is_null($key))
+		{
+			if ($unset)
+			{
+				unset($orm_only_session[$key]);
+				return null;
+			}
+			return $set_value ? ($orm_only_session[$key] = $value) : ($orm_only_session[$key] ?? null);
+		}
+		else if (is_array($key) && (!empty($key)))
+		{
+			$ref = &$orm_only_session;
+			$cont = (count($key) - 1);
+			for ($i = 0; $i < $cont; $i++)
+			{
+				$i_key = $key[$i];
+				if (! (is_string($i_key) || is_int($i_key) || is_scalar($i_key) || is_null($i_key)))
+					throw new \Exception("Bad key specified for SESSION assignment [" . gettype($i_key) . "]");
+				if (!isset($ref[$i_key]) || (!is_array($ref[$i_key])))
+					$ref[$i_key] = [];
+				$ref = &$ref[$i_key];
+			}
+			$last_key = $key[$cont];
+			if ($unset)
+			{
+				unset($ref[$last_key]);
+				return null;
+			}
+			return $set_value ? ($ref[$last_key] = $value) : ($ref[$last_key] ?? null);
+		}
+		else
+			throw new \Exception("Bad key specified for SESSION assignment [" . gettype($key) . "]");
+	}
+
 	$doSessionDebug = false;
 	$cleaned = false;
 	if ($doSessionDebug)

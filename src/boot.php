@@ -15,6 +15,16 @@ const Q_SECURITY_SAFE_FOLDERS = [
 	'uploads' => true,
 ];
 
+if (defined('OMI_ORM_ONLY') && OMI_ORM_ONLY)
+{
+	if (!defined('Q_RUNNING_PATH'))
+		throw new \Exception('Running path not defined.');
+	if (!defined('Q_EXEC_DIR'))
+		define('Q_EXEC_DIR', Q_RUNNING_PATH);
+	chdir(Q_EXEC_DIR);
+	return;
+}
+
 (function (){
 
 	error_reporting( error_reporting() &  ~ (E_WARNING | E_NOTICE) );

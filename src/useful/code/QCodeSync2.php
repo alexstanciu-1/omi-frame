@@ -15,6 +15,7 @@ class QCodeSync2
 	
 	public static $PHP_LINT_CHECK = true;
 	public static $PHP_LINT_CHECK_TPL = false;
+	protected static $LastException = null;
 	
 	public $upgrage_mode = null;
 	public $full_sync = false;
@@ -449,6 +450,7 @@ class QCodeSync2
 		
 		catch (\Exception $ex)
 		{
+			self::$LastException = $ex;
 			$ex_ct = $ex;
 		}
 		finally
@@ -482,6 +484,11 @@ class QCodeSync2
 			if ($ex_ct)
 				throw $ex_ct;
 		}
+	}
+
+	public static function GetLastException()
+	{
+		return self::$LastException;
 	}
 	
 	/**

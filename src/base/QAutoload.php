@@ -12,6 +12,7 @@
 final class QAutoload
 {
 	public static $RunSyncOnlyInRunningFolder = false;
+	protected static $LastScanForChangesException = null;
 	/**
 	 * @var int
 	 */
@@ -1252,6 +1253,7 @@ final class QAutoload
 				}
 				catch (Exception $ex)
 				{
+					self::$LastScanForChangesException = $ex;
 					// make sure we unlock
 					$lock->unlock();
 					self::$LockAutoload = false;
@@ -1266,6 +1268,11 @@ final class QAutoload
 				}
 			}
 		}
+	}
+
+	public static function GetLastScanForChangesException()
+	{
+		return self::$LastScanForChangesException;
 	}
 	
 	/**

@@ -130,7 +130,7 @@ class QApp extends QAppModule
 		
 		$dev_mode = QAutoload::GetDevelopmentMode();
 		
-		if ($dev_mode)
+		if ($dev_mode && ((!defined('OMI_ORM_ONLY')) || (!OMI_ORM_ONLY)))
 			session_start();
 		
 		register_shutdown_function(function ()

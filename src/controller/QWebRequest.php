@@ -647,10 +647,11 @@ final class QWebRequest
 		static::Init_Vars();
 		
 		$ssl = ((!empty($_SERVER['HTTPS'])) && ($_SERVER['HTTPS'] === 'on')) ? "s" : "";
+		$host = $replace_host ?? $_SERVER['HTTP_HOST'];
 		$port = $_SERVER['SERVER_PORT'];
-		$port = ((!$ssl && ($port == '80')) || ($ssl && ($port == '443'))) ? '' : ':'.$port;
+		$port = ((!$ssl && ($port == '80')) || ($ssl && ($port == '443')) || preg_match('/:\\d+$/', $host)) ? '' : ':'.$port;
 		
-		$url = "http{$ssl}://".($replace_host ?? $_SERVER['HTTP_HOST']).$port.self::$BaseHref.($with_original_request ? self::$OriginalRequest : '');
+		$url = "http{$ssl}://".$host.$port.self::$BaseHref.($with_original_request ? self::$OriginalRequest : '');
 		if ($with_query_string && (!empty($_GET)))
 			return $url."?".http_build_query($_GET);
 		else
